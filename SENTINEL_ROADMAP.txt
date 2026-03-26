@@ -1,0 +1,196 @@
+SENTINEL OSINT FIELD TOOLKIT – PRODUCT ROADMAP
+================================================
+Created: March 2026
+
+VERSION 2.3.0 – CURRENT RELEASE
+---------------------------------
+Status: Ready for App Store submission
+
+Features:
+- 12 OSINT investigation modules
+- One-Input Intelligence Search
+- Automatic FBI & Interpol wanted checks
+- All 50 US states + Canada wanted lists
+- 7 AI-powered features (Claude Sonnet)
+- Investigation Timeline with AI Summary
+- AES-256 encrypted case management
+- PDF export
+- Watch List
+- Biometric authentication
+- iPad support
+
+
+VERSION 2.3.1 – HOTFIX (Week 1-2 post-launch)
+-----------------------------------------------
+Priority: HIGH – Deploy immediately if needed
+Timeline: Within 2 weeks of launch
+
+Scope:
+- Bug fixes based on user reports
+- Crash fixes if any
+- UI/UX issues reported by first users
+- Wanted list URL updates if any broken links
+- Performance improvements
+
+
+VERSION 2.4.0 – VEHICLE INTELLIGENCE (Month 1-2)
+--------------------------------------------------
+Priority: HIGH
+Timeline: 4-6 weeks after launch
+
+New features:
+- Vehicle Intelligence Workspace
+  * License plate lookup
+  * VIN decoder
+  * Owner information
+  * Social media cross-reference
+  * Address history
+  * Map integration
+- Improved One-Input Search (vehicle detection)
+- UI refinements based on user feedback
+
+Note: Held back from v2.3 due to App Store sensitivity.
+Submit as update after initial approval established.
+
+
+VERSION 2.5.0 – INTELLIGENCE ENHANCEMENTS (Month 2-3)
+-------------------------------------------------------
+Priority: MEDIUM
+Timeline: 6-8 weeks after launch
+
+New features:
+- Enhanced Watch List with email alerts
+- Batch search (multiple names at once)
+- Case templates for common investigation types
+- Improved PDF report formatting
+- Search result filtering and sorting
+- Dark/Light mode toggle
+
+
+VERSION 3.0.0 – AI PLATFORM (Month 3-4)
+-----------------------------------------
+Priority: HIGH – Major release
+Timeline: 3-4 months after launch
+
+New AI features:
+- AI v3.0 Risk Profiling
+  * Automated threat level assessment
+  * Behavioral pattern analysis
+  * Network connection mapping
+- AI Contradiction Detection
+  * Cross-reference multiple data points
+  * Flag inconsistencies automatically
+- AI Image Analysis
+  * Facial recognition hints
+  * Location identification
+  * Metadata analysis
+  * Reverse image intelligence
+
+Infrastructure:
+- Auto-Renewable Subscriptions (Apple StoreKit 2)
+- Per-user AI usage tracking on Railway backend
+- Usage dashboard for subscribers
+- AI query rollover (unused queries carry forward)
+
+
+VERSION 3.1.0 – COLLABORATION (Month 5-6)
+-------------------------------------------
+Priority: MEDIUM
+Timeline: 5-6 months after launch
+
+New features:
+- Secure case sharing between investigators
+- Team accounts (agency licensing)
+- Encrypted case export/import
+- Court-ready report templates
+- Digital signature on PDF exports
+
+
+VERSION 4.0.0 – ENTERPRISE (Month 6-12)
+-----------------------------------------
+Priority: LONG-TERM
+Timeline: 6-12 months after launch
+
+Enterprise features:
+- Agency/team management dashboard
+- Custom branding options
+- API access for enterprise clients
+- Advanced audit logging for compliance
+- SSO integration
+- Volume licensing ($X/seat/month)
+- Dedicated support channel
+
+
+ONGOING MAINTENANCE (Every release)
+-------------------------------------
+- Wanted list URL verification and updates
+- Railway backend monitoring and scaling
+- Anthropic API version updates
+- Expo SDK updates
+- iOS compatibility updates
+- App Store guideline compliance review
+
+
+APP STORE UPDATE STRATEGY
+--------------------------
+Frequency target: Minimum 1 update per month (first year)
+Why: Apple rewards actively maintained apps in search ranking
+
+Update types:
+- Major (X.0.0): New feature set, major UI changes
+- Minor (X.X.0): New features, significant improvements  
+- Patch (X.X.X): Bug fixes, small improvements, content updates
+
+Release notes strategy:
+- Always highlight NEW features prominently
+- Mention performance improvements
+- Thank users for feedback
+- Use keywords naturally in release notes
+
+
+MONETIZATION ROADMAP
+---------------------
+Current:
+- Solo:        $29/month
+- Pro:         $79/month (Founding: first 200 locked permanently)
+- Annual Pro:  $599/year (Save $349)
+
+v3.0 additions:
+- Agency Plan: $199/month (3 seats)
+- Enterprise:  Custom pricing
+
+Revenue targets (conservative):
+- Month 1:   10 Pro subscribers  = $790/mo
+- Month 3:   50 Pro subscribers  = $3,950/mo
+- Month 6:  150 Pro subscribers  = $11,850/mo
+- Year 1:   300 Pro subscribers  = $23,700/mo
+
+Break-even estimate:
+- Apple 30% cut: ~$7,100/mo at 300 subscribers
+- Railway backend: ~$20/mo
+- Anthropic API (300 users × 100 queries): ~$150/mo
+- Apple Developer: $99/yr
+- Net at 300 subscribers: ~$16,000+/mo
+
+
+FOUNDING MEMBER PROGRAM
+------------------------
+- First 200 Pro subscribers locked at $79/mo permanently
+- Price lock applies even when Pro raises to $99/mo
+- Badge: "Founding Member" in app
+- Early access to new features
+- Direct feedback channel to developer
+
+Trigger for price increase:
+- When 200 founding members reached, raise Pro to $99/mo
+- Announce 30 days in advance
+- Existing subscribers grandfathered at $79/mo
+
+
+KNOWN TECHNICAL DEBT
+---------------------
+- HaveIBeenPwned API-avain ($3.95/kk) – lisää kun myynti alkaa (haveibeenpwned.com/API/Key)
+- Per-user AI usage tracking (currently client-side only)
+- Android Maps API key needs update (low priority, iOS first)
+- Wanted list URLs need periodic verification
+- Consider caching Interpol/FBI results to reduce API calls

@@ -1,0 +1,208 @@
+SENTINEL OSINT FIELD TOOLKIT – COMPLETE OVERVIEW
+=================================================
+Updated: March 2026
+
+GENERAL
+-------
+Sentinel is a professional-grade OSINT field toolkit built exclusively for
+licensed private investigators, corporate security professionals, and
+investigative journalists. Available in the USA and Canada.
+
+Bundle ID:   com.sentinel.osint
+Version:     2.3.0 (build 5)
+Slug:        sentinel-osint-na
+Developer:   Sentinel OSINT
+Support:     sentinelosintapp@protonmail.com
+Privacy:     https://sentinelosint.github.io/sentinel-privacy/
+
+
+TECHNICAL SPECIFICATIONS
+------------------------
+Platform:        iOS (iPhone + iPad Universal)
+Framework:       React Native / Expo SDK 51, TypeScript
+Backend:         Railway (sentinel-backend-production-05e1.up.railway.app)
+AI Engine:       Anthropic Claude Sonnet
+Encryption:      AES-256-CBC + HMAC-SHA256
+Key Storage:     iOS Secure Enclave
+Authentication:  Face ID / Touch ID + PIN
+Category:        Business + Utilities
+Age Rating:      17+
+
+
+INVESTIGATION MODULES (12)
+--------------------------
+1.  Person Search       – Name, background, profiles
+2.  Phone Lookup        – Owner, spam, carrier
+3.  Email Lookup        – Breaches, owner, domain
+4.  Social Media        – Username across 25+ platforms
+5.  IP & Network        – Location, ISP, threat intel
+6.  Domain & WHOIS      – DNS, registration, history
+7.  Company / Org       – SEC, state registries, finance
+8.  Vehicle             – Plate, VIN, history
+9.  Court Records       – PACER, state, criminal
+10. Geo / OSINT         – Satellite, flights, vessels
+11. Map View            – Field map, location pinning
+12. Image Analysis      – EXIF, reverse search, AI analysis
+13. Data Breaches       – Pwned, dark web, pastes
+
+
+AUTOMATIC WANTED CHECKS (Pro only)
+------------------------------------
+USA Federal:
+- FBI Most Wanted
+- FBI Ten Most Wanted
+- US Marshals 15 Most Wanted + Wanted
+- DEA, ICE, ATF, Secret Service, CBP Most Wanted
+
+USA – All 50 States (Alabama through Wyoming)
+
+Canada – Federal:
+- RCMP Most Wanted
+- Canada's 25 Most Wanted (BOLO Program)
+- CBSA Most Wanted
+
+Canada – Provinces & Cities:
+- Toronto Police, OPP (Ontario)
+- Surete du Quebec, SPVM (Montreal)
+- Calgary Police, Edmonton Police
+- Winnipeg Police, Vancouver Police
+- RCMP BC, Alberta, Saskatchewan, Manitoba
+
+International:
+- Interpol Red Notices (automatic real-time check)
+
+
+AI FEATURES (7, Pro only)
+--------------------------
+1. AI Deep Analysis      – In-depth background analysis
+2. AI Risk Profile       – Risk profiling of a subject
+3. AI Strategy           – Investigation strategy recommendations
+4. AI Contradiction      – Contradiction detection in data
+5. AI Image Analysis     – AI-powered image analysis
+6. AI Case Report        – Automated case report generation
+7. AI Timeline Summary   – Investigation summary with:
+                           Key findings, Risk indicators, Open questions
+
+AI Engine:   Claude Sonnet (Anthropic)
+Query limit: 100 queries/month (Pro and Annual Pro)
+
+
+ADDITIONAL FEATURES
+-------------------
+- One-Input Intelligence Search  – Single input → all sources automatically
+- Investigation Timeline         – Automatic activity log of all events
+- Cases Management               – Manage multiple investigations
+- Field Notes                    – Tagged field notes
+- Search History                 – Full search history
+- PDF Export                     – Professional PDF case reports
+- Watch List                     – Monitor targets for changes
+- Audit Log                      – 500-entry HMAC chain, JSON export
+- Biometric Lock                 – Face ID / Touch ID
+- Auto Session Lock              – 1-60 min timeout (default 15 min)
+- Remote Wipe                    – Complete data destruction
+
+
+SECURITY ARCHITECTURE
+---------------------
+- AES-256-CBC encryption + HMAC-SHA256 integrity verification
+- Unique IV per write operation
+- Keys stored in iOS Keychain (Secure Enclave A12+)
+- API key stored only on Railway backend, never on client
+- Audit log: 500 entries FIFO, HMAC chain, JSON export
+
+
+SUBSCRIPTION PLANS
+------------------
+
+TRIAL (Free, 7 days)
+- All 12 investigation modules
+- One-Input Search: max 2/day
+- 1 Case maximum
+- No AI features
+- No PDF export
+- No wanted checks
+Target: New users evaluating the app
+
+SOLO ($29/month)
+- All 12 modules, unlimited
+- One-Input Search: unlimited
+- Unlimited cases
+- PDF export
+- Field Notes & History
+- No AI features
+- No wanted checks
+Target: Budget-conscious users, students, small offices
+
+PRO ($79/month)
+- Everything in Solo
+- 7 AI-powered features (100 queries/month)
+- FBI & Interpol automatic wanted checks
+- All 50 US states + Canada wanted lists
+- AI Investigation Timeline Summary
+Target: Licensed PIs, corporate security, investigative journalists
+Founding Member: First 200 subscribers locked at $79/mo permanently
+
+ANNUAL PRO ($599/year)
+- Everything in Pro
+- 100 AI queries/month
+- Save $349/year vs. monthly subscription
+- Equivalent to $49.92/month
+- 2 months free vs. monthly billing
+Target: Serious professionals committed to their toolkit
+
+
+MARKETING MESSAGES
+------------------
+Core message:
+"Every minute counts. Pro pays for itself on the first case."
+
+Key differentiators:
+- "FBI + Interpol check: 3 seconds vs. 30 minutes manually"
+- "AI background analysis: 10 seconds vs. 1 hour research"
+- "Case report generation: 1 click vs. hours of writing"
+- "The only OSINT toolkit with automatic US & Canada wanted checks"
+- "Save $349/year with Annual Pro"
+
+Tagline:
+"FBI, Interpol & all 50 states. Professional OSINT in your pocket."
+
+
+APP STORE INFORMATION
+---------------------
+App Name:        Sentinel – OSINT Field Toolkit
+Seller:          Sentinel OSINT
+Bundle ID:       com.sentinel.osint
+SKU:             sentinel-osint-na-001
+Category:        Business (primary), Utilities (secondary)
+Age Rating:      17+
+Privacy Policy:  https://sentinelosint.github.io/sentinel-privacy/
+Support:         sentinelosintapp@protonmail.com
+Keywords:        osint,investigator,surveillance,people search,fbi,interpol,
+                 reverse phone lookup,pi,background check
+
+
+BACKEND & INFRASTRUCTURE
+------------------------
+Railway URL:      sentinel-backend-production-05e1.up.railway.app
+GitHub (backend): github.com/SentinelOsint/sentinel-backend
+GitHub (privacy): github.com/SentinelOsint/sentinel-privacy
+Anthropic account: hannuhuttunen@icloud.com
+Expo account:      hannuhuttunen@icloud.com
+
+
+PRE-APP STORE CHECKLIST
+------------------------
+[ ] Apple Developer account ($99/yr) – opening tomorrow
+[ ] EAS Build – production build
+[ ] App Store Connect – listing, metadata, screenshots
+[ ] In-App Purchases – subscription configuration
+[ ] Restore isPro → useState(false) in App.tsx line 52   <- CRITICAL
+[ ] Remove __DEV__ flags in App.tsx                      <- CRITICAL
+
+
+UPCOMING FEATURES (v2.4+)
+--------------------------
+- Vehicle Intelligence Workspace (plate + VIN + owner + social + map)
+- AI v3.0: risk profiling, contradiction detection, image analysis
+- Per-user AI usage tracking on backend
+- App Store Auto-Renewable Subscriptions

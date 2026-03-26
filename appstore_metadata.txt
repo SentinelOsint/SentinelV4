@@ -1,0 +1,62 @@
+APP STORE METADATA – SENTINEL OSINT FIELD TOOLKIT v2.4.0
+==================================================
+
+APP NAME: Sentinel – OSINT Field Toolkit
+
+PROMOTIONAL TEXT:
+FBI, Interpol & all 50 states. The only OSINT toolkit with automatic US & Canada wanted checks.
+
+KEYWORDS (100 chars max):
+osint,investigator,surveillance,people search,fbi,interpol,reverse phone lookup,pi,background check
+
+DESCRIPTION:
+One case. One search. Sentinel pays for itself.
+
+Licensed investigators and corporate security professionals don't have time to juggle 20 browser tabs, outdated databases, and manual FBI searches. Sentinel puts every tool you need in one secure, encrypted app — and delivers results in seconds.
+
+THE MOST COMPLETE MOBILE OSINT TOOLKIT
+12 modules. FBI · Interpol · 50 States · Canada. AI Risk Score. All in one secure app — built for investigators, researchers, and security professionals.
+
+INSTANT INTELLIGENCE ON ANY IDENTIFIER
+Type a name, phone number, email, IP address, domain, or company. Sentinel detects the input automatically, searches 50+ sources simultaneously, and delivers a complete intelligence report — instantly. No setup. No switching apps. No wasted time.
+
+AUTOMATIC FBI, INTERPOL & WANTED CHECKS
+Every person search automatically runs against FBI Most Wanted, Interpol Red Notices, US Marshals, DEA, ICE, ATF, Secret Service, all 50 US state wanted lists, RCMP, and Canadian provincial and city police databases. You don't have to ask. It just happens.
+
+AI RISK SCORE — KNOW IN SECONDS (PRO)
+Generate an AI Risk Score (0–100) on demand with classification: LOW, MEDIUM, HIGH, or CRITICAL. Includes key findings, red flags, contradiction detection, and recommended next steps. Catch what manual searches miss.
+
+BUILT FOR THE FIELD
+- Person profiles, background intelligence, social media analysis
+- Phone carrier, line type & region identification
+- Email breach detection & domain intelligence
+- IP geolocation, ISP, ASN & threat analysis
+- Domain DNS, hosting & registration history
+- Company records, SEC EDGAR & corporate registry
+- Court records & public documents (PACER)
+- Vehicle & plate history
+- Geo-OSINT, satellite imagery & flight tracking
+
+ENCRYPTED. SECURE. YOURS ALONE.
+AES-256 encryption. Face ID / Touch ID. Keys stored in iOS Secure Enclave — never in the cloud. Auto-lock, tamper-proof audit log, and remote wipe. Your case files stay on your device, period.
+
+COURT-READY DOCUMENTATION
+Export any investigation as a professionally formatted PDF report. Built for legal documentation, case files, and client deliverables.
+
+CHOOSE YOUR PLAN
+Trial — 7 days free, all modules unlocked. No commitment.
+
+Solo — $29/month
+All 12 OSINT modules, One-Input Search, Investigation Timeline, unlimited cases, PDF export, field notes & history.
+
+Pro — $79/month
+Everything in Solo, plus: automatic FBI & Interpol wanted checks, all 50 US states & Canada wanted lists, 7 AI-powered features, AI Risk Score, contradiction detection, AI image analysis, and 100 AI queries per month.
+
+FOUNDING MEMBER OFFER — LIMITED TIME
+The first 200 Pro subscribers lock in $79/month permanently. When Sentinel raises its price to $99/month, your rate never changes. 17 spots remaining.
+
+LEGAL NOTICE
+Sentinel is available to anyone who wants professional-grade OSINT tools. Sentinel is not a Consumer Reporting Agency (CRA). This tool cannot be used for employment screening, credit, insurance, or tenant screening under the FCRA. Users are responsible for compliance with DPPA and applicable state and federal privacy laws.
+
+Privacy Policy: https://sentinelosint.github.io/sentinel-privacy/
+Support: sentinelosintapp@protonmail.com

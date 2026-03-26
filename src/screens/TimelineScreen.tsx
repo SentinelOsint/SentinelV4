@@ -1,0 +1,395 @@
+/**
+ * SENTINEL – Investigation Timeline
+ * Auto-generated timeline from audit log events.
+ * Pro: AI-powered summary with key findings, risk indicators, open questions.
+ */
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, SafeAreaView, StatusBar,
+  ActivityIndicator, Alert,
+} from 'react-native';
+import { C, IS_IPAD, SPACE } from '../utils/theme';
+import { AuditLog, AuditEntry, AuditEventType } from '../utils/auditLog';
+
+// ─── AI (Claude Sonnet) ────────────────────────────────────────────────────
+const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+
+interface TimelineSummary {
+  summary:    string;
+  findings:   string[];
+  risks:      string[];
+  questions:  string[];
+}
+
+// ─── Props ─────────────────────────────────────────────────────────────────
+interface Props {
+  isPro:    boolean;
+  apiKey?:  string;
+  onBack:   () => void;
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+function formatTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch { return iso.slice(11, 16); }
+}
+
+function formatDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch { return iso.slice(0, 10); }
+}
+
+function eventIcon(type: AuditEventType): string {
+  switch (type) {
+    case 'SEARCH_QUERY':          return '🔍';
+    case 'AUTH_SUCCESS':          return '🔓';
+    case 'AUTH_FAILURE':          return '⚠️';
+    case 'AUTH_LOCKOUT':          return '🔒';
+    case 'SESSION_TIMEOUT':       return '⏱';
+    case 'SESSION_MANUAL_LOCK':   return '🔒';
+    case 'CASE_CREATE':           return '📁';
+    case 'CASE_OPEN':             return '📂';
+    case 'CASE_EXPORT_PDF':       return '📄';
+    case 'CASE_DELETE':           return '🗑';
+    case 'NOTE_CREATE':           return '📝';
+    case 'INTEGRITY_CHECK_FAIL':  return '🚨';
+    case 'WIPE_ALL_DATA':         return '💥';
+    default:                      return '•';
+  }
+}
+
+function eventColor(type: AuditEventType): string {
+  switch (type) {
+    case 'SEARCH_QUERY':          return C.accent;
+    case 'AUTH_FAILURE':
+    case 'AUTH_LOCKOUT':
+    case 'INTEGRITY_CHECK_FAIL':  return C.red;
+    case 'CASE_CREATE':
+    case 'CASE_OPEN':
+    case 'NOTE_CREATE':           return C.green;
+    case 'WIPE_ALL_DATA':         return C.red;
+    default:                      return C.textMid;
+  }
+}
+
+function eventLabel(type: AuditEventType, detail?: string): string {
+  switch (type) {
+    case 'SEARCH_QUERY':
+      return detail ? `Search: ${detail}` : 'Search query';
+    case 'AUTH_SUCCESS':    return 'Authentication successful';
+    case 'AUTH_FAILURE':    return 'Authentication failed';
+    case 'AUTH_LOCKOUT':    return 'Account locked out';
+    case 'SESSION_TIMEOUT': return 'Session timed out';
+    case 'SESSION_MANUAL_LOCK': return 'App locked manually';
+    case 'CASE_CREATE':     return detail ? `Case created: ${detail}` : 'New case created';
+    case 'CASE_OPEN':       return detail ? `Case opened: ${detail}` : 'Case opened';
+    case 'CASE_EXPORT_PDF': return 'Case exported to PDF';
+    case 'CASE_DELETE':     return 'Case deleted';
+    case 'NOTE_CREATE':     return 'Field note saved';
+    case 'NOTE_DELETE':     return 'Note deleted';
+    case 'HISTORY_CLEAR':   return 'Search history cleared';
+    case 'INTEGRITY_CHECK_FAIL': return '⚠ Integrity check failed';
+    case 'KEY_ROTATION':    return 'Encryption keys rotated';
+    case 'WIPE_ALL_DATA':   return 'All data wiped';
+    case 'SETTINGS_CHANGE': return detail ? `Settings changed: ${detail}` : 'Settings updated';
+    default:                return detail || type;
+  }
+}
+
+// Group entries by date
+function groupByDate(entries: AuditEntry[]): { date: string; items: AuditEntry[] }[] {
+  const map = new Map<string, AuditEntry[]>();
+  for (const e of entries) {
+    const d = e.timestamp.slice(0, 10);
+    if (!map.has(d)) map.set(d, []);
+    map.get(d)!.push(e);
+  }
+  return Array.from(map.entries()).map(([date, items]) => ({ date, items }));
+}
+
+// ─── Component ─────────────────────────────────────────────────────────────
+export default function TimelineScreen({ isPro, apiKey, onBack }: Props) {
+  const [entries,   setEntries]   = useState<AuditEntry[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [summary,   setSummary]   = useState<TimelineSummary | null>(null);
+  const [showAI,    setShowAI]    = useState(false);
+
+  // Load audit log
+  useEffect(() => {
+    (async () => {
+      try {
+        const recent = await AuditLog.getRecent(100);
+        setEntries(recent);
+      } catch (e) {
+        console.warn('Timeline: could not load audit log', e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // AI Summary
+  const generateSummary = useCallback(async () => {
+    if (entries.length === 0) {
+      Alert.alert('No Data', 'No investigation activity to summarize yet.');
+      return;
+    }
+    setAiLoading(true);
+    setSummary(null);
+    setShowAI(true);
+    try {
+      const logText = entries
+        .slice(0, 50)
+        .map(e => `[${formatTime(e.timestamp)}] ${e.type}${e.detail ? ': ' + e.detail : ''}`)
+        .join('\n');
+
+      const prompt = `You are an OSINT investigation analyst. Analyze the following investigation activity log from a professional investigator's session and provide a structured intelligence summary.
+
+ACTIVITY LOG:
+${logText}
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "summary": "2-3 sentence overview of the investigation session",
+  "findings": ["finding 1", "finding 2", "finding 3"],
+  "risks": ["risk or concern 1", "risk or concern 2"],
+  "questions": ["open question 1", "open question 2", "open question 3"]
+}
+
+Keep each item concise (max 15 words). Base findings only on actual log entries.`;
+
+      const systemPrompt = 'You are an OSINT investigation analyst. Respond ONLY with valid JSON, no markdown, no preamble.';
+      const res = await fetch('https://sentinel-backend-production-05e1.up.railway.app/ai/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          systemPrompt, userPrompt: prompt,
+        }),
+      });
+
+      const data = await res.json();
+      const text = data.result || '';
+      const clean = text.replace(/```json|```/g, '').trim();
+      const parsed: TimelineSummary = JSON.parse(clean);
+      setSummary(parsed);
+    } catch (e) {
+      Alert.alert('AI Error', 'Could not generate summary. Check your connection.');
+      setShowAI(false);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [entries]);
+
+  const groups = groupByDate(entries);
+  const searchCount = entries.filter(e => e.type === 'SEARCH_QUERY').length;
+
+  return (
+    <SafeAreaView style={s.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity onPress={onBack} style={s.backBtn}>
+          <Text style={s.backTxt}>← Back</Text>
+        </TouchableOpacity>
+        <View style={s.headerCenter}>
+          <Text style={s.title}>Investigation Timeline</Text>
+          <Text style={s.subtitle}>
+            {loading ? 'Loading…' : `${entries.length} events · ${searchCount} searches`}
+          </Text>
+        </View>
+        <View style={{ width: 60 }} />
+      </View>
+
+      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent}>
+
+        {/* AI Summary Button (Pro only) */}
+        {isPro && !showAI && (
+          <TouchableOpacity style={s.aiBtn} onPress={generateSummary}>
+            <Text style={s.aiBtnIcon}>✦</Text>
+            <Text style={s.aiBtnTxt}>Generate AI Investigation Summary</Text>
+          </TouchableOpacity>
+        )}
+
+        {!isPro && (
+          <View style={s.proGate}>
+            <Text style={s.proGateIcon}>✦</Text>
+            <Text style={s.proGateTxt}>AI Investigation Summary</Text>
+            <Text style={s.proGateDesc}>
+              Upgrade to Pro to get AI-powered summaries with key findings,
+              risk indicators, and open questions.
+            </Text>
+          </View>
+        )}
+
+        {/* AI Loading */}
+        {aiLoading && (
+          <View style={s.aiLoading}>
+            <ActivityIndicator color={C.accent} size="small" />
+            <Text style={s.aiLoadingTxt}>Analyzing investigation activity…</Text>
+          </View>
+        )}
+
+        {/* AI Summary Result */}
+        {summary && showAI && (
+          <View style={s.summaryCard}>
+            <Text style={s.summaryHeader}>✦ AI Investigation Summary</Text>
+            <Text style={s.summaryText}>{summary.summary}</Text>
+
+            {summary.findings.length > 0 && (
+              <View style={s.summarySection}>
+                <Text style={s.sectionLabel}>KEY FINDINGS</Text>
+                {summary.findings.map((f, i) => (
+                  <Text key={i} style={s.bulletGreen}>◆ {f}</Text>
+                ))}
+              </View>
+            )}
+
+            {summary.risks.length > 0 && (
+              <View style={s.summarySection}>
+                <Text style={s.sectionLabel}>RISK INDICATORS</Text>
+                {summary.risks.map((r, i) => (
+                  <Text key={i} style={s.bulletRed}>▲ {r}</Text>
+                ))}
+              </View>
+            )}
+
+            {summary.questions.length > 0 && (
+              <View style={s.summarySection}>
+                <Text style={s.sectionLabel}>OPEN QUESTIONS</Text>
+                {summary.questions.map((q, i) => (
+                  <Text key={i} style={s.bulletAmber}>? {q}</Text>
+                ))}
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={s.refreshBtn}
+              onPress={generateSummary}
+            >
+              <Text style={s.refreshTxt}>↺ Regenerate</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <View style={s.center}>
+            <ActivityIndicator color={C.accent} size="large" />
+            <Text style={s.loadingTxt}>Loading timeline…</Text>
+          </View>
+        )}
+
+        {/* Empty state */}
+        {!loading && entries.length === 0 && (
+          <View style={s.center}>
+            <Text style={s.emptyIcon}>🕐</Text>
+            <Text style={s.emptyTitle}>No activity yet</Text>
+            <Text style={s.emptyDesc}>
+              Start searching to build your investigation timeline.
+            </Text>
+          </View>
+        )}
+
+        {/* Timeline Groups */}
+        {!loading && groups.map(({ date, items }) => (
+          <View key={date} style={s.group}>
+            <Text style={s.dateHeader}>{formatDate(date)}</Text>
+            <View style={s.groupItems}>
+              {items.map((entry, idx) => (
+                <View key={entry.id} style={s.timelineRow}>
+                  {/* Timeline line */}
+                  <View style={s.timelineLeft}>
+                    <View style={[s.dot, { backgroundColor: eventColor(entry.type) }]} />
+                    {idx < items.length - 1 && <View style={s.line} />}
+                  </View>
+                  {/* Content */}
+                  <View style={s.timelineContent}>
+                    <View style={s.rowHeader}>
+                      <Text style={s.timeText}>{formatTime(entry.timestamp)}</Text>
+                      <Text style={s.eventIcon}>{eventIcon(entry.type)}</Text>
+                    </View>
+                    <Text style={[s.eventLabel, { color: eventColor(entry.type) }]}>
+                      {eventLabel(entry.type, entry.detail)}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ─── Styles ────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  safe:            { flex: 1, backgroundColor: C.bg },
+  header:          { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
+  backBtn:         { width: 60 },
+  backTxt:         { color: C.accent, fontSize: 15 },
+  headerCenter:    { flex: 1, alignItems: 'center' },
+  title:           { color: C.text, fontSize: IS_IPAD ? 20 : 17, fontWeight: '700' },
+  subtitle:        { color: C.textMid, fontSize: 12, marginTop: 2 },
+  scroll:          { flex: 1 },
+  scrollContent:   { padding: 16 },
+
+  // AI button
+  aiBtn:           { flexDirection: 'row', alignItems: 'center', backgroundColor: C.accentDim, borderRadius: 12, padding: 14, marginBottom: 16, gap: 8 },
+  aiBtnIcon:       { color: C.accent, fontSize: 16 },
+  aiBtnTxt:        { color: C.accent, fontSize: 15, fontWeight: '600', flex: 1 },
+
+  // Pro gate
+  proGate:         { backgroundColor: C.card, borderRadius: 12, padding: 16, marginBottom: 16, alignItems: 'center', borderWidth: 1, borderColor: C.border },
+  proGateIcon:     { color: C.textMid, fontSize: 24, marginBottom: 6 },
+  proGateTxt:      { color: C.textMid, fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  proGateDesc:     { color: C.textDim, fontSize: 13, textAlign: 'center', lineHeight: 18 },
+
+  // AI loading
+  aiLoading:       { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, backgroundColor: C.card, borderRadius: 12, marginBottom: 16 },
+  aiLoadingTxt:    { color: C.textMid, fontSize: 14 },
+
+  // Summary card
+  summaryCard:     { backgroundColor: C.card, borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: C.accentDim },
+  summaryHeader:   { color: C.accent, fontSize: 14, fontWeight: '700', marginBottom: 10, letterSpacing: 0.5 },
+  summaryText:     { color: C.text, fontSize: 14, lineHeight: 20, marginBottom: 12 },
+  summarySection:  { marginTop: 10 },
+  sectionLabel:    { color: C.textMid, fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
+  bulletGreen:     { color: C.green, fontSize: 13, lineHeight: 20, marginBottom: 3 },
+  bulletRed:       { color: C.red, fontSize: 13, lineHeight: 20, marginBottom: 3 },
+  bulletAmber:     { color: C.amber, fontSize: 13, lineHeight: 20, marginBottom: 3 },
+  refreshBtn:      { marginTop: 12, alignSelf: 'flex-end' },
+  refreshTxt:      { color: C.textMid, fontSize: 13 },
+
+  // Loading / empty
+  center:          { alignItems: 'center', paddingTop: 60 },
+  loadingTxt:      { color: C.textMid, marginTop: 12, fontSize: 14 },
+  emptyIcon:       { fontSize: 40, marginBottom: 12 },
+  emptyTitle:      { color: C.text, fontSize: 17, fontWeight: '700', marginBottom: 6 },
+  emptyDesc:       { color: C.textMid, fontSize: 14, textAlign: 'center', lineHeight: 20 },
+
+  // Timeline
+  group:           { marginBottom: 20 },
+  dateHeader:      { color: C.textMid, fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 10, textTransform: 'uppercase' },
+  groupItems:      {},
+  timelineRow:     { flexDirection: 'row', marginBottom: 4 },
+  timelineLeft:    { width: 24, alignItems: 'center' },
+  dot:             { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
+  line:            { width: 1, flex: 1, backgroundColor: C.border, marginTop: 4 },
+  timelineContent: { flex: 1, paddingLeft: 10, paddingBottom: 14 },
+  rowHeader:       { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  timeText:        { color: C.textDim, fontSize: 11, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  eventIcon:       { fontSize: 12 },
+  eventLabel:      { fontSize: 13, lineHeight: 18 },
+});

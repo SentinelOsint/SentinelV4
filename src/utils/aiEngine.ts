@@ -1,0 +1,318 @@
+/**
+ * SENTINEL – AI Analysis Engine
+ *
+ * Four AI-powered features (Pro tier only):
+ *
+ * 1. analyzeResults     – Summarizes OSINT search results, flags anomalies
+ * 2. generateReport     – Writes a professional client-ready case report
+ * 3. suggestStrategy    – Recommends OSINT sources and next steps
+ * 4. summarizeNotes     – Condenses field notes into key findings
+ *
+ * All calls use Claude Sonnet via Anthropic API.
+ * API key is stored encrypted in SecureStorage (never in code).
+ * Usage is tracked per month with a 100-call soft cap per user.
+ */
+
+import { SecureStorage } from './secureStorage';
+import { AuditLog }      from './auditLog';
+import { OsintResult, FieldNote, CaseReport } from '../types';
+
+const API_URL   = 'https://sentinel-backend-production-05e1.up.railway.app/ai/analyze';
+const MODEL     = 'claude-sonnet-4-20250514';
+const MAX_TOKENS = 1024;
+
+// Storage keys
+const USAGE_KEY  = 'sentinel_ai_usage_v1';
+const APIKEY_KEY = 'sentinel_anthropic_key_v1';
+const MONTHLY_CAP = 100;
+
+// ── Usage tracking ────────────────────────────────────────────────────────────
+
+interface UsageRecord {
+  month: string;   // "2026-03"
+  count: number;
+}
+
+async function getUsage(): Promise<UsageRecord> {
+  try {
+    const data = await SecureStorage.get<UsageRecord>(USAGE_KEY);
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    if (!data || data.month !== thisMonth) return { month: thisMonth, count: 0 };
+    return data;
+  } catch { return { month: new Date().toISOString().slice(0, 7), count: 0 }; }
+}
+
+async function incrementUsage(): Promise<number> {
+  try {
+    const usage = await getUsage();
+    usage.count++;
+    await SecureStorage.set(USAGE_KEY, usage);
+    return usage.count;
+  } catch { return 0; }
+}
+
+export async function getAIUsageThisMonth(): Promise<{ count: number; cap: number; remaining: number }> {
+  const usage = await getUsage();
+  return { count: usage.count, cap: MONTHLY_CAP, remaining: Math.max(0, MONTHLY_CAP - usage.count) };
+}
+
+// ── API key management ────────────────────────────────────────────────────────
+
+export async function saveAPIKey(key: string): Promise<void> {
+  await SecureStorage.set(APIKEY_KEY, key.trim());
+}
+
+export async function getAPIKey(): Promise<string | null> {
+  try {
+    return await SecureStorage.get<string>(APIKEY_KEY);
+  } catch { return null; }
+}
+
+export async function hasAPIKey(): Promise<boolean> {
+  const key = await getAPIKey();
+  return !!(key && key.startsWith('sk-ant-'));
+}
+
+// ── Core API call ─────────────────────────────────────────────────────────────
+
+async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
+  // Check usage cap
+  const usage = await getUsage();
+  if (usage.count >= MONTHLY_CAP) throw new Error('USAGE_CAP_REACHED');
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ systemPrompt, userPrompt: userMessage }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `API error ${response.status}`);
+  }
+  const data = await response.json();
+  await incrementUsage();
+  return data.result ?? '';
+}
+
+// ── Error message helper ──────────────────────────────────────────────────────
+
+export function getAIErrorMessage(error: Error): string {
+  switch (error.message) {
+    case 'NO_API_KEY':
+      return 'Anthropic API key not configured. Go to Security Settings → AI Configuration to add your key.';
+    case 'INVALID_API_KEY':
+      return 'Invalid API key. Check your key in Security Settings → AI Configuration.';
+    case 'RATE_LIMITED':
+      return 'Too many requests. Wait a moment and try again.';
+    case 'USAGE_CAP_REACHED':
+      return `Monthly AI limit reached (${MONTHLY_CAP} queries). Resets on the 1st of next month.`;
+    default:
+      return `AI error: ${error.message}`;
+  }
+}
+
+// ── Feature 1: Analyze search results ────────────────────────────────────────
+
+export async function analyzeResults(
+  module: string,
+  query: string,
+  results: OsintResult[]
+): Promise<string> {
+  const filteredResults = results
+    .filter(r => r.value && r.value.trim())
+    .map(r => `${r.label}: ${r.value}`)
+    .join('\n');
+
+  if (!filteredResults.trim()) {
+    throw new Error('No data to analyze. Run a search first.');
+  }
+
+  const system = `You are an expert OSINT analyst assistant for licensed private investigators, 
+security professionals, and journalists. Analyze search results concisely and professionally. 
+Flag inconsistencies, notable findings, and suggested follow-up actions. 
+Never speculate beyond the data. Be direct and factual. Use bullet points.
+Do not include disclaimers about professional advice.`;
+
+  const user = `Module: ${module}
+Query: ${query}
+
+Search Results:
+${filteredResults}
+
+Provide:
+1. Key findings (2-3 bullets)
+2. Anomalies or inconsistencies worth noting
+3. Recommended follow-up searches`;
+
+  await AuditLog.log('SEARCH_QUERY', `AI Analysis: ${module} – ${query}`);
+  return await callClaude(system, user);
+}
+
+// ── Feature 2: Generate case report ──────────────────────────────────────────
+
+export async function generateCaseReport(caseData: CaseReport): Promise<string> {
+  const searchSummary = caseData.searches
+    .slice(0, 30)
+    .map(s => `- ${s.module}: "${s.query}" (${s.timestamp})`)
+    .join('\n');
+
+  const notesSummary = caseData.notes
+    .slice(0, 20)
+    .map(n => `[${n.tag}] ${n.text}`)
+    .join('\n');
+
+  const system = `You are an expert investigative report writer for licensed professionals.
+Write professional, factual investigation reports suitable for client delivery or legal proceedings.
+Use formal language. Structure clearly with sections. Do not invent facts not present in the data.
+Format: plain text with clear section headers using === markers.`;
+
+  const user = `Write a professional investigation report for the following case:
+
+Case Title: ${caseData.title}
+Subject: ${caseData.subject || 'Not specified'}
+Status: ${caseData.status.toUpperCase()}
+Priority: ${caseData.priority.toUpperCase()}
+Location: ${caseData.location || 'Not specified'}
+Description: ${caseData.description}
+Created: ${caseData.createdAt}
+Tags: ${caseData.tags.join(', ') || 'None'}
+
+Research Conducted (${caseData.searches.length} searches):
+${searchSummary}
+${caseData.searches.length > 30 ? `... and ${caseData.searches.length - 30} more searches` : ''}
+
+Field Notes (${caseData.notes.length} entries):
+${notesSummary}
+${caseData.notes.length > 20 ? `... and ${caseData.notes.length - 20} more notes` : ''}
+
+Include sections: Executive Summary, Research Methodology, Key Findings, Conclusion, Recommended Next Steps.`;
+
+  await AuditLog.log('CASE_EXPORT_PDF', `AI Report: ${caseData.title}`);
+  return await callClaude(system, user);
+}
+
+// ── Feature 3: Search strategy advisor ───────────────────────────────────────
+
+export async function suggestSearchStrategy(
+  subjectType: string,
+  query: string,
+  context: string
+): Promise<string> {
+  const system = `You are an expert OSINT strategist for licensed investigators.
+Recommend specific, actionable search strategies using publicly available sources.
+Focus on legal open-source methods only. Be specific about which databases, 
+search techniques, and Sentinel modules to use. Use numbered lists.`;
+
+  const user = `I need an OSINT search strategy for the following:
+
+Subject type: ${subjectType}
+Query / Subject: ${query}
+Context / Goal: ${context || 'General investigation'}
+
+Provide:
+1. Recommended Sentinel modules to use (in order of priority)
+2. Specific search terms and variations to try
+3. Key public databases relevant to this subject type
+4. Cross-referencing tips to verify findings
+5. Common pitfalls to avoid`;
+
+  await AuditLog.log('SEARCH_QUERY', `AI Strategy: ${subjectType} – ${query}`);
+  return await callClaude(system, user);
+}
+
+// ── Feature 4: Summarize field notes ─────────────────────────────────────────
+
+export async function summarizeNotes(notes: FieldNote[]): Promise<string> {
+  if (notes.length === 0) throw new Error('No notes to summarize.');
+
+  const noteText = notes
+    .map(n => `[${n.tag} – ${n.timestamp}]\n${n.text}`)
+    .join('\n\n');
+
+  const system = `You are an expert analyst summarizing field investigation notes.
+Extract key findings, patterns, and actionable intelligence from raw notes.
+Be concise and structured. Group related findings. Highlight contradictions.`;
+
+  const user = `Summarize the following ${notes.length} field notes from an investigation:
+
+${noteText}
+
+Provide:
+1. Key findings (grouped by theme)
+2. Timeline of significant events (if apparent)
+3. Unresolved questions or gaps
+4. Priority items requiring follow-up`;
+
+  await AuditLog.log('SEARCH_QUERY', `AI Notes Summary: ${notes.length} notes`);
+  return await callClaude(system, user);
+}
+
+// ─── v3.0 AI Features ──────────────────────────────────────────────────────
+
+export async function generateRiskProfile(
+  subjectName: string,
+  findings: OsintResult[]
+): Promise<string> {
+  const findingsText = findings
+    .map(f => `${f.label}: ${f.value}`)
+    .join('\n');
+  const system = `You are an expert risk analyst specializing in OSINT-based subject profiling.
+Assess risk indicators from gathered intelligence data.
+Be objective, factual, and structured. Use professional investigative language.`;
+  const user = `Generate a risk profile for subject: ${subjectName}
+
+OSINT findings:
+${findingsText}
+
+Provide:
+1. Overall risk level (Low/Medium/High/Critical)
+2. Key risk indicators identified
+3. Red flags or anomalies
+4. Recommended follow-up actions
+5. Confidence assessment based on available data`;
+  await AuditLog.log('SEARCH_QUERY', `AI Risk Profile: ${subjectName}`);
+  return await callClaude(system, user);
+}
+
+export async function detectContradictions(
+  findings: OsintResult[]
+): Promise<string> {
+  const findingsText = findings
+    .map(f => `${f.label}: ${f.value}`)
+    .join('\n');
+  const system = `You are an expert investigative analyst specializing in cross-source verification.
+Identify contradictions, inconsistencies, and discrepancies across multiple data sources.
+Be precise and cite specific conflicting data points.`;
+  const user = `Analyze the following OSINT findings for contradictions and inconsistencies:
+
+${findingsText}
+
+Identify:
+1. Direct contradictions between sources
+2. Suspicious inconsistencies
+3. Missing or unverifiable data points
+4. Recommended verification steps`;
+  await AuditLog.log('SEARCH_QUERY', 'AI Contradiction Detection');
+  return await callClaude(system, user);
+}
+
+export async function analyzeImage(
+  imageDescription: string,
+  context?: string
+): Promise<string> {
+  const system = `You are an expert OSINT image analyst.
+Analyze image metadata, content, and context for investigative intelligence.
+Identify persons, locations, objects, timestamps, and potential leads.`;
+  const user = `Analyze the following image for OSINT intelligence:
+
+Image description/metadata: ${imageDescription}
+${context ? `Context: ${context}` : ''}
+
+Provide:
+1. Key observations and identifiable elements
+2. Potential location indicators
+3. Timestamp or date clues
+4. Persons or entities of interest
+5. Recommended follow-up searches`;
+  await AuditLog.log('SEARCH_QUERY', 'AI Image Analysis');
+  return await callClaude(system, user);
+}
