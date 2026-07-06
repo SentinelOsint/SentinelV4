@@ -51,6 +51,10 @@ export default function WatchListScreen({ isPro, onBack }: Props) {
   }, [load]);
 
   const handleAdd = async () => {
+    if (!isPro) {
+      Alert.alert('Pro Feature', 'Watch List monitoring requires a Pro subscription.');
+      return;
+    }
     if (!label.trim() || !value.trim()) {
       Alert.alert('Missing Info', 'Please enter both a label and a value.');
       return;
@@ -94,7 +98,7 @@ export default function WatchListScreen({ isPro, onBack }: Props) {
           <Text style={s.backTxt}>← Back</Text>
         </TouchableOpacity>
         <Text style={s.title}>Watch List</Text>
-        <TouchableOpacity onPress={() => setShowAdd(!showAdd)} style={s.addBtn}>
+        <TouchableOpacity onPress={() => { if (!isPro) { Alert.alert('Pro Feature', 'Watch List monitoring requires a Pro subscription.'); return; } setShowAdd(!showAdd); }} style={s.addBtn}>
           <Text style={s.addBtnTxt}>{showAdd ? '✕' : '+ Add'}</Text>
         </TouchableOpacity>
       </View>

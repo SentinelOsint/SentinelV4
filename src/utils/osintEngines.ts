@@ -106,165 +106,6 @@ export function getSocialResults(username: string): OsintResult[] {
   ];
 }
 
-// ── 4. Person Search ──────────────────────────────────────────────────────────
-export async function getPersonResults(name: string, location: string, isPro: boolean = false): Promise<OsintResult[]> {
-  // FBI Most Wanted API check
-  const wantedResults: OsintResult[] = [];
-  try {
-    const decodedName = decodeURIComponent(name).trim();
-    const fbiUrl = `https://api.fbi.gov/wanted/v1/list?title=${encodeURIComponent(decodedName)}`;
-    const fbiRes = await fetch(fbiUrl);
-    const fbiData = await fbiRes.json();
-    const searchName = decodedName.toLowerCase().trim();
-    const fbiMatch = fbiData.items?.filter((item: any) => {
-      const title = (item.title || '').toLowerCase().trim();
-      return title === searchName;
-    });
-    if (fbiMatch && fbiMatch.length > 0) {
-      wantedResults.push({ label: '🚨 FBI MOST WANTED MATCH', value: `ALERT: ${decodedName} found on FBI Most Wanted list!`, type: 'copy' as const });
-      fbiMatch.slice(0, 3).forEach((item: any) => {
-        wantedResults.push({ label: item.title || 'Unknown', value: item.url || 'https://www.fbi.gov/wanted', type: 'link' as const });
-      });
-    } else {
-      wantedResults.push({ label: '✅ FBI Most Wanted', value: 'No match found in FBI Most Wanted database', type: 'info' as const });
-    }
-  } catch {
-    wantedResults.push({ label: 'FBI Most Wanted', value: 'https://www.fbi.gov/wanted', type: 'link' as const });
-  }
-
-  // Interpol Red Notices API check
-  try {
-    const nameParts = decodeURIComponent(name).trim().split(' ');
-    const forename = nameParts.slice(0, -1).join(' ') || nameParts[0] || '';
-    const surname = nameParts[nameParts.length - 1] || '';
-    const interpolUrl = `https://sentinel-backend-production-05e1.up.railway.app/interpol/search?forename=${encodeURIComponent(forename)}&name=${encodeURIComponent(surname)}`;
-    const interpolRes = await fetch(interpolUrl);
-    const interpolData = await interpolRes.json();
-    const notices = interpolData?._embedded?.notices || [];
-    if (notices.length > 0) {
-      wantedResults.push({ label: '🚨 INTERPOL RED NOTICE MATCH', value: `ALERT: Possible Interpol Red Notice match found!`, type: 'copy' as const });
-      notices.slice(0, 3).forEach((n: any) => {
-        const fullName = `${n.forename || ''} ${n.name || ''}`.trim();
-        const url = n._links?.self?.href ? `https://www.interpol.int/How-we-work/Notices/Red-Notices/View-Red-Notices` : 'https://www.interpol.int/How-we-work/Notices/Red-Notices/View-Red-Notices';
-        wantedResults.push({ label: `Interpol: ${fullName}`, value: url, type: 'link' as const });
-      });
-    } else {
-      wantedResults.push({ label: '✅ Interpol Red Notices', value: 'No match found in Interpol Red Notices database', type: 'info' as const });
-    }
-  } catch {
-    wantedResults.push({ label: 'Interpol Red Notices', value: 'https://www.interpol.int/How-we-work/Notices/Red-Notices/View-Red-Notices', type: 'link' as const });
-  }
-  const q = `${name}${location}`;
-  return [
-    ...(isPro ? wantedResults : []),
-    ...((isPro ? [
-    { label: '─── FEDERAL WANTED LISTS (USA)', value: '', type: 'info' },
-    { label: 'FBI Most Wanted', value: `https://www.fbi.gov/wanted`, type: 'link' },
-    { label: 'FBI Ten Most Wanted', value: `https://www.fbi.gov/wanted/topten`, type: 'link' },
-    { label: 'US Marshals 15 Most Wanted', value: `https://www.usmarshals.gov/what-we-do/fugitive-operations/15-most-wanted`, type: 'link' },
-    { label: 'US Marshals Wanted', value: `https://www.usmarshals.gov/what-we-do/fugitive-operations/wanted-fugitives`, type: 'link' },
-    { label: 'DEA Most Wanted', value: `https://www.dea.gov/fugitives/all`, type: 'link' },
-    { label: 'ICE Most Wanted', value: `https://www.ice.gov/most-wanted`, type: 'link' },
-    { label: 'ATF Most Wanted', value: `https://www.atf.gov/most-wanted`, type: 'link' },
-    { label: 'Secret Service Most Wanted', value: `https://www.secretservice.gov/investigation/most-wanted`, type: 'link' },
-    { label: 'CBP Most Wanted', value: `https://www.cbp.gov/border-security/human-trafficking/most-wanted`, type: 'link' },
-    { label: '─── US STATE WANTED LISTS', value: '', type: 'info' },
-    { label: 'Alabama – Most Wanted', value: `https://www.alabama.gov/mostwanted`, type: 'link' },
-    { label: 'Alaska – Most Wanted', value: `https://dps.alaska.gov/AboutDPS/MostWanted`, type: 'link' },
-    { label: 'Arizona – Most Wanted', value: `https://www.azdps.gov/safety/most_wanted`, type: 'link' },
-    { label: 'Arkansas – Most Wanted', value: `https://www.dfa.arkansas.gov/fugitives`, type: 'link' },
-    { label: 'California – Most Wanted', value: `https://www.caldoj.org/wanted`, type: 'link' },
-    { label: 'Colorado – Most Wanted', value: `https://cbi.colorado.gov/sections/fugitive-unit/most-wanted`, type: 'link' },
-    { label: 'Connecticut – Most Wanted', value: `https://portal.ct.gov/DESPP/Division-of-State-Police/Fugitive-Task-Force/Most-Wanted`, type: 'link' },
-    { label: 'Delaware – Most Wanted', value: `https://dsp.delaware.gov/fugitive-unit/`, type: 'link' },
-    { label: 'Florida – Most Wanted', value: `https://www.fdle.state.fl.us/wanted`, type: 'link' },
-    { label: 'Georgia – Most Wanted', value: `https://gbi.georgia.gov/services/most-wanted`, type: 'link' },
-    { label: 'Hawaii – Most Wanted', value: `https://www.hawaiipolice.com/most-wanted`, type: 'link' },
-    { label: 'Idaho – Most Wanted', value: `https://isp.idaho.gov/BCI/mostWanted.html`, type: 'link' },
-    { label: 'Illinois – Most Wanted', value: `https://isp.illinois.gov/MostWanted`, type: 'link' },
-    { label: 'Indiana – Most Wanted', value: `https://www.in.gov/isp/fugitive/`, type: 'link' },
-    { label: 'Iowa – Most Wanted', value: `https://www.dps.state.ia.us/CriminalInvestigation/MostWanted/`, type: 'link' },
-    { label: 'Kansas – Most Wanted', value: `https://www.kbi.ks.gov/fugitives`, type: 'link' },
-    { label: 'Kentucky – Most Wanted', value: `https://kentuckystatepolice.org/most-wanted/`, type: 'link' },
-    { label: 'Louisiana – Most Wanted', value: `https://lsp.org/mostwanted.html`, type: 'link' },
-    { label: 'Maine – Most Wanted', value: `https://www.maine.gov/dps/msp/investigation-traffic/fugitives`, type: 'link' },
-    { label: 'Maryland – Most Wanted', value: `https://mdsp.maryland.gov/Organization/Pages/CriminalInvestigationBureau/MostWanted.aspx`, type: 'link' },
-    { label: 'Massachusetts – Most Wanted', value: `https://www.mass.gov/most-wanted`, type: 'link' },
-    { label: 'Michigan – Most Wanted', value: `https://www.michigan.gov/msp/divisions/cid/most-wanted`, type: 'link' },
-    { label: 'Minnesota – Most Wanted', value: `https://dps.mn.gov/divisions/bca/bca-divisions/investigations/Pages/fugitive-apprehension-unit.aspx`, type: 'link' },
-    { label: 'Mississippi – Most Wanted', value: `https://www.dps.state.ms.us/mbi/most-wanted/`, type: 'link' },
-    { label: 'Missouri – Most Wanted', value: `https://www.mshp.dps.missouri.gov/MSHPWeb/PatrolDivisions/CID/fugitives.html`, type: 'link' },
-    { label: 'Montana – Most Wanted', value: `https://doj.mt.gov/enforcement/most-wanted/`, type: 'link' },
-    { label: 'Nebraska – Most Wanted', value: `https://nsp.nebraska.gov/most-wanted`, type: 'link' },
-    { label: 'Nevada – Most Wanted', value: `https://www.nvdps.gov/most-wanted`, type: 'link' },
-    { label: 'New Hampshire – Most Wanted', value: `https://www.nh.gov/safety/divisions/nhsp/bureaus/criminalinvestigations/fugitives/`, type: 'link' },
-    { label: 'New Jersey – Most Wanted', value: `https://www.njsp.org/division/investigations/most-wanted.shtml`, type: 'link' },
-    { label: 'New Mexico – Most Wanted', value: `https://www.dps.nm.gov/fugitives`, type: 'link' },
-    { label: 'New York – Most Wanted', value: `https://troopers.ny.gov/most-wanted`, type: 'link' },
-    { label: 'North Carolina – Most Wanted', value: `https://www.ncsbi.gov/Services/Most-Wanted`, type: 'link' },
-    { label: 'North Dakota – Most Wanted', value: `https://www.hpcnd.org/most-wanted`, type: 'link' },
-    { label: 'Ohio – Most Wanted', value: `https://www.ohioattorneygeneral.gov/Law-Enforcement/Ohio-Fugitive-Safe-Surrender/Most-Wanted`, type: 'link' },
-    { label: 'Oklahoma – Most Wanted', value: `https://osbi.ok.gov/most-wanted`, type: 'link' },
-    { label: 'Oregon – Most Wanted', value: `https://www.oregon.gov/osp/programs/ID/Pages/mostWanted.aspx`, type: 'link' },
-    { label: 'Pennsylvania – Most Wanted', value: `https://www.psp.pa.gov/fugitives/Pages/default.aspx`, type: 'link' },
-    { label: 'Rhode Island – Most Wanted', value: `https://riag.ri.gov/civil-and-criminal-actions/most-wanted`, type: 'link' },
-    { label: 'South Carolina – Most Wanted', value: `https://www.sled.sc.gov/mostwanted.aspx`, type: 'link' },
-    { label: 'South Dakota – Most Wanted', value: `https://dci.sd.gov/Investigations/MostWanted.aspx`, type: 'link' },
-    { label: 'Tennessee – Most Wanted', value: `https://www.tn.gov/tbi/crime-info/most-wanted.html`, type: 'link' },
-    { label: 'Texas – Most Wanted', value: `https://www.dps.texas.gov/section/texas-10-most-wanted`, type: 'link' },
-    { label: 'Utah – Most Wanted', value: `https://bci.utah.gov/most-wanted/`, type: 'link' },
-    { label: 'Vermont – Most Wanted', value: `https://vsp.vermont.gov/investigations/fugitives`, type: 'link' },
-    { label: 'Virginia – Most Wanted', value: `https://www.vsp.virginia.gov/CJIS_MostWanted.shtm`, type: 'link' },
-    { label: 'Washington – Most Wanted', value: `https://www.wsp.wa.gov/crime/most-wanted/`, type: 'link' },
-    { label: 'West Virginia – Most Wanted', value: `https://www.wvsp.gov/about/Pages/MostWanted.aspx`, type: 'link' },
-    { label: 'Wisconsin – Most Wanted', value: `https://www.doj.state.wi.us/dles/cib/most-wanted`, type: 'link' },
-    { label: 'Wyoming – Most Wanted', value: `https://wci.wyo.gov/adult-corrections/most-wanted`, type: 'link' },
-    { label: '─── CANADA – FEDERAL WANTED LISTS', value: '', type: 'info' },
-    { label: 'RCMP Most Wanted', value: `https://www.rcmp-grc.gc.ca/en/most-wanted`, type: 'link' },
-    { label: "Canada's 25 Most Wanted", value: `https://www.canada25mostwanted.com/`, type: 'link' },
-    { label: 'CBSA Most Wanted', value: `https://www.cbsa-asfc.gc.ca/security-securite/war-rec/menu-eng.html`, type: 'link' },
-    { label: 'BOLO Program', value: `https://www.boloprogram.org/`, type: 'link' },
-    { label: '─── CANADA – PROVINCIAL & MUNICIPAL', value: '', type: 'info' },
-    { label: 'Toronto Police Most Wanted', value: `https://www.tps.ca/crime/most-wanted/`, type: 'link' },
-    { label: 'OPP Most Wanted (Ontario)', value: `https://www.opp.ca/index.php?id=115&entryid=most-wanted`, type: 'link' },
-    { label: 'Sûreté du Québec', value: `https://www.sq.gouv.qc.ca/activites-missions/criminalite/personnes-recherchees/`, type: 'link' },
-    { label: 'SPVM Most Wanted (Montréal)', value: `https://spvm.qc.ca/en/Fiches/Details/Personnes-recherchees`, type: 'link' },
-    { label: 'Calgary Police Most Wanted', value: `https://www.calgarypolice.ca/most-wanted`, type: 'link' },
-    { label: 'Edmonton Police Most Wanted', value: `https://www.edmontonpolice.ca/CommunityPolicing/MostWanted`, type: 'link' },
-    { label: 'Winnipeg Police Most Wanted', value: `https://www.winnipeg.ca/police/most-wanted/`, type: 'link' },
-    { label: 'Vancouver Police Most Wanted', value: `https://vpd.ca/crime-statistics-updates/most-wanted/`, type: 'link' },
-    { label: 'RCMP BC Most Wanted', value: `https://bc.rcmp-grc.gc.ca/ViewPage.action?siteNodeId=87&languageId=1&contentId=-1`, type: 'link' },
-    { label: 'RCMP Alberta Most Wanted', value: `https://www.rcmp-grc.gc.ca/en/alberta/most-wanted`, type: 'link' },
-    { label: 'RCMP Saskatchewan Most Wanted', value: `https://www.rcmp-grc.gc.ca/en/saskatchewan/most-wanted`, type: 'link' },
-    { label: 'RCMP Manitoba Most Wanted', value: `https://www.rcmp-grc.gc.ca/en/manitoba/most-wanted`, type: 'link' },
-    ] : []) as OsintResult[]),
-    { label: '─── PUBLIC RECORDS', value: '', type: 'info' },
-    { label: 'TruthFinder', value: `https://www.truthfinder.com/results/?firstName=${name}&lastName=`, type: 'link' },
-    { label: 'Spokeo', value: `https://www.spokeo.com/${name.replace(/%20/g,'-')}`, type: 'link' },
-    { label: 'Whitepages', value: `https://www.whitepages.com/name/${name.replace(/%20/g,'-')}`, type: 'link' },
-    { label: 'FastPeopleSearch', value: `https://www.fastpeoplesearch.com/name/${name.replace(/%20/g,'-')}`, type: 'link' },
-    { label: 'PeopleFinder', value: `https://www.peoplefinder.com/search/?full_name=${name}`, type: 'link' },
-    { label: 'Intelius', value: `https://www.intelius.com/people-search/`, type: 'link' },
-    { label: '─── PROFESSIONAL RECORDS', value: '', type: 'info' },
-    { label: 'LinkedIn Search', value: `https://www.linkedin.com/search/results/people/?keywords=${q}`, type: 'link' },
-    { label: 'ZoomInfo', value: `https://www.zoominfo.com/s/#!search/people/${name}`, type: 'link' },
-    { label: 'Pipl', value: `https://pipl.com/search/?q=${name}&in=5`, type: 'link' },
-    { label: '─── PROFESSIONAL LICENSES', value: '', type: 'info' },
-    { label: 'License Lookup (NIPR)', value: `https://nipr.com/`, type: 'link' },
-    { label: 'Healthcare Licenses', value: `https://www.npdb.hrsa.gov/`, type: 'link' },
-    { label: 'State License Search', value: `https://www.usa.gov/state-professional-licenses`, type: 'link' },
-    { label: '─── COURT & LEGAL', value: '', type: 'info' },
-    { label: 'PACER (Federal)', value: `https://pacer.uscourts.gov/`, type: 'link' },
-    { label: 'CourtListener', value: `https://www.courtlistener.com/?q=${name}&type=r`, type: 'link' },
-    { label: '─── SOCIAL & WEB', value: '', type: 'info' },
-    { label: 'Google Search', value: `https://www.google.com/search?q=${q}`, type: 'link' },
-    { label: 'Google Images', value: `https://www.google.com/search?q=${q}&tbm=isch`, type: 'link' },
-    { label: 'Twitter / X Search', value: `https://x.com/search?q=${name}&f=user`, type: 'link' },
-    { label: 'YouTube Channel Search', value: `https://www.youtube.com/results?search_query=${q}&sp=EgIQAg%253D%253D`, type: 'link' },
-    { label: 'YouTube Video Search', value: `https://www.youtube.com/results?search_query=${q}`, type: 'link' },
-  ];
-}
-
 // ── 5. Phone Lookup ───────────────────────────────────────────────────────────
 export function getPhoneResults(phone: string): OsintResult[] {
   return [
@@ -286,6 +127,10 @@ export function getPhoneResults(phone: string): OsintResult[] {
     { label: 'Facebook Search', value: `https://www.facebook.com/search/top/?q=${phone}`, type: 'link' },
     { label: 'Telegram Search', value: `https://t.me/+${phone}`, type: 'link' },
     { label: 'Google Search', value: `https://www.google.com/search?q="${phone}"`, type: 'link' },
+    { label: '─── CANADIAN LOOKUP', value: '', type: 'info' },
+    { label: 'Canada411', value: `https://www.canada411.ca/search/reverse.html?ph=${phone}`, type: 'link' },
+    { label: 'Canada411 Business', value: `https://www.canada411.ca/search/?stype=ph&ph=${phone}`, type: 'link' },
+    { label: 'YellowPages Canada', value: `https://www.yellowpages.ca/search/si/1/${phone}/Canada`, type: 'link' },
   ];
 }
 
@@ -320,6 +165,13 @@ export function getCompanyResults(company: string): OsintResult[] {
     { label: 'SEC EDGAR', value: `https://efts.sec.gov/LATEST/search-index?q=${company}&dateRange=custom&startdt=2000-01-01&enddt=2099-01-01&forms=10-K`, type: 'link' },
     { label: 'SEC Full-Text Search', value: `https://efts.sec.gov/LATEST/search-index?q=${company}`, type: 'link' },
     { label: 'OpenCorporates', value: `https://opencorporates.com/companies?q=${company}&utf8=✓`, type: 'link' },
+    { label: '─── POLITICAL & NONPROFIT RESEARCH', value: '', type: 'info' },
+    { label: 'FollowTheMoney — Donor Search', value: `https://www.followthemoney.org/show-me?q=${company}&y=#tabs-6`, type: 'link' },
+    { label: 'FollowTheMoney — Candidate Search', value: `https://www.followthemoney.org/show-me?q=${company}#tabs-1`, type: 'link' },
+    { label: 'FollowTheMoney — Organization', value: `https://www.followthemoney.org/show-me?q=${company}&y=#tabs-3`, type: 'link' },
+    { label: 'ProPublica Nonprofit Explorer', value: `https://projects.propublica.org/nonprofits/search?q=${company}`, type: 'link' },
+    { label: 'ProPublica — IRS 990 Filings', value: `https://projects.propublica.org/nonprofits/search?q=${company}&state[id]=0&ntee[id]=0&c_code[id]=0`, type: 'link' },
+    { label: 'OpenSecrets — Org Search', value: `https://www.opensecrets.org/search?q=${company}&type=orgs`, type: 'link' },
     { label: '─── STATE REGISTRATIONS', value: '', type: 'info' },
     { label: 'SOS (Multi-State Search)', value: `https://www.bizapedia.com/search.html?term=${company}`, type: 'link' },
     { label: 'NAICS/SIC Lookup', value: `https://www.naics.com/search/`, type: 'link' },
@@ -332,6 +184,16 @@ export function getCompanyResults(company: string): OsintResult[] {
     { label: 'BBB', value: `https://www.bbb.org/search?find_text=${company}`, type: 'link' },
     { label: 'Ripoff Report', value: `https://www.ripoffreport.com/results/${company}`, type: 'link' },
     { label: 'Glassdoor', value: `https://www.glassdoor.com/Reviews/company-reviews.htm?sc.keyword=${company}`, type: 'link' },
+    { label: '─── CANADIAN CORPORATE REGISTRY', value: '', type: 'info' },
+    { label: 'Corporations Canada', value: `https://www.ic.gc.ca/app/scr/cc/CorporationsCanada/fdrlCrpSrch.html?locale=en_CA`, type: 'link' },
+    { label: 'Ontario Business Registry', value: `https://www.ontario.ca/page/ontario-business-registry`, type: 'link' },
+    { label: 'BC Company Search', value: `https://www.bcregistry.gov.bc.ca/businesses/search`, type: 'link' },
+    { label: 'Alberta Corporate Registry', value: `https://www.alberta.ca/corporate-registry.aspx`, type: 'link' },
+    { label: 'Quebec Enterprise Registry', value: `https://www.registreentreprises.gouv.qc.ca/en/default.aspx`, type: 'link' },
+    { label: '─── INTELLECTUAL PROPERTY (USPTO)', value: '', type: 'info' },
+    { label: 'USPTO Trademark Search', value: `https://tmsearch.uspto.gov/search/search-information?searchInput=${company}&searchOption=BASIC`, type: 'link' },
+    { label: 'USPTO Patent Search', value: `https://ppubs.uspto.gov/pubwebapp/external.html#/search?query=${company}`, type: 'link' },
+    { label: 'USPTO Trademark by Owner', value: `https://tmsearch.uspto.gov/search/search-information?searchInput=${company}&searchOption=OWNER`, type: 'link' },
     { label: '─── BENEFICIAL OWNERSHIP', value: '', type: 'info' },
     { label: 'FinCEN BOI', value: `https://boiefiling.fincen.gov/`, type: 'link' },
     { label: 'OFAC Sanctions', value: `https://sanctionssearch.ofac.treas.gov/`, type: 'link' },
@@ -358,6 +220,12 @@ export function getVehicleResults(plate: string, plateEncoded: string): OsintRes
     { label: '─── STATE DMV', value: '', type: 'info' },
     { label: 'DMV.org (State Links)', value: `https://www.dmv.org/`, type: 'link' },
     { label: 'OpenDMV', value: `https://www.opendmv.com/`, type: 'link' },
+    { label: '─── FAA REGISTRY', value: '', type: 'info' },
+    { label: 'FAA Aircraft Registry', value: `https://registry.faa.gov/aircraftinquiry/Search/NNumberInquiry`, type: 'link' },
+    { label: 'FAA Airmen Registry', value: `https://amsrvs.registry.faa.gov/airmeninquiry/`, type: 'link' },
+    { label: 'FAA Aircraft by Owner', value: `https://registry.faa.gov/aircraftinquiry/Search/NameInquiry`, type: 'link' },
+    { label: 'FAA Accident Database', value: `https://www.ntsb.gov/safety/data/Pages/Data_Stats.aspx`, type: 'link' },
+    { label: 'FlightAware Owner Search', value: `https://www.flightaware.com/live/flight/${plate}`, type: 'link' },
   ];
 }
 
@@ -458,6 +326,10 @@ export function getCourtResults(query: string): OsintResult[] {
     { label: 'PACER Bankruptcy', value: `https://pacer.uscourts.gov/`, type: 'link' },
     { label: 'Court Records (Justia)', value: `https://dockets.justia.com/?query=${query}`, type: 'link' },
     { label: 'Law360', value: `https://www.law360.com/search?q=${query}`, type: 'link' },
+    { label: '─── CANADIAN COURTS', value: '', type: 'info' },
+    { label: 'CanLII (Canadian Legal)', value: `https://www.canlii.org/en/#search/text=${query}`, type: 'link' },
+    { label: 'BC Court Services', value: `https://justice.gov.bc.ca/cso/esearch/civil/partySearch.do`, type: 'link' },
+    { label: 'Ontario Courts', value: `https://www.ontario.ca/page/court-case-search`, type: 'link' },
     { label: '─── LIENS & JUDGMENTS', value: '', type: 'info' },
     { label: 'SearchQuarry Liens', value: `https://www.searchquarry.com/liens/`, type: 'link' },
     { label: 'LienHub', value: `https://www.lienhub.com/`, type: 'link' },

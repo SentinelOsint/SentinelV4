@@ -27,11 +27,12 @@ export interface OneInputResult {
 export function detectInputType(input: string): InputType {
   const trimmed = input.trim();
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return 'email';
-  if (/^[\+]?[\d\s\-\(\)]{7,15}$/.test(trimmed)) return 'phone';
+  if (/^[\+]?[\d\s\-\(\)]{7,20}$/.test(trimmed)) return 'phone';
   if (/^(\d{1,3}\.){3}\d{1,3}$/.test(trimmed)) return 'ip';
   if (/^[a-zA-Z0-9\-]+\.[a-zA-Z]{2,}$/.test(trimmed) && !trimmed.includes(' ')) return 'domain';
-  const companyKeywords = /\b(inc|llc|ltd|corp|company|co\.|group|holdings|enterprises|industries|technologies|tech|solutions|services|associates|partners|international|global)\b/i;
+  const companyKeywords = /\b(inc|llc|ltd|corp|company|co\.|group|holdings|enterprises|industries|technologies|tech|solutions|services|associates|partners|international|global|agency|holdco|realty|properties|ventures|capital|fund|trust|bank|financial|corporation|limited|management|consulting)\b/i;
   if (companyKeywords.test(trimmed)) return 'company';
+  if (/[&,]/.test(trimmed)) return 'company';
   if (/^[a-zA-ZÀ-ÖØ-öø-ÿ\s\-\'\.]{3,}$/.test(trimmed) && trimmed.includes(' ')) return 'person';
   if (/^[a-zA-Z0-9\s\-\.&,]{2,}$/.test(trimmed)) return 'company';
   return 'unknown';
@@ -49,54 +50,118 @@ export function getDetectedLabel(type: InputType): string {
   }
 }
 
-async function personModules(q: string, isPro: boolean = false): Promise<ModuleResult[]> {
+async function personModules(q: string, isPro: boolean = false, tracerfyKey: string = '', batchDataKey: string = ''): Promise<ModuleResult[]> {
   const enc = encodeURIComponent(q);
 
-  // Wanted checks (Pro only)
+  // Wanted checks + Google KG — all run in parallel
   const wantedLinks: { label: string; url: string }[] = [];
-  if (isPro) {
-    // FBI check
-    try {
-      const fbiRes = await fetch(`https://api.fbi.gov/wanted/v1/list?title=${enc}`);
-      const fbiData = await fbiRes.json();
-      const searchName = decodeURIComponent(enc).toLowerCase().trim();
-      const fbiMatch = fbiData.items?.find((item: any) => {
-        const title = (item.title || '').toLowerCase().trim();
-        return title === searchName;
-      });
-      if (fbiMatch) {
-        wantedLinks.push({ label: `🚨 FBI MATCH: ${fbiMatch.title}`, url: fbiMatch.url || 'https://www.fbi.gov/wanted' });
-      } else {
-        wantedLinks.push({ label: '✅ FBI Most Wanted – No match', url: 'https://www.fbi.gov/wanted' });
-      }
-    } catch {
-      wantedLinks.push({ label: 'FBI Most Wanted', url: 'https://www.fbi.gov/wanted' });
-    }
+  const personAutoLinks: { label: string; url: string }[] = [];
 
-    // Interpol check
+  // Tracerfy live skip trace (Pro + user API key)
+  if (isPro && tracerfyKey) {
     try {
       const nameParts = q.trim().split(' ');
-      const forename = nameParts.slice(0, -1).join(' ') || nameParts[0] || '';
-      const surname = nameParts[nameParts.length - 1] || '';
-      const interpolRes = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/interpol/search?forename=${encodeURIComponent(forename)}&name=${encodeURIComponent(surname)}`);
-      const interpolData = await interpolRes.json();
-      if (interpolData.total > 0) {
-        const n = interpolData._embedded.notices[0];
-        wantedLinks.push({ label: `🚨 INTERPOL RED NOTICE: ${n.forename} ${n.name}`, url: 'https://www.interpol.int/How-we-work/Notices/Red-Notices/View-Red-Notices' });
+      const firstName = nameParts[0] || '';
+      const lastName  = nameParts.slice(1).join(' ') || '';
+      const tr = await fetch(`https://api.tracerfy.com/v1/person/search?first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`, {
+        headers: { 'Authorization': `Bearer ${tracerfyKey}`, 'Content-Type': 'application/json' },
+      });
+      const td = await tr.json();
+      if (td.results && td.results.length > 0) {
+        personAutoLinks.push({ label: `🔍 TRACERFY: ${td.results.length} record(s) found`, url: `https://tracerfy.com` });
+        td.results.slice(0, 3).forEach((r: any) => {
+          if (r.addresses?.length) personAutoLinks.push({ label: `📍 ${r.addresses[0].street || ''} ${r.addresses[0].city || ''}, ${r.addresses[0].state || ''}`.trim(), url: `https://tracerfy.com` });
+          if (r.phones?.length) personAutoLinks.push({ label: `📞 ${r.phones[0].number || ''}`, url: `https://tracerfy.com` });
+        });
       } else {
-        wantedLinks.push({ label: '✅ Interpol Red Notices – No match', url: 'https://www.interpol.int/How-we-work/Notices/Red-Notices/View-Red-Notices' });
+        personAutoLinks.push({ label: '✅ Tracerfy: No matching records found', url: 'https://tracerfy.com' });
       }
     } catch {
-      wantedLinks.push({ label: 'Interpol Red Notices', url: 'https://www.interpol.int/How-we-work/Notices/Red-Notices/View-Red-Notices' });
+      // Tracerfy failed silently
     }
   }
 
-  // Auto person intelligence
-  const personAutoLinks: { label: string; url: string }[] = [];
-  try {
-    // Google Knowledge Graph check
-    const googleRes = await fetch(`https://kgsearch.googleapis.com/v1/entities:search?query=${enc}&limit=1&key=AIzaSyBC3110xUO4fOpNj1BCawuevrdtFevnQlo`);
-    const googleData = await googleRes.json();
+  const searchName = q.toLowerCase().trim();
+  const nameParts = searchName.split(' ').filter((p: string) => p.length > 1);
+  const lastName = nameParts[nameParts.length - 1];
+  const interpNameParts = q.trim().split(' ');
+  const forename = interpNameParts.slice(0, -1).join(' ') || interpNameParts[0] || '';
+  const surname = interpNameParts[interpNameParts.length - 1] || '';
+
+  const [fbiResult, interpolResult, googleResult, ofacResult, unResult, bisResult] = await Promise.allSettled([
+    fetch(`https://api.fbi.gov/wanted/v1/list?title=${encodeURIComponent(lastName)}&pageSize=50`).then(r => r.json()),
+    fetch(`https://sentinel-backend-production-05e1.up.railway.app/interpol/search?forename=${encodeURIComponent(forename)}&name=${encodeURIComponent(surname)}`).then(r => r.json()),
+    fetch(`https://kgsearch.googleapis.com/v1/entities:search?query=${enc}&limit=1&key=AIzaSyBC3110xUO4fOpNj1BCawuevrdtFevnQlo`).then(r => r.json()),
+    fetch(`https://sentinel-backend-production-05e1.up.railway.app/sanctions/ofac?name=${encodeURIComponent(q)}`).then(r => r.json()),
+    fetch(`https://sentinel-backend-production-05e1.up.railway.app/sanctions/un?name=${encodeURIComponent(q)}`).then(r => r.json()),
+    fetch(`https://sentinel-backend-production-05e1.up.railway.app/sanctions/bis?name=${encodeURIComponent(q)}`).then(r => r.json()),
+  ]);
+
+  // FBI result
+  if (fbiResult.status === 'fulfilled') {
+    const fbiData = fbiResult.value;
+    const fbiMatch = fbiData.items?.find((item: any) => {
+      const title = (item.title || '').toLowerCase().trim();
+      return nameParts.every((p: string) => title.includes(p));
+    });
+    if (fbiMatch) {
+      wantedLinks.push({ label: `🚨 FBI MATCH: ${fbiMatch.title}`, url: fbiMatch.url || 'https://www.fbi.gov/wanted' });
+    } else {
+      wantedLinks.push({ label: '✅ FBI Most Wanted – No match', url: 'https://www.fbi.gov/wanted' });
+    }
+  } else {
+    wantedLinks.push({ label: 'FBI Most Wanted', url: 'https://www.fbi.gov/wanted' });
+  }
+
+  // Interpol result
+  if (interpolResult.status === 'fulfilled') {
+    const interpolData = interpolResult.value;
+    if (interpolData.total > 0) {
+      const n = interpolData._embedded.notices[0];
+      wantedLinks.push({ label: `🚨 INTERPOL RED NOTICE: ${n.forename} ${n.name}`, url: 'https://www.interpol.int/How-we-work/Notices/Red-Notices/View-Red-Notices' });
+    } else {
+      wantedLinks.push({ label: '✅ Interpol Red Notices – No match', url: 'https://www.interpol.int/How-we-work/Notices/Red-Notices/View-Red-Notices' });
+    }
+  } else {
+    wantedLinks.push({ label: 'Interpol Red Notices', url: 'https://www.interpol.int/How-we-work/Notices/Red-Notices/View-Red-Notices' });
+  }
+
+  // OFAC result
+  if (ofacResult.status === 'fulfilled') {
+    const ofacData = ofacResult.value;
+    wantedLinks.push({ label: '🔍 OFAC Sanctions – Search manually', url: ofacData.searchUrl || 'https://sanctionssearch.ofac.treas.gov/' });
+  } else {
+    wantedLinks.push({ label: 'OFAC Sanctions', url: 'https://sanctionssearch.ofac.treas.gov/' });
+  }
+
+  // UN Sanctions result
+  if (unResult.status === 'fulfilled') {
+    const unData = unResult.value;
+    if (unData.total > 0) {
+      wantedLinks.push({ label: `🚨 UN SANCTIONS MATCH: ${unData.matches[0]?.name || q}`, url: 'https://scsanctions.un.org/' });
+      if (unData.matches[0]?.nationality) wantedLinks.push({ label: `🌍 Nationality: ${unData.matches[0].nationality}`, url: 'https://scsanctions.un.org/' });
+    } else {
+      wantedLinks.push({ label: '✅ UN Security Council Sanctions – No match', url: 'https://scsanctions.un.org/' });
+    }
+  } else {
+    wantedLinks.push({ label: 'UN Security Council Sanctions', url: 'https://scsanctions.un.org/' });
+  }
+
+  // BIS Denied Persons result
+  if (bisResult.status === 'fulfilled') {
+    const bisData = bisResult.value;
+    if (bisData.total > 0) {
+      wantedLinks.push({ label: `🚨 BIS DENIED PERSONS MATCH: ${bisData.matches[0]?.entry?.slice(0, 50) || q}`, url: 'https://www.bis.doc.gov/index.php/policy-guidance/lists-of-parties-of-concern/denied-persons-list' });
+    } else {
+      wantedLinks.push({ label: '✅ BIS Denied Persons List – No match', url: 'https://www.bis.doc.gov/index.php/policy-guidance/lists-of-parties-of-concern/denied-persons-list' });
+    }
+  } else {
+    wantedLinks.push({ label: 'BIS Denied Persons List', url: 'https://www.bis.doc.gov/index.php/policy-guidance/lists-of-parties-of-concern/denied-persons-list' });
+  }
+
+  // Google KG result
+  if (googleResult.status === 'fulfilled') {
+    const googleData = googleResult.value;
     if (googleData.itemListElement && googleData.itemListElement.length > 0) {
       const entity = googleData.itemListElement[0].result;
       personAutoLinks.push({ label: `✅ Google Knowledge: ${entity.name}`, url: `https://www.google.com/search?q="${enc}"` });
@@ -106,7 +171,7 @@ async function personModules(q: string, isPro: boolean = false): Promise<ModuleR
       personAutoLinks.push({ label: `📰 Google News: "${q}"`, url: `https://news.google.com/search?q=${enc}` });
       personAutoLinks.push({ label: `🔗 LinkedIn: "${q}"`, url: `https://www.linkedin.com/search/results/people/?keywords=${enc}` });
     }
-  } catch {
+  } else {
     personAutoLinks.push({ label: `🔍 Google: Search "${q}"`, url: `https://www.google.com/search?q="${enc}"` });
     personAutoLinks.push({ label: `🔗 LinkedIn: "${q}"`, url: `https://www.linkedin.com/search/results/people/?keywords=${enc}` });
   }
@@ -116,12 +181,12 @@ async function personModules(q: string, isPro: boolean = false): Promise<ModuleR
       module: '👤 PERSON INTELLIGENCE', icon: '👤',
       links: personAutoLinks,
     },
-    ...(isPro && wantedLinks.length > 0 ? [{
-      module: '🚨 WANTED CHECKS', icon: '🚨',
+    ...(wantedLinks.length > 0 ? [{
+      module: '🚨 WANTED & SANCTIONS CHECKS', icon: '🚨',
       links: wantedLinks,
     }] : []),
     {
-      module: 'Person Search', icon: '👤',
+      module: 'Public Records', icon: '📋',
       links: [
         { label: 'TruthFinder',      url: `https://www.truthfinder.com/results/?firstName=${enc}` },
         { label: 'Spokeo',           url: `https://www.spokeo.com/search?q=${enc}` },
@@ -131,6 +196,122 @@ async function personModules(q: string, isPro: boolean = false): Promise<ModuleR
         { label: 'Pipl',             url: `https://pipl.com/search/?q=${enc}&in=5` },
         { label: 'PeopleFinder',     url: `https://www.peoplefinder.com/search/?full_name=${enc}` },
         { label: 'ZabaSearch',       url: `https://www.zabasearch.com/people/${enc}/` },
+        { label: 'Canada411 People', url: `https://www.canada411.ca/search/?stype=si&fn=${enc}&ln=` },
+        { label: 'Canada White Pages', url: `https://www.canada411.ca/search/?stype=si&fn=${enc}` },
+      ],
+    },
+    {
+      module: '🌳 Genealogy & Historical Records', icon: '🌳',
+      links: [
+        { label: 'FamilySearch — Person Search', url: `https://www.familysearch.org/search/record/results?q.givenName=${enc}&q.surname=` },
+        { label: 'FamilySearch — Family Tree', url: `https://www.familysearch.org/search/tree/results?q.givenName=${enc}` },
+        { label: 'FamilySearch — Historical Records', url: `https://www.familysearch.org/search/record/results?q.anyName=${enc}` },
+        { label: 'Ancestry — Search', url: `https://www.ancestry.com/search/?name=${enc}` },
+        { label: 'FindAGrave', url: `https://www.findagrave.com/memorial/search?lastname=${enc}` },
+        { label: 'Fold3 — Military Records', url: `https://www.fold3.com/search#query=${enc}` },
+        { label: 'Newspapers.com — Historical', url: `https://www.newspapers.com/search/#query=${enc}` },
+        { label: 'MyHeritage — Search', url: `https://www.myheritage.com/research/search/results?q.first_name=${enc}` },
+      ],
+    },
+    {
+      module: '🚔 Federal Wanted (USA)', icon: '🚔',
+      links: [
+        { label: 'FBI Most Wanted',           url: `https://www.fbi.gov/wanted` },
+        { label: 'FBI Ten Most Wanted',       url: `https://www.fbi.gov/wanted/topten` },
+        { label: 'US Marshals 15 Most Wanted', url: `https://www.usmarshals.gov/what-we-do/fugitive-operations/15-most-wanted` },
+        { label: 'US Marshals Wanted',        url: `https://www.usmarshals.gov/what-we-do/fugitive-operations/wanted-fugitives` },
+        { label: 'DEA Most Wanted',           url: `https://www.dea.gov/fugitives/all` },
+        { label: 'ICE Most Wanted',           url: `https://www.ice.gov/most-wanted` },
+        { label: 'ATF Most Wanted',           url: `https://www.atf.gov/most-wanted` },
+        { label: 'Secret Service Most Wanted', url: `https://www.secretservice.gov/investigation/most-wanted` },
+        { label: 'CBP Most Wanted',           url: `https://www.cbp.gov/border-security/human-trafficking/most-wanted` },
+      ],
+    },
+    {
+      module: '🗺️ State Wanted Lists (USA)', icon: '🗺️',
+      links: [
+        { label: 'Alabama',      url: `https://www.alabama.gov/mostwanted` },
+        { label: 'Alaska',       url: `https://dps.alaska.gov/AboutDPS/MostWanted` },
+        { label: 'Arizona',      url: `https://www.azdps.gov/safety/most_wanted` },
+        { label: 'Arkansas',     url: `https://www.dfa.arkansas.gov/fugitives` },
+        { label: 'California',   url: `https://www.caldoj.org/wanted` },
+        { label: 'Colorado',     url: `https://cbi.colorado.gov/sections/fugitive-unit/most-wanted` },
+        { label: 'Connecticut',  url: `https://portal.ct.gov/DESPP/Division-of-State-Police/Fugitive-Task-Force/Most-Wanted` },
+        { label: 'Delaware',     url: `https://dsp.delaware.gov/fugitive-unit/` },
+        { label: 'Florida',      url: `https://www.fdle.state.fl.us/wanted` },
+        { label: 'Georgia',      url: `https://gbi.georgia.gov/services/most-wanted` },
+        { label: 'Hawaii',       url: `https://www.hawaiipolice.com/most-wanted` },
+        { label: 'Idaho',        url: `https://isp.idaho.gov/BCI/mostWanted.html` },
+        { label: 'Illinois',     url: `https://isp.illinois.gov/MostWanted` },
+        { label: 'Indiana',      url: `https://www.in.gov/isp/fugitive/` },
+        { label: 'Iowa',         url: `https://www.dps.state.ia.us/CriminalInvestigation/MostWanted/` },
+        { label: 'Kansas',       url: `https://www.kbi.ks.gov/fugitives` },
+        { label: 'Kentucky',     url: `https://kentuckystatepolice.org/most-wanted/` },
+        { label: 'Louisiana',    url: `https://lsp.org/mostwanted.html` },
+        { label: 'Maine',        url: `https://www.maine.gov/dps/msp/investigation-traffic/fugitives` },
+        { label: 'Maryland',     url: `https://mdsp.maryland.gov/Organization/Pages/CriminalInvestigationBureau/MostWanted.aspx` },
+        { label: 'Massachusetts', url: `https://www.mass.gov/most-wanted` },
+        { label: 'Michigan',     url: `https://www.michigan.gov/msp/divisions/cid/most-wanted` },
+        { label: 'Minnesota',    url: `https://dps.mn.gov/divisions/bca/bca-divisions/investigations/Pages/fugitive-apprehension-unit.aspx` },
+        { label: 'Mississippi',  url: `https://www.dps.state.ms.us/mbi/most-wanted/` },
+        { label: 'Missouri',     url: `https://www.mshp.dps.missouri.gov/MSHPWeb/PatrolDivisions/CID/fugitives.html` },
+        { label: 'Montana',      url: `https://doj.mt.gov/enforcement/most-wanted/` },
+        { label: 'Nebraska',     url: `https://nsp.nebraska.gov/most-wanted` },
+        { label: 'Nevada',       url: `https://www.nvdps.gov/most-wanted` },
+        { label: 'New Hampshire', url: `https://www.nh.gov/safety/divisions/nhsp/bureaus/criminalinvestigations/fugitives/` },
+        { label: 'New Jersey',   url: `https://www.njsp.org/division/investigations/most-wanted.shtml` },
+        { label: 'New Mexico',   url: `https://www.dps.nm.gov/fugitives` },
+        { label: 'New York',     url: `https://troopers.ny.gov/most-wanted` },
+        { label: 'North Carolina', url: `https://www.ncsbi.gov/Services/Most-Wanted` },
+        { label: 'North Dakota', url: `https://www.hpcnd.org/most-wanted` },
+        { label: 'Ohio',         url: `https://www.ohioattorneygeneral.gov/Law-Enforcement/Ohio-Fugitive-Safe-Surrender/Most-Wanted` },
+        { label: 'Oklahoma',     url: `https://osbi.ok.gov/most-wanted` },
+        { label: 'Oregon',       url: `https://www.oregon.gov/osp/programs/ID/Pages/mostWanted.aspx` },
+        { label: 'Pennsylvania', url: `https://www.psp.pa.gov/fugitives/Pages/default.aspx` },
+        { label: 'Rhode Island', url: `https://riag.ri.gov/civil-and-criminal-actions/most-wanted` },
+        { label: 'South Carolina', url: `https://www.sled.sc.gov/mostwanted.aspx` },
+        { label: 'South Dakota', url: `https://dci.sd.gov/Investigations/MostWanted.aspx` },
+        { label: 'Tennessee',    url: `https://www.tn.gov/tbi/crime-info/most-wanted.html` },
+        { label: 'Texas',        url: `https://www.dps.texas.gov/section/texas-10-most-wanted` },
+        { label: 'Utah',         url: `https://bci.utah.gov/most-wanted/` },
+        { label: 'Vermont',      url: `https://vsp.vermont.gov/investigations/fugitives` },
+        { label: 'Virginia',     url: `https://www.vsp.virginia.gov/CJIS_MostWanted.shtm` },
+        { label: 'Washington',   url: `https://www.wsp.wa.gov/crime/most-wanted/` },
+        { label: 'West Virginia', url: `https://www.wvsp.gov/about/Pages/MostWanted.aspx` },
+        { label: 'Wisconsin',    url: `https://www.doj.state.wi.us/dles/cib/most-wanted` },
+        { label: 'Wyoming',      url: `https://wci.wyo.gov/adult-corrections/most-wanted` },
+      ],
+    },
+    {
+      module: '🍁 Canada Wanted Lists', icon: '🍁',
+      links: [
+        { label: 'RCMP Most Wanted',           url: `https://www.rcmp-grc.gc.ca/en/most-wanted` },
+        { label: "Canada's 25 Most Wanted",    url: `https://www.canada25mostwanted.com/` },
+        { label: 'CBSA Most Wanted',           url: `https://www.cbsa-asfc.gc.ca/security-securite/war-rec/menu-eng.html` },
+        { label: 'BOLO Program',               url: `https://www.boloprogram.org/` },
+        { label: 'Toronto Police Most Wanted', url: `https://www.tps.ca/crime/most-wanted/` },
+        { label: 'OPP Most Wanted (Ontario)',  url: `https://www.opp.ca/index.php?id=115&entryid=most-wanted` },
+        { label: 'Sûreté du Québec',           url: `https://www.sq.gouv.qc.ca/activites-missions/criminalite/personnes-recherchees/` },
+        { label: 'SPVM Most Wanted (Montréal)', url: `https://spvm.qc.ca/en/Fiches/Details/Personnes-recherchees` },
+        { label: 'Calgary Police Most Wanted', url: `https://www.calgarypolice.ca/most-wanted` },
+        { label: 'Edmonton Police Most Wanted', url: `https://www.edmontonpolice.ca/CommunityPolicing/MostWanted` },
+        { label: 'Winnipeg Police Most Wanted', url: `https://www.winnipeg.ca/police/most-wanted/` },
+        { label: 'Vancouver Police Most Wanted', url: `https://vpd.ca/crime-statistics-updates/most-wanted/` },
+        { label: 'RCMP BC Most Wanted',        url: `https://bc.rcmp-grc.gc.ca/ViewPage.action?siteNodeId=87&languageId=1&contentId=-1` },
+        { label: 'RCMP Alberta Most Wanted',   url: `https://www.rcmp-grc.gc.ca/en/alberta/most-wanted` },
+        { label: 'RCMP Saskatchewan Most Wanted', url: `https://www.rcmp-grc.gc.ca/en/saskatchewan/most-wanted` },
+        { label: 'RCMP Manitoba Most Wanted',  url: `https://www.rcmp-grc.gc.ca/en/manitoba/most-wanted` },
+      ],
+    },
+    {
+      module: '💼 Professional Records', icon: '💼',
+      links: [
+        { label: 'LinkedIn',         url: `https://www.linkedin.com/search/results/people/?keywords=${enc}` },
+        { label: 'ZoomInfo',         url: `https://www.zoominfo.com/s/#!search/people/${enc}` },
+        { label: 'Pipl',             url: `https://pipl.com/search/?q=${enc}&in=5` },
+        { label: 'License Lookup (NIPR)', url: `https://nipr.com/` },
+        { label: 'Healthcare Licenses', url: `https://www.npdb.hrsa.gov/` },
+        { label: 'State License Search', url: `https://www.usa.gov/state-professional-licenses` },
       ],
     },
     {
@@ -195,27 +376,20 @@ async function phoneModules(q: string): Promise<ModuleResult[]> {
   // Auto phone intelligence
   const phoneAutoLinks: { label: string; url: string }[] = [];
   try {
-    const res = await fetch(`https://phonevalidate.com/api?phone=${digits}&apikey=free`);
+    const res = await fetch(`https://ipapi.co/${digits}/json/`);
     const data = await res.json();
-    if (data && data.country_code) {
-      phoneAutoLinks.push({ label: `🌍 Country: ${data.country_name || data.country_code}`, url: `https://www.numlookup.com/?number=${enc}` });
-      phoneAutoLinks.push({ label: `📡 Carrier: ${data.carrier || 'Unknown'}`, url: `https://www.numlookup.com/?number=${enc}` });
-      phoneAutoLinks.push({ label: `📱 Type: ${data.line_type || 'Unknown'}`, url: `https://www.numlookup.com/?number=${enc}` });
-      if (data.country_code === 'CA') {
-        phoneAutoLinks.push({ label: '🍁 Canadian number detected', url: `https://www.numlookup.com/?number=${enc}` });
-      } else if (data.country_code === 'US') {
-        phoneAutoLinks.push({ label: '🇺🇸 US number detected', url: `https://www.numlookup.com/?number=${enc}` });
-      }
-    } else {
-      // Fallback - detect from number format
-      if (digits.startsWith('1') && digits.length === 11) {
-        phoneAutoLinks.push({ label: '🌍 North American number (US/Canada)', url: `https://www.numlookup.com/?number=${enc}` });
-      } else {
-        phoneAutoLinks.push({ label: `📞 ${digits.length} digit number`, url: `https://www.numlookup.com/?number=${enc}` });
-      }
+    if (data && !data.error) {
+      phoneAutoLinks.push({ label: `🌍 Country: ${data.country_name || 'Unknown'}`, url: `https://www.numlookup.com/?number=${enc}` });
+      phoneAutoLinks.push({ label: `📍 Region: ${data.region || 'Unknown'}`, url: `https://www.numlookup.com/?number=${enc}` });
     }
-  } catch {
+  } catch {}
+  // Always add format detection
+  if (digits.startsWith('1') && digits.length === 11) {
+    phoneAutoLinks.push({ label: '🇺🇸🍁 North American number (US/Canada)', url: `https://www.numlookup.com/?number=${enc}` });
+    phoneAutoLinks.push({ label: `📞 Number: +${digits}`, url: `https://www.numlookup.com/?number=${enc}` });
+  } else {
     phoneAutoLinks.push({ label: `📞 Number: ${q}`, url: `https://www.numlookup.com/?number=${enc}` });
+    phoneAutoLinks.push({ label: `📞 ${digits.length} digits detected`, url: `https://www.numlookup.com/?number=${enc}` });
   }
 
   return [
@@ -326,7 +500,10 @@ async function ipModules(q: string): Promise<ModuleResult[]> {
   // Auto IP lookup
   const ipAutoLinks: { label: string; url: string }[] = [];
   try {
-    const res = await fetch(`https://ipapi.co/${enc}/json/`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(`https://ipapi.co/${enc}/json/`, { signal: controller.signal });
+    clearTimeout(timeout);
     const data = await res.json();
     if (data && data.ip && !data.error) {
       ipAutoLinks.push({ label: `📍 ${data.city || '?'}, ${data.region || '?'}, ${data.country_name || '?'}`, url: `https://ipapi.co/${enc}/json/` });
@@ -334,10 +511,13 @@ async function ipModules(q: string): Promise<ModuleResult[]> {
       ipAutoLinks.push({ label: `🌐 ASN: ${data.asn || 'Unknown'}`, url: `https://ipapi.co/${enc}/json/` });
       if (data.timezone) ipAutoLinks.push({ label: `🕐 Timezone: ${data.timezone}`, url: `https://ipapi.co/${enc}/json/` });
     } else {
-      ipAutoLinks.push({ label: '⚠️ Could not resolve IP data', url: `https://ipapi.co/${enc}/json/` });
+      ipAutoLinks.push({ label: `🌐 IP: ${q}`, url: `https://ipinfo.io/${enc}` });
+      ipAutoLinks.push({ label: '🔍 IPinfo lookup', url: `https://ipinfo.io/${enc}` });
     }
   } catch {
-    ipAutoLinks.push({ label: 'IP Lookup failed', url: `https://ipapi.co/${enc}/json/` });
+    ipAutoLinks.push({ label: `🌐 IP: ${q}`, url: `https://ipinfo.io/${enc}` });
+    ipAutoLinks.push({ label: '🔍 IPinfo lookup', url: `https://ipinfo.io/${enc}` });
+    ipAutoLinks.push({ label: '🛡️ AbuseIPDB', url: `https://www.abuseipdb.com/check/${enc}` });
   }
 
   return [
@@ -458,10 +638,15 @@ async function companyModules(q: string): Promise<ModuleResult[]> {
 
   // Auto corporate intelligence
   const corpAutoLinks: { label: string; url: string }[] = [];
-  try {
-    // SEC EDGAR full-text search
-    const secRes = await fetch(`https://efts.sec.gov/LATEST/search-index?q="${enc}"&dateRange=custom&startdt=2020-01-01&forms=10-K,10-Q,8-K`);
-    const secData = await secRes.json();
+  // SEC EDGAR + OpenCorporates US — run in parallel
+  const [secResult, ocResult] = await Promise.allSettled([
+    fetch(`https://efts.sec.gov/LATEST/search-index?q="${enc}"&dateRange=custom&startdt=2020-01-01&forms=10-K,10-Q,8-K`).then(r => r.json()),
+    fetch(`https://api.opencorporates.com/v0.4/companies/search?q=${enc}&jurisdiction_code=us`).then(r => r.json()),
+  ]);
+
+  // SEC result
+  if (secResult.status === 'fulfilled') {
+    const secData = secResult.value;
     if (secData.hits?.hits?.length > 0) {
       const hit = secData.hits.hits[0]._source;
       corpAutoLinks.push({ label: `📊 SEC Filing: ${hit.display_names?.[0] || q}`, url: `https://www.sec.gov/cgi-bin/browse-edgar?company=${enc}&action=getcompany` });
@@ -469,31 +654,34 @@ async function companyModules(q: string): Promise<ModuleResult[]> {
     } else {
       corpAutoLinks.push({ label: `🔍 SEC EDGAR: Search ${q}`, url: `https://www.sec.gov/cgi-bin/browse-edgar?company=${enc}&action=getcompany` });
     }
-  } catch {
+  } else {
     corpAutoLinks.push({ label: `📊 SEC EDGAR`, url: `https://www.sec.gov/cgi-bin/browse-edgar?company=${enc}&action=getcompany` });
   }
 
-  try {
-    // OpenCorporates API
-    const ocRes = await fetch(`https://api.opencorporates.com/v0.4/companies/search?q=${enc}&jurisdiction_code=us`);
-    const ocData = await ocRes.json();
+  // OpenCorporates result
+  if (ocResult.status === 'fulfilled') {
+    const ocData = ocResult.value;
     if (ocData.results?.companies?.length > 0) {
       const co = ocData.results.companies[0].company;
       corpAutoLinks.push({ label: `✅ Found: ${co.name} (${co.jurisdiction_code?.toUpperCase()})`, url: co.opencorporates_url || `https://opencorporates.com/companies?q=${enc}` });
       corpAutoLinks.push({ label: `📍 Status: ${co.current_status || 'Unknown'}`, url: co.opencorporates_url || `https://opencorporates.com/companies?q=${enc}` });
     } else {
-      // Try Canada
-      const ocCaRes = await fetch(`https://api.opencorporates.com/v0.4/companies/search?q=${enc}&jurisdiction_code=ca`);
-      const ocCaData = await ocCaRes.json();
-      if (ocCaData.results?.companies?.length > 0) {
-        const co = ocCaData.results.companies[0].company;
-        corpAutoLinks.push({ label: `🍁 Found in Canada: ${co.name}`, url: co.opencorporates_url || `https://opencorporates.com/companies?q=${enc}` });
-        corpAutoLinks.push({ label: `📍 Status: ${co.current_status || 'Unknown'}`, url: co.opencorporates_url || `https://opencorporates.com/companies?q=${enc}` });
-      } else {
+      // Try Canada as fallback
+      try {
+        const ocCaRes = await fetch(`https://api.opencorporates.com/v0.4/companies/search?q=${enc}&jurisdiction_code=ca`);
+        const ocCaData = await ocCaRes.json();
+        if (ocCaData.results?.companies?.length > 0) {
+          const co = ocCaData.results.companies[0].company;
+          corpAutoLinks.push({ label: `🍁 Found in Canada: ${co.name}`, url: co.opencorporates_url || `https://opencorporates.com/companies?q=${enc}` });
+          corpAutoLinks.push({ label: `📍 Status: ${co.current_status || 'Unknown'}`, url: co.opencorporates_url || `https://opencorporates.com/companies?q=${enc}` });
+        } else {
+          corpAutoLinks.push({ label: `🔍 OpenCorporates: No match found`, url: `https://opencorporates.com/companies?q=${enc}` });
+        }
+      } catch {
         corpAutoLinks.push({ label: `🔍 OpenCorporates: No match found`, url: `https://opencorporates.com/companies?q=${enc}` });
       }
     }
-  } catch {
+  } else {
     corpAutoLinks.push({ label: `🏢 OpenCorporates`, url: `https://opencorporates.com/companies?q=${enc}` });
   }
 
@@ -591,17 +779,18 @@ export async function buildOneInputResult(query: string, isPro: boolean = false)
       modulesList.push({ module: '🕸️ CONNECTIONS', icon: '🕸️', links: connectionLinks });
     }
 
-    // Run each identifier
-    for (const { line, type } of types) {
-      const subResult = await buildOneInputResult(line, isPro);
-      // Add first auto-intelligence module from each
-      if (subResult.modules.length > 0) {
+    // Run each identifier in parallel
+    const subResults = await Promise.allSettled(
+      types.map(({ line }) => buildOneInputResult(line, isPro))
+    );
+    subResults.forEach((result, idx) => {
+      if (result.status === 'fulfilled' && result.value.modules.length > 0) {
         modulesList.push({
-          ...subResult.modules[0],
-          module: `${subResult.modules[0].module} (${line})`
+          ...result.value.modules[0],
+          module: `${result.value.modules[0].module} (${types[idx].line})`
         });
       }
-    }
+    });
 
     return {
       query,

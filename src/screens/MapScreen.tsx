@@ -1,13 +1,6 @@
 /**
  * SENTINEL – Map View Screen
- *
- * Interactive field map for:
- * – Pinning investigation locations
- * – Current device location
- * – Adding geo-notes
- * – iPad 3-column optimized layout
- *
- * Uses react-native-maps (Google Maps on iOS via app.json config)
+ * Uses @maplibre/maplibre-react-native with OpenStreetMap (no API key required)
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -16,8 +9,9 @@ import {
   SafeAreaView, StatusBar, Alert, TextInput,
   ScrollView, Modal,
 } from 'react-native';
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
-import { C, IS_IPAD, SPACE } from '../utils/theme';
+import { Map, Camera, Marker, UserLocation, type CameraRef } from '@maplibre/maplibre-react-native';
+import { C, IS_IPAD } from '../utils/theme';
+import { Storage } from '../utils/storage';
 
 interface MapPin {
   id: string;
@@ -36,7 +30,7 @@ interface Props {
 }
 
 export default function MapScreen({ onBack, onSaveNote }: Props) {
-  const mapRef = useRef<MapView>(null);
+  const cameraRef = useRef<CameraRef>(null);
   const [pins, setPins] = useState<MapPin[]>([]);
   const [selectedPin, setSelectedPin] = useState<MapPin | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -44,16 +38,18 @@ export default function MapScreen({ onBack, onSaveNote }: Props) {
   const [pinTitle, setPinTitle] = useState('');
   const [pinNote, setPinNote] = useState('');
   const [pinColor, setPinColor] = useState(PIN_COLORS[0]);
-  const [region, setRegion] = useState({
-    latitude:      40.7128,
-    longitude:    -74.0060,
-    latitudeDelta:  0.05,
-    longitudeDelta: 0.05,
-  });
+
+  useEffect(() => {
+    Storage.getSettings().then((s: any) => {
+      if (s.mapPins) setPins(s.mapPins);
+    });
+  }, []);
 
   const handleMapPress = (e: any) => {
-    const coord = e.nativeEvent.coordinate;
-    setPendingCoord(coord);
+    const { geometry } = e;
+    if (!geometry || !geometry.coordinates) return;
+    const [longitude, latitude] = geometry.coordinates;
+    setPendingCoord({ latitude, longitude });
     setPinTitle('');
     setPinNote('');
     setPinColor(PIN_COLORS[0]);
@@ -70,7 +66,11 @@ export default function MapScreen({ onBack, onSaveNote }: Props) {
       color: pinColor,
       timestamp: new Date().toLocaleString('en-US'),
     };
-    setPins(prev => [...prev, pin]);
+    setPins(prev => {
+      const updated = [...prev, pin];
+      Storage.saveSetting('mapPins', updated);
+      return updated;
+    });
     setShowAddModal(false);
   };
 
@@ -78,7 +78,11 @@ export default function MapScreen({ onBack, onSaveNote }: Props) {
     Alert.alert('Delete Pin', 'Remove this location pin?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => {
-        setPins(prev => prev.filter(p => p.id !== id));
+        setPins(prev => {
+          const updated = prev.filter(p => p.id !== id);
+          Storage.saveSetting('mapPins', updated);
+          return updated;
+        });
         setSelectedPin(null);
       }},
     ]);
@@ -87,6 +91,14 @@ export default function MapScreen({ onBack, onSaveNote }: Props) {
   const saveToNotes = (pin: MapPin) => {
     const text = `📍 ${pin.title}\nCoords: ${pin.coordinate.latitude.toFixed(5)}, ${pin.coordinate.longitude.toFixed(5)}\n${pin.note ? `Note: ${pin.note}` : ''}`.trim();
     onSaveNote(text);
+  };
+
+  const flyToPin = (pin: MapPin) => {
+    setSelectedPin(pin);
+    cameraRef.current?.flyTo({
+      center: [pin.coordinate.longitude, pin.coordinate.latitude],
+      duration: 400,
+    });
   };
 
   return (
@@ -101,43 +113,36 @@ export default function MapScreen({ onBack, onSaveNote }: Props) {
       </View>
 
       <View style={s.mapContainer}>
-        <MapView
-          ref={mapRef}
+        <Map
           style={s.map}
-          provider={PROVIDER_GOOGLE}
-          initialRegion={region}
-          onRegionChangeComplete={setRegion}
+          mapStyle="https://demotiles.maplibre.org/style.json"
           onPress={handleMapPress}
-          showsUserLocation
-          showsCompass
-          showsScale
-          mapType="hybrid"
         >
+          <Camera
+            ref={cameraRef}
+            initialViewState={{
+              center: [-74.0060, 40.7128],
+              zoom: 10,
+            }}
+          />
+          <UserLocation />
           {pins.map(pin => (
             <Marker
               key={pin.id}
-              coordinate={pin.coordinate}
-              pinColor={pin.color}
+              id={pin.id}
+              lngLat={[pin.coordinate.longitude, pin.coordinate.latitude]}
               onPress={() => setSelectedPin(pin)}
             >
-              <Callout>
-                <View style={s.callout}>
-                  <Text style={s.calloutTitle}>{pin.title}</Text>
-                  {pin.note ? <Text style={s.calloutNote}>{pin.note}</Text> : null}
-                  <Text style={s.calloutTime}>{pin.timestamp}</Text>
-                </View>
-              </Callout>
+              <View style={[s.pinMarker, { backgroundColor: pin.color }]} />
             </Marker>
           ))}
-        </MapView>
+        </Map>
 
-        {/* Map hint */}
         <View style={s.hintBanner}>
           <Text style={s.hintText}>Tap map to drop a pin</Text>
         </View>
       </View>
 
-      {/* Pin list panel (iPad: sidebar style) */}
       {pins.length > 0 && (
         <View style={[s.pinList, IS_IPAD && s.iPadPinList]}>
           <Text style={s.pinListTitle}>PINNED LOCATIONS</Text>
@@ -146,14 +151,7 @@ export default function MapScreen({ onBack, onSaveNote }: Props) {
               <TouchableOpacity
                 key={pin.id}
                 style={[s.pinChip, { borderLeftColor: pin.color }]}
-                onPress={() => {
-                  setSelectedPin(pin);
-                  mapRef.current?.animateToRegion({
-                    ...pin.coordinate,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }, 400);
-                }}
+                onPress={() => flyToPin(pin)}
               >
                 <View style={[s.pinDot, { backgroundColor: pin.color }]} />
                 <Text style={s.pinChipTitle} numberOfLines={1}>{pin.title}</Text>
@@ -163,7 +161,6 @@ export default function MapScreen({ onBack, onSaveNote }: Props) {
         </View>
       )}
 
-      {/* Selected pin detail */}
       {selectedPin && (
         <View style={s.detailPanel}>
           <View style={s.detailHeader}>
@@ -187,7 +184,6 @@ export default function MapScreen({ onBack, onSaveNote }: Props) {
         </View>
       )}
 
-      {/* Add pin modal */}
       <Modal visible={showAddModal} transparent animationType="slide">
         <View style={s.modalOverlay}>
           <View style={[s.modalCard, IS_IPAD && s.iPadModal]}>
@@ -241,6 +237,7 @@ const s = StyleSheet.create({
   pinCount:     { color: C.textDim, fontSize: 13 },
   mapContainer: { flex: 1, position: 'relative' },
   map:          { flex: 1 },
+  pinMarker:    { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: '#fff' },
   hintBanner:   { position: 'absolute', top: 12, alignSelf: 'center', backgroundColor: 'rgba(7,11,18,0.82)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
   hintText:     { color: C.textDim, fontSize: 12 },
   pinList:      { backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, padding: 12 },
@@ -260,10 +257,6 @@ const s = StyleSheet.create({
   actionBtn:    { flex: 1, backgroundColor: C.card, borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: C.border },
   deleteBtn:    { borderColor: C.red },
   actionBtnTxt: { color: C.text, fontSize: 13, fontWeight: '600' },
-  callout:      { padding: 8, maxWidth: 200 },
-  calloutTitle: { fontWeight: '700', fontSize: 13, color: '#111' },
-  calloutNote:  { fontSize: 12, color: '#444', marginTop: 2 },
-  calloutTime:  { fontSize: 10, color: '#888', marginTop: 4 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.88)', justifyContent: 'flex-end' },
   modalCard:    { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: IS_IPAD ? 32 : 24, paddingBottom: IS_IPAD ? 52 : 48 },
   iPadModal:    { marginHorizontal: 100, borderRadius: 24, marginBottom: 60 },

@@ -16,11 +16,11 @@ export type Screen =
   | 'geo'
   | 'geo_map'
   | 'image'
-  | 'breach'
+  | 'breach' | 'case_intake'
   | 'cases'
   | 'notes'
   | 'history'
-  | 'timeline' | 'upgrade' | 'watchlist' | 'one_input' | 'settings' | 'geo_map';
+  | 'timeline' | 'upgrade' | 'watchlist' | 'one_input' | 'settings';
 
 export type OsintResultType = 'data' | 'link' | 'copy' | 'info' | 'warn';
 

@@ -15,6 +15,7 @@
 import { SecureStorage } from './secureStorage';
 import { AuditLog }      from './auditLog';
 import { CaseReport, HistoryItem, FieldNote } from '../types';
+import Constants from 'expo-constants';
 
 // Storage keys (AsyncStorage holds encrypted blobs under these keys)
 const K = {
@@ -107,7 +108,7 @@ export const Storage = {
 const TRIAL_KEY = 'sentinel_trial_v1';
 const SUB_KEY   = 'sentinel_subscription_v1';
 
-export type SubscriptionTier = 'trial' | 'solo' | 'pro' | 'expired';
+export type SubscriptionTier = 'trial' | 'pro' | 'expired';
 
 export const Trial = {
   async initialize(): Promise<void> {
@@ -136,14 +137,17 @@ export const Trial = {
   },
 
   async getSubscriptionTier(): Promise<SubscriptionTier> {
+    // Reviewer build: automatically grant Pro access
+    const isReviewerBuild = Constants.expoConfig?.extra?.isReviewerBuild === true;
+    if (isReviewerBuild) return 'pro';
     const sub = await SecureStorage.get<string>(SUB_KEY);
-    if (sub === 'solo') return 'solo';
     if (sub === 'pro')  return 'pro';
+    if (sub === 'expired') return 'expired';
     const trialActive = await Trial.isActive();
     return trialActive ? 'trial' : 'expired';
   },
 
-  async setSubscription(tier: 'solo' | 'pro'): Promise<void> {
+  async setSubscription(tier: 'pro' | 'expired'): Promise<void> {
     await SecureStorage.set(SUB_KEY, tier);
     await AuditLog.log('SETTINGS_CHANGE', `Subscription set: ${tier}`);
   },
@@ -162,7 +166,7 @@ export const Trial = {
 
   async canUseOneInput(): Promise<boolean> {
     const tier = await Trial.getSubscriptionTier();
-    if (tier === 'solo' || tier === 'pro') return true;
+    if (tier === 'pro') return true;
     if (tier === 'expired') return false;
     const used = await Trial.getOneInputUsageToday();
     return used < 2;
@@ -170,18 +174,18 @@ export const Trial = {
 
   async canUseAI(): Promise<boolean> {
     const tier = await Trial.getSubscriptionTier();
-    return tier === 'pro';
+    return tier === 'pro' || tier === 'trial';
   },
 
   async canExportPDF(): Promise<boolean> {
     const tier = await Trial.getSubscriptionTier();
-    return tier === 'pro' || tier === 'solo';
+    return tier === 'pro' || tier === 'trial';
   },
 
   async getMaxCases(): Promise<number> {
     const tier = await Trial.getSubscriptionTier();
-    if (tier === 'pro' || tier === 'solo') return 999;
-    if (tier === 'trial') return 1;
+    if (tier === 'pro') return 999;
+    if (tier === 'trial') return 3;
     return 0;
   },
 };

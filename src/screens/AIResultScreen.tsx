@@ -19,9 +19,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   SafeAreaView, StatusBar, ActivityIndicator, Share,
-  Clipboard, Alert, Animated,
+  Alert, Animated,
 } from 'react-native';
-import { C, IS_IPAD, SPACE } from '../utils/theme';
+import { C, IS_IPAD } from '../utils/theme';
 import { getAIUsageThisMonth } from '../utils/aiEngine';
 
 export type AIScreenMode =
@@ -81,7 +81,10 @@ export default function AIResultScreen({ mode, title, onBack, onSaveNote, fetchR
   };
 
   const handleCopy = () => {
-    Clipboard.setString(result);
+    try {
+      const { Clipboard } = require('react-native');
+      Clipboard.setString(result);
+    } catch {}
     Alert.alert('✓ Copied', 'AI analysis copied to clipboard.');
   };
 

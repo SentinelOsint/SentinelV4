@@ -38,6 +38,7 @@ class SessionManagerClass {
   private shakeSubscription: any   = null;
   private lastShakeTime:  number   = 0;
   private shakeEnabled:   boolean  = true;
+  private isAuthenticating: boolean = false;
 
   async initialize(onLock: () => void): Promise<void> {
     this.onLockCallback = onLock;
@@ -50,7 +51,8 @@ class SessionManagerClass {
     if (savedFailed !== null) {
       this.failedAttempts = parseInt(savedFailed);
     }
-    this.appStateListener = AppState.addEventListener('change', this._handleAppStateChange.bind(this));
+    // AppState handled by App.tsx to avoid conflicts with biometric auth
+    // this.appStateListener = AppState.addEventListener('change', this._handleAppStateChange.bind(this));
     this._scheduleTimeout();
     this._startShakeDetection();
   }
@@ -88,6 +90,7 @@ class SessionManagerClass {
 
   setShakeToLock(enabled: boolean): void { this.shakeEnabled = enabled; }
   getShakeEnabled(): boolean { return this.shakeEnabled; }
+  setAuthenticating(val: boolean): void { this.isAuthenticating = val; }
 
   touch(): void {
     this.lastActivity = Date.now();
@@ -162,11 +165,14 @@ class SessionManagerClass {
   }
 
   private _handleAppStateChange(nextState: AppStateStatus): void {
+    console.log("[SESSION] AppState changed to:", nextState, "isAuthenticating:", this.isAuthenticating);
     if (nextState === 'background' || nextState === 'inactive') {
-      clearKeyMaterial();
+      if (!this.isAuthenticating) clearKeyMaterial();
       if (this.timeoutHandle) clearTimeout(this.timeoutHandle);
     } else if (nextState === 'active') {
-      if (!isSessionActive()) {
+      console.log("[SESSION] Returning to active, isSessionActive:", isSessionActive(), "isAuthenticating:", this.isAuthenticating);
+      if (!isSessionActive() && !this.isAuthenticating) {
+        console.log("[SESSION] Triggering lock callback");
         if (this.onLockCallback) this.onLockCallback();
       } else {
         this.touch();

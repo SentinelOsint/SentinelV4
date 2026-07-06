@@ -1,0 +1,6 @@
+content = open('App.tsx').read()
+content = content.replace('const appState = useRef(AppState.currentState);','const appState = useRef(AppState.currentState);\n  const isAuthenticating = useRef(false);')
+content = content.replace('if (unlocked) {\n          setNeedsReauth(true);\n          setUnlocked(false);\n        }','if (unlocked && !isAuthenticating.current) {\n          setNeedsReauth(true);\n          setUnlocked(false);\n        }')
+content = content.replace('onUnlock={() => { setUnlocked(true); setNeedsReauth(false); }}','onUnlock={() => { isAuthenticating.current = false; setUnlocked(true); setNeedsReauth(false); }}')
+open('App.tsx', 'w').write(content)
+print('Valmis!')

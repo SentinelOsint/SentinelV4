@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sentinel OSINT",
     "slug": "sentinel-osint-na",
-    "version": "2.4.0",
+    "version": "2.11.0",
     "orientation": "default",
     "userInterfaceStyle": "dark",
     "splash": {
@@ -13,15 +13,20 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sentinel.osint",
-      "buildNumber": "6",
+      "buildNumber": "45",
+      "marketingVersion": "2.9.0",
+      "subtitle": "Background Check, Skip Trace & AI",
       "requireFullScreen": false,
       "entitlements": {
         "keychain-access-groups": [
+          "$(AppIdentifierPrefix)com.sentinel.osint",
           "$(AppIdentifierPrefix)com.sentinel.osint"
         ]
       },
       "infoPlist": {
         "NSFaceIDUsageDescription": "Sentinel uses Face ID to protect your investigative data.",
+        "NSMicrophoneUsageDescription": "Sentinel uses the microphone for voice dictation in Case Intake to allow hands-free data entry during client meetings.",
+        "NSSpeechRecognitionUsageDescription": "Sentinel uses speech recognition to transcribe spoken subject information during client intake sessions.",
         "NSCameraUsageDescription": "Used for capturing images for EXIF metadata analysis.",
         "NSPhotoLibraryUsageDescription": "Used for selecting images for reverse image search.",
         "NSLocationWhenInUseUsageDescription": "Used to show your current position on the field map.",
@@ -29,14 +34,16 @@
         "UISupportedInterfaceOrientations~ipad": [
           "UIInterfaceOrientationPortrait",
           "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight",
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
           "UIInterfaceOrientationLandscapeRight"
         ],
         "UISupportedInterfaceOrientations~iphone": [
+          "UIInterfaceOrientationPortrait",
           "UIInterfaceOrientationPortrait"
-        ]
-      },
-      "config": {
-        "googleMapsApiKey": "AIzaSyBC3110xUO4fOpNj1BCawuevrdtFevnQlo"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "icon": "./assets/icon.png"
     },
@@ -45,7 +52,7 @@
         "backgroundColor": "#070b12"
       },
       "package": "com.sentinel.osint",
-      "versionCode": 4,
+      "versionCode": 8,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
@@ -53,12 +60,7 @@
         "android.permission.USE_FINGERPRINT",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "YOUR_GOOGLE_MAPS_ANDROID_API_KEY"
-        }
-      }
+      ]
     },
     "plugins": [
       "expo-local-authentication",
@@ -71,12 +73,16 @@
             "usesCleartextTraffic": false
           }
         }
-      ]
+      ],
+      "expo-asset",
+      "@maplibre/maplibre-react-native",
+      "expo-iap"
     ],
     "extra": {
       "eas": {
         "projectId": "35ddc2b0-ca53-4a1e-b40c-57d31915c35b"
-      }
+      },
+      "isReviewerBuild": false
     },
     "icon": "./assets/icon.png",
     "owner": "hannuhuttunen"

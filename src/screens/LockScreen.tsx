@@ -13,12 +13,13 @@ import { runIntegrityCheck, IntegrityReport } from '../utils/integrityCheck';
 
 interface Props {
   onUnlock: () => void;
+  onAuthStart?: () => void;
   isReauth?: boolean;   // true = session timed out, not first launch
 }
 
 type LockState = 'checking' | 'ready' | 'authenticating' | 'failed' | 'locked_out' | 'integrity_warn';
 
-export default function LockScreen({ onUnlock, isReauth = false }: Props) {
+export default function LockScreen({ onUnlock, onAuthStart, isReauth = false }: Props) {
   const [lockState,      setLockState]      = useState<LockState>('checking');
   const [biometricType,  setBiometricType]  = useState('Biometrics');
   const [errorMsg,       setErrorMsg]       = useState('');
@@ -72,13 +73,15 @@ export default function LockScreen({ onUnlock, isReauth = false }: Props) {
       }
       setFailedCount(SessionManager.getFailedAttempts());
       setLockState('ready');
-      authenticate();
+      // Small delay before auto-triggering biometrics to ensure UI is ready
+      setTimeout(() => authenticate(), 1000);
     } catch {
       await _completeUnlock();
     }
   };
 
   const authenticate = async () => {
+    if (onAuthStart) onAuthStart();
     setLockState('authenticating');
     try {
       const result = await LocalAuthentication.authenticateAsync({
@@ -86,6 +89,7 @@ export default function LockScreen({ onUnlock, isReauth = false }: Props) {
         fallbackLabel:       'Use Passcode',
         cancelLabel:         'Cancel',
         disableDeviceFallback: false,
+        requireConfirmation: false,
       });
 
       if (result.success) {
@@ -178,7 +182,7 @@ export default function LockScreen({ onUnlock, isReauth = false }: Props) {
 
         <View style={s.logoWrap}>
           <Text style={s.logo}>SENTINEL</Text>
-          <Text style={s.logoSub}>OSINT FIELD TOOLKIT</Text>
+          <Text style={s.logoSub}>FIELD INTELLIGENCE PLATFORM</Text>
         </View>
 
         <IntegrityWarning />

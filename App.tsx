@@ -31,6 +31,7 @@ import { analyzeResults } from './src/utils/aiEngine';
 import TimelineScreen from './src/screens/TimelineScreen';
 import UpgradeScreen from './src/screens/UpgradeScreen';
 import WatchListScreen from './src/screens/WatchListScreen';
+import CaseIntakeScreen from './src/screens/CaseIntakeScreen';
 
 import { Storage, Trial, SubscriptionTier } from './src/utils/storage';
 import { exportSearchPDF } from './src/utils/pdfExport';
@@ -42,8 +43,9 @@ SplashScreen.preventAutoHideAsync();
 import {
   C, NOTE_TAGS, IS_IPAD, CARD_WIDTH, GRID_GAP, GRID_PADDING,
 } from './src/utils/theme';
+import * as StoreReview from 'expo-store-review';
 import {
-  getIPResults, getDomainResults, getSocialResults, getPersonResults,
+  getIPResults, getDomainResults, getSocialResults,
   getPhoneResults, getEmailResults, getCompanyResults, getVehicleResults,
   getGeoResults, getImageResults, getBreachResults, getCourtResults,
 } from './src/utils/osintEngines';
@@ -53,7 +55,7 @@ export default function App() {
   const [unlocked,      setUnlocked]      = useState(false);
   const [needsReauth,   setNeedsReauth]   = useState(false);
   const [isPro,         setIsPro]         = useState(false);
-  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>('trial');
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>('trial' as SubscriptionTier);
   const [screen,        setScreen]        = useState<Screen>('home');
   const [loading,       setLoading]       = useState(false);
   const [results,       setResults]       = useState<OsintResult[]>([]);
@@ -70,6 +72,7 @@ export default function App() {
   const [curQuery,      setCurQuery]      = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const appState = useRef(AppState.currentState);
+  const isAuthenticating = useRef(false);
 
   // ── Session management ────────────────────────────────────────────────────
   const handleLock = useCallback(() => {
@@ -86,10 +89,55 @@ export default function App() {
   useEffect(() => {
     if (unlocked) {
       Trial.initialize().then(async () => {
-      const tier = await Trial.getSubscriptionTier();
-      setSubscriptionTier(tier);
-      setIsPro(tier === 'pro');
-    });
+        // Validate subscription with Apple server on every launch
+        try {
+          const { initConnection, getAvailablePurchases, endConnection } = await import('expo-iap');
+          await initConnection();
+          const purchases = await getAvailablePurchases();
+          await endConnection();
+
+          if (purchases && purchases.length > 0) {
+            // Try server-side validation first
+            let validatedByServer = false;
+            for (const purchase of purchases) {
+              const receipt = (purchase as any).transactionReceipt;
+              if (!receipt) continue;
+              try {
+                const res = await fetch('https://sentinel-backend-production-05e1.up.railway.app/iap/validate', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ receiptData: receipt }),
+                });
+                const data = await res.json();
+                if (data.valid && data.tier === 'pro') {
+                  await Trial.setSubscription(data.tier);
+                  validatedByServer = true;
+                  break;
+                }
+              } catch {
+                // Server validation failed for this receipt, try next
+              }
+            }
+            if (!validatedByServer) {
+              // Server validation failed or returned expired — set expired
+              await Trial.setSubscription('expired');
+            }
+          } else {
+            // No purchases found — check if trial is still active
+            const trialActive = await Trial.isActive();
+            if (!trialActive) {
+              await Trial.setSubscription('expired');
+            }
+          }
+        } catch (e) {
+          console.warn('Subscription validation failed:', e);
+          // Network error — fall back to stored tier to avoid locking out valid users
+        }
+
+        const tier = await Trial.getSubscriptionTier();
+        setSubscriptionTier(tier);
+        setIsPro(tier === 'pro');
+      });
       // Initialize session manager with lock callback
       SessionManager.initialize(handleLock);
       loadData();
@@ -120,17 +168,17 @@ export default function App() {
   // ── AppState / Biometric re-auth ─────────────────────────────────────────
   useEffect(() => {
     const sub = AppState.addEventListener('change', nextState => {
-      if (appState.current.match(/active/) && nextState === 'background') {
-        // App going to background – start lock timer
+      if (nextState === 'background') {
+        // Only lock when truly backgrounded, not on inactive (Face ID dialog)
         appState.current = nextState;
-      } else if (appState.current.match(/inactive|background/) && nextState === 'active') {
-        // App coming to foreground – require re-auth if session active
-        appState.current = nextState;
-        if (unlocked) {
+        if (unlocked && !isAuthenticating.current) {
           setNeedsReauth(true);
           setUnlocked(false);
         }
+      } else if (nextState === 'active') {
+        appState.current = nextState;
       } else {
+        // inactive – do nothing, Face ID/passcode dialogs cause this
         appState.current = nextState;
       }
     });
@@ -246,11 +294,33 @@ export default function App() {
   const quickNote = (v: string) => { setNoteText(v); setShowNoteModal(true); };
 
   // ── Search runner ─────────────────────────────────────────────────────────
+  const requestReviewIfEligible = async () => {
+    try {
+      const REVIEW_KEY = 'sentinel_search_count';
+      const settings = await Storage.getSettings();
+      const count = ((settings[REVIEW_KEY] as number) || 0) + 1;
+      await Storage.saveSetting(REVIEW_KEY, count);
+      if (count === 3 || count === 10 || count === 25) {
+        const isAvailable = await StoreReview.isAvailableAsync();
+        if (isAvailable) {
+          await StoreReview.requestReview();
+        }
+      }
+    } catch (e) {
+      console.warn('Review request failed:', e);
+    }
+  };
+
   const run = async (module: string, query: string, fn: () => Promise<OsintResult[]> | OsintResult[]) => {
     if (!query.trim()) { Alert.alert('Required', 'Enter a value to search.'); return; }
     onUserInteraction();
     setLoading(true); setResults([]); setCurModule(module); setCurQuery(query.trim());
-    try { setResults(await fn()); addToHistory(module, query.trim()); }
+    try {
+      const res = await fn();
+      setResults(res);
+      addToHistory(module, query.trim());
+      if (res.length > 0) requestReviewIfEligible();
+    }
     catch (e: any) { Alert.alert('Error', e.message || 'Search failed'); }
     setLoading(false);
   };
@@ -268,18 +338,514 @@ export default function App() {
       setLoading(false);
     }
   };
-  const searchIP      = () => run('IP & Network',    input, async () => { const r = await fetch(`https://ipapi.co/${input.trim()}/json/`); const d = await r.json(); if (d.error) throw new Error(d.reason); return getIPResults(d); });
-  const searchDomain  = () => run('Domain & WHOIS',  input, async () => { const q = input.trim().replace(/^https?:\/\//,'').split('/')[0]; const r = await fetch(`https://ipapi.co/${q}/json/`); const d = await r.json(); return getDomainResults(q, d); });
-  const searchSocial  = () => run('Social Media',    input, () => getSocialResults(encodeURIComponent(input.trim())));
-  const searchPerson  = () => run('Person Search',   input, () => getPersonResults(encodeURIComponent(input.trim()), input2.trim() ? '+' + encodeURIComponent(input2.trim()) : '', isPro));
-  const searchPhone   = () => run('Phone Lookup',    input, () => getPhoneResults(input.trim().replace(/[\s\-\(\)]/g, '')));
-  const searchEmail   = () => { const q = input.trim().toLowerCase(); if (!q.includes('@')) { Alert.alert('Invalid', 'Enter a valid email.'); return; } run('Email Lookup', q, () => getEmailResults(q, q.split('@')[1])); };
-  const searchCompany = () => run('Company / Org',   input, () => getCompanyResults(encodeURIComponent(input.trim())));
-  const searchVehicle = () => run('Vehicle',         input, () => getVehicleResults(input.trim().toUpperCase(), encodeURIComponent(input.trim().toUpperCase())));
-  const searchGeo     = () => run('Geo & Location',  input, () => getGeoResults(encodeURIComponent(input.trim()), input.trim()));
+  const searchIP = () => run('IP & Network', input, async () => {
+    const ip = input.trim();
+    const results: OsintResult[] = [];
+
+    // Basic IP data
+    const r = await fetch(`http://ip-api.com/json/${ip}`);
+    const d = await r.json();
+    if (d.status === 'fail') throw new Error(d.message || 'IP lookup failed');
+
+    results.push({ label: 'IP ADDRESS', value: ip, type: 'copy' });
+    results.push({ label: 'LOCATION', value: `${d.city}, ${d.regionName}, ${d.country}`, type: 'data' });
+    results.push({ label: 'ISP', value: d.isp || 'Unknown', type: 'data' });
+    results.push({ label: 'ORG', value: d.org || 'Unknown', type: 'data' });
+    results.push({ label: 'ASN', value: d.as || 'Unknown', type: 'data' });
+    results.push({ label: 'TIMEZONE', value: d.timezone || 'Unknown', type: 'data' });
+    results.push({ label: 'COORDINATES', value: d.lat && d.lon ? `${d.lat}, ${d.lon}` : 'N/A', type: 'copy' });
+
+    // Threat intelligence with user API keys
+    const settings = await Storage.getSettings();
+    const abuseKey   = settings.abuseIPDBKey as string || '';
+    const greyKey    = settings.greyNoiseKey as string || '';
+    const shodanKey  = settings.shodanKey as string || '';
+
+    // Shodan live lookup — Pro only
+    if (isPro && shodanKey) {
+      try {
+        const sr = await fetch(`https://api.shodan.io/shodan/host/${ip}?key=${encodeURIComponent(shodanKey)}`);
+        const sd = await sr.json();
+        if (!sd.error) {
+          results.push({ label: '─── SHODAN INTELLIGENCE', value: '', type: 'info' });
+          results.push({ label: 'OPEN PORTS', value: sd.ports ? sd.ports.slice(0,10).join(', ') : 'None found', type: 'data' });
+          results.push({ label: 'OS', value: sd.os || 'Unknown', type: 'data' });
+          results.push({ label: 'HOSTNAMES', value: sd.hostnames?.length ? sd.hostnames.slice(0,3).join(', ') : 'None', type: 'data' });
+          results.push({ label: 'LAST SEEN', value: sd.last_update || 'Unknown', type: 'data' });
+          if (sd.vulns && Object.keys(sd.vulns).length > 0) {
+            results.push({ label: '⚠️ VULNERABILITIES', value: Object.keys(sd.vulns).slice(0,5).join(', '), type: 'data' });
+          }
+          results.push({ label: 'COUNTRY', value: sd.country_name || 'Unknown', type: 'data' });
+        }
+      } catch {
+        // Shodan fetch failed silently
+      }
+    }
+
+    if (abuseKey || greyKey) {
+      try {
+        const threat = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/ip/threat?ip=${ip}&abuseKey=${encodeURIComponent(abuseKey)}&greyNoiseKey=${encodeURIComponent(greyKey)}`);
+        const td = await threat.json();
+
+        if (td.results.abuseIPDB) {
+          results.push({ label: '─── ABUSEIPDB', value: '', type: 'info' });
+          const abuse = td.results.abuseIPDB;
+          results.push({ label: 'ABUSE SCORE', value: `${abuse.abuseConfidenceScore}% confidence`, type: abuse.abuseConfidenceScore > 50 ? 'copy' : 'data' });
+          results.push({ label: 'TOTAL REPORTS', value: `${abuse.totalReports} reports`, type: 'data' });
+          results.push({ label: 'IS WHITELISTED', value: abuse.isWhitelisted ? 'Yes' : 'No', type: 'data' });
+        }
+
+        if (td.results.greyNoise) {
+          results.push({ label: '─── GREYNOISE', value: '', type: 'info' });
+          const grey = td.results.greyNoise;
+          results.push({ label: 'CLASSIFICATION', value: grey.classification || 'Unknown', type: 'data' });
+          results.push({ label: 'NOISE', value: grey.noise ? '⚠️ Internet scanner detected' : '✅ Not a known scanner', type: 'data' });
+          results.push({ label: 'RIOT', value: grey.riot ? '✅ Known benign service' : 'Unknown', type: 'data' });
+        }
+      } catch {
+        // Threat intel fetch failed silently
+      }
+    } else {
+      results.push({ label: '─── THREAT INTELLIGENCE', value: '', type: 'info' });
+      results.push({ label: 'AbuseIPDB + GreyNoise', value: 'Add API keys in Security Settings to enable threat intelligence', type: 'data' });
+    }
+
+    results.push({ label: '─── EXTERNAL SOURCES', value: '', type: 'info' });
+    results.push({ label: 'AbuseIPDB', value: `https://www.abuseipdb.com/check/${ip}`, type: 'link' });
+    results.push({ label: 'VirusTotal', value: `https://www.virustotal.com/gui/ip-address/${ip}`, type: 'link' });
+    results.push({ label: 'Shodan', value: `https://www.shodan.io/host/${ip}`, type: 'link' });
+    results.push({ label: 'Grey Noise', value: `https://viz.greynoise.io/ip/${ip}`, type: 'link' });
+    results.push({ label: 'Google Maps', value: d.lat && d.lon ? `https://maps.google.com/?q=${d.lat},${d.lon}` : 'https://maps.google.com', type: 'link' });
+
+    return results;
+  });
+  const searchDomain  = () => run('Domain & WHOIS',  input, async () => {
+    const q = input.trim().replace(/^https?:\/\//,'').split('/')[0];
+    const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/domain/lookup?domain=${q}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    
+    const results: OsintResult[] = [];
+    
+    // Basic info
+    results.push({ label: 'DOMAIN', value: q, type: 'copy' });
+    results.push({ label: 'IP ADDRESS', value: d.ip || 'Unknown', type: 'copy' });
+    
+    // IP geolocation
+    if (d.ipData && d.ipData.status === 'success') {
+      results.push({ label: 'HOSTING LOCATION', value: `${d.ipData.city}, ${d.ipData.regionName}, ${d.ipData.country}`, type: 'data' });
+      results.push({ label: 'HOSTING ISP', value: d.ipData.isp || 'Unknown', type: 'data' });
+      results.push({ label: 'ASN', value: d.ipData.as || 'Unknown', type: 'data' });
+    }
+    
+    // DNS Records
+    results.push({ label: '─── DNS RECORDS', value: '', type: 'info' });
+    if (d.dns.a && d.dns.a.length > 0) {
+      d.dns.a.forEach((r: any) => results.push({ label: 'A RECORD', value: `${r.data} (TTL: ${r.TTL})`, type: 'copy' }));
+    }
+    if (d.dns.mx && d.dns.mx.length > 0) {
+      d.dns.mx.forEach((r: any) => results.push({ label: 'MX RECORD', value: r.data, type: 'data' }));
+    }
+    if (d.dns.txt && d.dns.txt.length > 0) {
+      d.dns.txt.slice(0, 3).forEach((r: any) => results.push({ label: 'TXT RECORD', value: r.data, type: 'data' }));
+    }
+    
+    // Subdomains
+    if (d.subdomains && d.subdomains.length > 0) {
+      results.push({ label: '─── SUBDOMAINS FOUND', value: '', type: 'info' });
+      d.subdomains.forEach((sub: string) => {
+        results.push({ label: 'SUBDOMAIN', value: sub, type: 'copy' });
+      });
+    }
+    
+    // SSL Certificates
+    if (d.certs && d.certs.length > 0) {
+      results.push({ label: '─── SSL CERTIFICATES', value: '', type: 'info' });
+      d.certs.slice(0, 3).forEach((c: any) => {
+        results.push({ label: 'CERT ISSUED', value: `${c.common_name} — ${new Date(c.not_before).toLocaleDateString('en-US')}`, type: 'data' });
+      });
+    }
+    
+    // External links
+    results.push({ label: '─── WHOIS & REGISTRATION', value: '', type: 'info' });
+    results.push({ label: 'WHOIS Lookup', value: `https://www.whois.com/whois/${q}`, type: 'link' });
+    results.push({ label: 'ICANN WHOIS', value: `https://lookup.icann.org/en/lookup?name=${q}`, type: 'link' });
+    results.push({ label: '─── REPUTATION', value: '', type: 'info' });
+    results.push({ label: 'VirusTotal', value: `https://www.virustotal.com/gui/domain/${q}`, type: 'link' });
+    results.push({ label: 'URLScan', value: `https://urlscan.io/search/#domain:${q}`, type: 'link' });
+    results.push({ label: 'Wayback Machine', value: `https://web.archive.org/web/*/${q}`, type: 'link' });
+    
+    return results;
+  });
+  const searchSocial = () => run('Social Media', input, async () => {
+    const username = input.trim();
+    const encoded = encodeURIComponent(username);
+    const results: OsintResult[] = [];
+
+    // Reddit direct lookup
+    try {
+      const r = await fetch(`https://www.reddit.com/user/${username}/about.json`, {
+        headers: { 'User-Agent': 'Sentinel-OSINT-Toolkit/1.0' }
+      });
+      const d = await r.json();
+      if (d.data && !d.error) {
+        results.push({ label: '─── REDDIT PROFILE FOUND', value: '', type: 'info' });
+        results.push({ label: 'USERNAME', value: `u/${username}`, type: 'copy' });
+        results.push({ label: 'KARMA', value: `${(d.data.total_karma || 0).toLocaleString()} total`, type: 'data' });
+        results.push({ label: 'POST KARMA', value: (d.data.link_karma || 0).toLocaleString(), type: 'data' });
+        results.push({ label: 'COMMENT KARMA', value: (d.data.comment_karma || 0).toLocaleString(), type: 'data' });
+        results.push({ label: 'ACCOUNT CREATED', value: new Date((d.data.created_utc || 0) * 1000).toLocaleDateString('en-US'), type: 'data' });
+        if (d.data.is_employee) results.push({ label: 'REDDIT EMPLOYEE', value: '⚠️ Yes', type: 'data' });
+        results.push({ label: 'View Profile', value: `https://www.reddit.com/user/${username}`, type: 'link' });
+      } else {
+        results.push({ label: '─── REDDIT', value: '', type: 'info' });
+        results.push({ label: '✅ REDDIT', value: 'No account found for this username', type: 'data' });
+      }
+    } catch {
+      results.push({ label: '─── REDDIT', value: '', type: 'info' });
+      results.push({ label: 'Reddit', value: `https://www.reddit.com/user/${username}`, type: 'link' });
+    }
+
+    results.push({ label: '─── MAJOR PLATFORMS', value: '', type: 'info' });
+    results.push({ label: 'Instagram', value: `https://www.instagram.com/${username}/`, type: 'link' });
+    results.push({ label: 'Twitter / X', value: `https://x.com/${username}`, type: 'link' });
+    results.push({ label: 'Facebook', value: `https://www.facebook.com/${username}`, type: 'link' });
+    results.push({ label: 'LinkedIn', value: `https://www.linkedin.com/in/${username}`, type: 'link' });
+    results.push({ label: 'TikTok', value: `https://www.tiktok.com/@${username}`, type: 'link' });
+    results.push({ label: 'YouTube', value: `https://www.youtube.com/@${username}`, type: 'link' });
+    results.push({ label: '─── TECH & DEVELOPER', value: '', type: 'info' });
+    results.push({ label: 'GitHub', value: `https://github.com/${username}`, type: 'link' });
+    results.push({ label: 'GitLab', value: `https://gitlab.com/${username}`, type: 'link' });
+    results.push({ label: 'Hacker News', value: `https://news.ycombinator.com/user?id=${username}`, type: 'link' });
+    results.push({ label: '─── OTHER PLATFORMS', value: '', type: 'info' });
+    results.push({ label: 'Twitch', value: `https://www.twitch.tv/${username}`, type: 'link' });
+    results.push({ label: 'Telegram', value: `https://t.me/${username}`, type: 'link' });
+    results.push({ label: 'Medium', value: `https://medium.com/@${username}`, type: 'link' });
+    results.push({ label: '─── OSINT AGGREGATORS', value: '', type: 'info' });
+    results.push({ label: 'WhatsMyName', value: `https://whatsmyname.app/`, type: 'link' });
+    results.push({ label: 'Sherlock', value: `https://sherlock-project.github.io/`, type: 'link' });
+
+    return results;
+  });
+  const searchPhone = () => {
+    const q = input.trim().replace(/[\s\-\(\)]/g, '');
+    run('Phone Lookup', q, async () => {
+      const results: OsintResult[] = [];
+      results.push({ label: 'PHONE', value: q, type: 'copy' });
+
+      // Country detection from country code
+      const countryMap: Record<string, string> = {
+        '+1': 'USA / Canada', '+44': 'United Kingdom', '+61': 'Australia',
+        '+49': 'Germany', '+33': 'France', '+39': 'Italy', '+34': 'Spain',
+        '+52': 'Mexico', '+55': 'Brazil', '+91': 'India', '+86': 'China',
+        '+81': 'Japan', '+82': 'South Korea', '+7': 'Russia',
+      };
+      const matchedCountry = Object.entries(countryMap).find(([code]) => q.startsWith(code));
+      if (matchedCountry) {
+        results.push({ label: 'COUNTRY', value: matchedCountry[1], type: 'data' });
+      }
+      
+      // US/Canada specific info
+      if (q.startsWith('+1') && q.length === 12) {
+        const areaCode = q.slice(2, 5);
+        results.push({ label: 'AREA CODE', value: areaCode, type: 'data' });
+      }
+
+      results.push({ label: '─── CARRIER & OWNER', value: '', type: 'info' });
+      results.push({ label: 'Truecaller', value: `https://www.truecaller.com/search/us/${q}`, type: 'link' });
+      results.push({ label: 'Whitepages Reverse', value: `https://www.whitepages.com/phone/${q}`, type: 'link' });
+      results.push({ label: 'Spokeo Phone', value: `https://www.spokeo.com/phone/${q}`, type: 'link' });
+      results.push({ label: '─── SPAM & FRAUD', value: '', type: 'info' });
+      results.push({ label: 'Should I Answer?', value: `https://www.shouldianswer.com/phone-number/${q}`, type: 'link' });
+      results.push({ label: 'WhoCallsMe', value: `https://www.whocalledme.com/PhoneNumber/${q}`, type: 'link' });
+      results.push({ label: '─── SOCIAL SEARCH', value: '', type: 'info' });
+      results.push({ label: 'Facebook Search', value: `https://www.facebook.com/search/top/?q=${q}`, type: 'link' });
+      results.push({ label: 'Google Search', value: `https://www.google.com/search?q="${q}"`, type: 'link' });
+      results.push({ label: '─── CANADIAN LOOKUP', value: '', type: 'info' });
+      results.push({ label: 'Canada411', value: `https://www.canada411.ca/search/reverse.html?ph=${q}`, type: 'link' });
+
+      return results;
+    });
+  };
+  const searchEmail = () => {
+    const q = input.trim().toLowerCase();
+    if (!q.includes('@')) { Alert.alert('Invalid', 'Enter a valid email.'); return; }
+    const domain = q.split('@')[1];
+    run('Email Lookup', q, async () => {
+      const results: OsintResult[] = [];
+      results.push({ label: 'EMAIL', value: q, type: 'copy' });
+      results.push({ label: 'DOMAIN', value: domain, type: 'data' });
+
+      // Domain MX and DNS lookup
+      try {
+        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/domain/lookup?domain=${domain}`);
+        const d = await r.json();
+        
+        if (d.ipData && d.ipData.status === 'success') {
+          results.push({ label: '─── EMAIL DOMAIN INFO', value: '', type: 'info' });
+          results.push({ label: 'DOMAIN IP', value: d.ip || 'Unknown', type: 'copy' });
+          results.push({ label: 'HOSTED IN', value: `${d.ipData.city}, ${d.ipData.country}`, type: 'data' });
+          results.push({ label: 'HOSTING ISP', value: d.ipData.isp || 'Unknown', type: 'data' });
+        }
+        
+        if (d.dns.mx && d.dns.mx.length > 0) {
+          results.push({ label: '─── MAIL SERVERS (MX)', value: '', type: 'info' });
+          d.dns.mx.forEach((mx: any) => {
+            results.push({ label: 'MX RECORD', value: mx.data, type: 'data' });
+          });
+        }
+        
+        if (d.dns.txt && d.dns.txt.length > 0) {
+          const spf = d.dns.txt.find((t: any) => t.data && t.data.includes('spf'));
+          if (spf) {
+            results.push({ label: 'SPF RECORD', value: spf.data, type: 'data' });
+          }
+        }
+      } catch {
+        results.push({ label: 'DOMAIN LOOKUP', value: 'Could not fetch domain info', type: 'data' });
+      }
+
+      results.push({ label: '─── BREACH DATABASES', value: '', type: 'info' });
+      results.push({ label: 'HaveIBeenPwned', value: `https://haveibeenpwned.com/account/${encodeURIComponent(q)}`, type: 'link' });
+      results.push({ label: 'DeHashed', value: `https://dehashed.com/search?query=${encodeURIComponent(q)}`, type: 'link' });
+      results.push({ label: 'LeakCheck', value: `https://leakcheck.io/?query=${encodeURIComponent(q)}`, type: 'link' });
+      results.push({ label: '─── SOCIAL PRESENCE', value: '', type: 'info' });
+      results.push({ label: 'Google Search', value: `https://www.google.com/search?q="${encodeURIComponent(q)}"`, type: 'link' });
+      results.push({ label: 'Twitter / X', value: `https://x.com/search?q=${encodeURIComponent(q)}`, type: 'link' });
+      results.push({ label: 'Gravatar', value: `https://en.gravatar.com/${q}`, type: 'link' });
+      results.push({ label: '─── DOMAIN INTEL', value: '', type: 'info' });
+      results.push({ label: 'WHOIS Domain', value: `https://www.whois.com/whois/${domain}`, type: 'link' });
+      results.push({ label: 'VirusTotal Domain', value: `https://www.virustotal.com/gui/domain/${domain}`, type: 'link' });
+
+      return results;
+    });
+  };
+  const searchCompany = () => run('Company / Org', input, async () => {
+    const q = input.trim();
+    const encoded = encodeURIComponent(q);
+    const results = getCompanyResults(encoded);
+
+    // Pro: live USPTO Markbase API-haku
+    if (isPro) {
+      try {
+        const r = await fetch(`https://markbase.co/search?query=${encoded}&limit=5`);
+        const d = await r.json();
+        if (d.hits && d.hits.length > 0) {
+          results.push({ label: '─── USPTO LIVE TRADEMARK RESULTS', value: '', type: 'info' });
+          d.hits.forEach((hit: any) => {
+            const status = hit.status_code === '800' ? '✅ Active' : '⚠️ Inactive';
+            results.push({
+              label: `${hit.word_mark} — ${hit.owner_name} (${status})`,
+              value: `https://tmsearch.uspto.gov/search/search-information?searchInput=${encodeURIComponent(hit.word_mark)}&searchOption=BASIC`,
+              type: 'link'
+            });
+          });
+        } else {
+          results.push({ label: '─── USPTO LIVE TRADEMARK RESULTS', value: '', type: 'info' });
+          results.push({ label: 'No active trademarks found', value: '', type: 'data' });
+        }
+      } catch {
+        results.push({ label: 'USPTO Live Search', value: 'Could not fetch trademark data', type: 'data' });
+      }
+    }
+
+    return results;
+  });
+  const searchVehicle = () => run('Vehicle', input, async () => {
+    const q = input.trim().toUpperCase();
+    const isVIN = /^[A-HJ-NPR-Z0-9]{17}$/.test(q);
+    
+    const results: OsintResult[] = [];
+    results.push({ label: 'PLATE / VIN', value: q, type: 'copy' });
+    
+    if (isVIN) {
+      try {
+        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/vin/lookup?vin=${q}`);
+        const d = await r.json();
+        
+        if (d.results && d.results.length > 0) {
+          results.push({ label: '─── VEHICLE DETAILS', value: '', type: 'info' });
+          const fields = ['Make', 'Model', 'Model Year', 'Body Class', 'Drive Type', 'Engine Configuration', 'Fuel Type - Primary', 'Plant Country'];
+          d.results.forEach((item: any) => {
+            if (fields.includes(item.Variable) && item.Value && item.Value !== 'Not Applicable' && item.Value !== null) {
+              results.push({ label: item.Variable.toUpperCase(), value: item.Value, type: 'data' });
+            }
+          });
+        }
+        
+        if (d.recalls && d.recalls.length > 0) {
+          results.push({ label: '─── SAFETY RECALLS', value: '', type: 'info' });
+          d.recalls.slice(0, 5).forEach((recall: any) => {
+            results.push({ label: 'RECALL', value: recall.Component || recall.Summary || 'See NHTSA', type: 'data' });
+          });
+        } else {
+          results.push({ label: '─── SAFETY RECALLS', value: '', type: 'info' });
+          results.push({ label: 'RECALLS', value: 'No recalls found for this VIN', type: 'data' });
+        }
+      } catch {
+        results.push({ label: 'VIN LOOKUP', value: 'Could not fetch vehicle data', type: 'data' });
+      }
+    }
+    
+    results.push({ label: '─── ADDITIONAL SOURCES', value: '', type: 'info' });
+    results.push({ label: 'NICB VINCheck', value: 'https://www.nicb.org/vincheck', type: 'link' });
+    results.push({ label: 'NHTSA Complaints', value: `https://www.nhtsa.gov/vehicle/${q}`, type: 'link' });
+    results.push({ label: 'Carfax', value: 'https://www.carfax.com/', type: 'link' });
+    results.push({ label: 'VehicleHistory.com', value: `https://vehiclehistory.com/license-plate-search/${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'DMV.org', value: 'https://www.dmv.org/', type: 'link' });
+    results.push({ label: 'OpenDMV', value: 'https://www.opendmv.com/', type: 'link' });
+
+    results.push({ label: '─── FAA REGISTRY', value: '', type: 'info' });
+    results.push({ label: 'FAA Aircraft Registry (N-Number)', value: 'https://registry.faa.gov/aircraftinquiry/Search/NNumberInquiry', type: 'link' });
+    results.push({ label: 'FAA Aircraft by Owner Name', value: 'https://registry.faa.gov/aircraftinquiry/Search/NameInquiry', type: 'link' });
+    results.push({ label: 'FAA Airmen Registry', value: 'https://amsrvs.registry.faa.gov/airmeninquiry/', type: 'link' });
+    results.push({ label: 'FAA Accident & Incident Data', value: 'https://www.ntsb.gov/safety/data/Pages/Data_Stats.aspx', type: 'link' });
+    results.push({ label: 'FlightAware Aircraft Search', value: `https://www.flightaware.com/live/flight/${q}`, type: 'link' });
+
+    return results;
+  });
+  const searchGeo = () => run('Geo & Location', input, async () => {
+    const raw = input.trim();
+    const coordMatch = raw.match(/(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
+    const lat = coordMatch ? coordMatch[1] : '';
+    const lng = coordMatch ? coordMatch[2] : '';
+    
+    const results: OsintResult[] = [];
+    results.push({ label: 'QUERY', value: raw, type: 'copy' });
+    
+    if (lat && lng) {
+      results.push({ label: 'COORDINATES', value: `${lat}, ${lng}`, type: 'copy' });
+      
+      // Weather data from Open-Meteo
+      try {
+        const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,weather_code&temperature_unit=fahrenheit`);
+        const wd = await w.json();
+        if (wd.current) {
+          const weatherCodes: Record<number, string> = {
+            0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+            45: 'Foggy', 48: 'Icy fog', 51: 'Light drizzle', 53: 'Moderate drizzle',
+            61: 'Light rain', 63: 'Moderate rain', 65: 'Heavy rain',
+            71: 'Light snow', 73: 'Moderate snow', 75: 'Heavy snow',
+            80: 'Rain showers', 95: 'Thunderstorm'
+          };
+          results.push({ label: '─── CURRENT WEATHER', value: '', type: 'info' });
+          results.push({ label: 'CONDITIONS', value: weatherCodes[wd.current.weather_code] || 'Unknown', type: 'data' });
+          results.push({ label: 'TEMPERATURE', value: `${wd.current.temperature_2m}°F`, type: 'data' });
+          results.push({ label: 'WIND SPEED', value: `${wd.current.wind_speed_10m} km/h`, type: 'data' });
+          results.push({ label: 'ELEVATION', value: `${wd.elevation}m`, type: 'data' });
+        }
+      } catch {
+        // Weather fetch failed silently
+      }
+    }
+    
+    results.push({ label: '─── SATELLITE & MAPS', value: '', type: 'info' });
+    results.push({ label: 'Google Maps', value: lat && lng ? `https://maps.google.com/?q=${lat},${lng}` : `https://maps.google.com/?q=${encodeURIComponent(raw)}`, type: 'link' });
+    results.push({ label: 'Google Earth', value: lat && lng ? `https://earth.google.com/web/@${lat},${lng},500a,500d,35y` : `https://earth.google.com/web/search/${encodeURIComponent(raw)}`, type: 'link' });
+    results.push({ label: 'OpenStreetMap', value: lat && lng ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}` : `https://www.openstreetmap.org/search?query=${encodeURIComponent(raw)}`, type: 'link' });
+    results.push({ label: '─── FLIGHT & VESSEL', value: '', type: 'info' });
+    results.push({ label: 'Flightradar24', value: `https://www.flightradar24.com/${lat && lng ? `${lat},${lng}` : ''}`, type: 'link' });
+    results.push({ label: 'MarineTraffic', value: lat && lng ? `https://www.marinetraffic.com/en/ais/home/centerx:${lng}/centery:${lat}/zoom:12` : `https://www.marinetraffic.com/`, type: 'link' });
+    results.push({ label: '─── GEOSPATIAL INTEL', value: '', type: 'info' });
+    results.push({ label: 'Sentinel Hub EO Browser', value: `https://apps.sentinel-hub.com/eo-browser/`, type: 'link' });
+    results.push({ label: 'Zoom Earth', value: lat && lng ? `https://zoom.earth/#view=${lat},${lng},17z` : `https://zoom.earth/`, type: 'link' });
+    
+    return results;
+  });
   const searchImage   = () => run('Image Analysis',  input, () => getImageResults(encodeURIComponent(input.trim()), input.trim()));
-  const searchBreach  = () => run('Data Breaches',   input, () => getBreachResults(encodeURIComponent(input.trim())));
-  const searchCourt   = () => run('Court Records',   input, () => getCourtResults(encodeURIComponent(input.trim())));
+  const searchBreach  = () => run('Data Breaches', input, async () => {
+    const q = input.trim();
+    const results: OsintResult[] = [];
+    results.push({ label: 'QUERY', value: q, type: 'copy' });
+
+    // Check if input looks like a password — use HIBP Pwned Passwords
+    const looksLikePassword = !q.includes('@') && !q.includes('.') && q.length >= 6;
+    if (looksLikePassword) {
+      try {
+        results.push({ label: '─── PASSWORD BREACH CHECK', value: '', type: 'info' });
+        const encoder = new TextEncoder();
+        const data = encoder.encode(q.toUpperCase());
+        const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+        const prefix = hashHex.slice(0, 5);
+        const suffix = hashHex.slice(5);
+        
+        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/breach/password?hash=${prefix}`);
+        const d = await r.json();
+        
+        if (d.results) {
+          const lines = d.results.split('\n');
+          const match = lines.find((line: string) => line.startsWith(suffix));
+          if (match) {
+            const count = match.split(':')[1]?.trim();
+            results.push({ label: '🚨 PASSWORD FOUND IN BREACHES', value: `This password has appeared ${parseInt(count).toLocaleString()} times in data breaches. Do not use it.`, type: 'copy' });
+          } else {
+            results.push({ label: '✅ PASSWORD NOT FOUND', value: 'This password has not appeared in known data breaches.', type: 'data' });
+          }
+        }
+      } catch {
+        results.push({ label: 'PASSWORD CHECK', value: 'Could not check password', type: 'data' });
+      }
+    }
+
+    results.push({ label: '─── BREACH DATABASES', value: '', type: 'info' });
+    results.push({ label: 'HaveIBeenPwned', value: `https://haveibeenpwned.com/account/${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'DeHashed', value: `https://dehashed.com/search?query=${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'LeakCheck', value: `https://leakcheck.io/?query=${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'IntelX', value: `https://intelx.io/?s=${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: '─── DARK WEB MONITORING', value: '', type: 'info' });
+    results.push({ label: 'DarkSearch', value: `https://darksearch.io/search?query=${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'BreachDirectory', value: `https://breachdirectory.org/`, type: 'link' });
+
+    return results;
+  });
+  const searchCourt = () => run('Criminal & Public Safety', input, async () => {
+    const q = input.trim();
+    const results: OsintResult[] = [];
+    results.push({ label: 'QUERY', value: q, type: 'copy' });
+
+    results.push({ label: '─── SCREENING RESOURCES', value: '', type: 'info' });
+    results.push({ label: 'NSOPW — Sex Offender Registry', value: `https://www.nsopw.gov/Search/Results?PersonFirstName=&PersonLastName=${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'VINE — Custody & Release Status', value: 'https://www.vinelink.com/#/search', type: 'link' });
+    results.push({ label: 'National Human Trafficking Hotline', value: 'tel:18883737888', type: 'link' });
+    results.push({ label: 'DHS Tip Line (Report Trafficking)', value: 'tel:18663472423', type: 'link' });
+
+    try {
+      const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/court/search?query=${encodeURIComponent(q)}`);
+      const d = await r.json();
+
+      if (d.cases && d.cases.length > 0) {
+        results.push({ label: `─── FEDERAL CASES FOUND (${d.totalCases} total)`, value: '', type: 'info' });
+        d.cases.slice(0, 5).forEach((c: any) => {
+          results.push({ label: c.caseName || 'Unknown Case', value: `${c.court} · ${c.dateFiled || 'Unknown date'}`, type: 'data' });
+          if (c.citation && c.citation.length > 0) {
+            results.push({ label: 'CITATION', value: c.citation[0], type: 'copy' });
+          }
+          results.push({ label: 'View Case', value: `https://www.courtlistener.com${c.absolute_url}`, type: 'link' });
+        });
+      } else {
+        results.push({ label: '─── FEDERAL CASES', value: '', type: 'info' });
+        results.push({ label: 'RESULT', value: 'No federal cases found for this query', type: 'data' });
+      }
+
+      if (d.people && d.people.length > 0) {
+        results.push({ label: `─── PEOPLE IN COURT RECORDS (${d.totalPeople} total)`, value: '', type: 'info' });
+        d.people.slice(0, 3).forEach((p: any) => {
+          results.push({ label: p.name || 'Unknown', value: `${p.dob_city || ''} ${p.dob_state || ''} · ${p.gender || ''}`.trim(), type: 'data' });
+        });
+      }
+    } catch {
+      results.push({ label: 'COURT LOOKUP', value: 'Could not fetch court records', type: 'data' });
+    }
+
+    results.push({ label: '─── ADDITIONAL SOURCES', value: '', type: 'info' });
+    results.push({ label: 'CourtListener', value: `https://www.courtlistener.com/?q=${encodeURIComponent(q)}&type=o`, type: 'link' });
+    results.push({ label: 'PACER', value: 'https://pacer.uscourts.gov/', type: 'link' });
+    results.push({ label: 'CanLII (Canadian)', value: `https://www.canlii.org/en/#search/text=${encodeURIComponent(q)}`, type: 'link' });
+
+    return results;
+  });
 
   // ════════════════════════════════════════════════════════════════════════
   // SPECIAL SCREENS
@@ -287,20 +853,68 @@ export default function App() {
 
   if (!unlocked) return (
   <LockScreen
-   onUnlock={() => { setUnlocked(true); setNeedsReauth(false); }}
+   onUnlock={() => { isAuthenticating.current = false; SessionManager.setAuthenticating(false); setUnlocked(true); setNeedsReauth(false); }}
+   onAuthStart={() => { isAuthenticating.current = true; SessionManager.setAuthenticating(true); }}
    isReauth={needsReauth}
    />
   );
   const wrapAnimated = (child: React.ReactElement) => (
     <Animated.View style={{ flex: 1, opacity: fadeAnim }}>{child}</Animated.View>
   );
-  if (screen === 'cases')    return wrapAnimated(<CasesScreen onBack={goHome} activeCaseId={activeCaseId} onSetActiveCase={handleSetActiveCase} />);
+
+  // ── Expired subscription gate ─────────────────────────────────────────────
+  if (subscriptionTier !== 'trial' && subscriptionTier !== 'pro') return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <Text style={{ fontSize: 48, marginBottom: 24 }}>🔒</Text>
+      <Text style={{ color: C.text, fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 12 }}>SENTINEL</Text>
+      <Text style={{ color: C.textDim, fontSize: 9, letterSpacing: 3, textAlign: 'center', marginBottom: 32 }}>FIELD INTELLIGENCE PLATFORM</Text>
+      <Text style={{ color: C.text, fontSize: 18, fontWeight: '600', textAlign: 'center', marginBottom: 12 }}>Your trial has ended.</Text>
+      <Text style={{ color: C.textMid, fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 32 }}>
+        Subscribe to Pro to access your saved cases, notes, and investigation data.
+      </Text>
+      <TouchableOpacity
+        style={{ backgroundColor: C.accent, borderRadius: 12, padding: 16, width: '100%', alignItems: 'center', marginBottom: 16 }}
+        onPress={() => setScreen('upgrade')}
+      >
+        <Text style={{ color: C.bg, fontWeight: '700', fontSize: 16 }}>Subscribe to Pro</Text>
+      </TouchableOpacity>
+      <Text style={{ color: C.textDim, fontSize: 11, textAlign: 'center', lineHeight: 16, marginTop: 8 }}>
+        Your data is preserved and will be restored upon subscribing.
+      </Text>
+    </SafeAreaView>
+  );
+
+  // ── Expired subscription gate ─────────────────────────────────────────────
+  if (subscriptionTier !== 'trial' && subscriptionTier !== 'pro') return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <Text style={{ fontSize: 48, marginBottom: 24 }}>🔒</Text>
+      <Text style={{ color: C.text, fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 12 }}>SENTINEL</Text>
+      <Text style={{ color: C.textDim, fontSize: 9, letterSpacing: 3, textAlign: 'center', marginBottom: 32 }}>FIELD INTELLIGENCE PLATFORM</Text>
+      <Text style={{ color: C.text, fontSize: 18, fontWeight: '600', textAlign: 'center', marginBottom: 12 }}>Your trial has ended.</Text>
+      <Text style={{ color: C.textMid, fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 32 }}>
+        Subscribe to Pro to access your saved cases, notes, and investigation data.
+      </Text>
+      <TouchableOpacity
+        style={{ backgroundColor: C.accent, borderRadius: 12, padding: 16, width: '100%', alignItems: 'center', marginBottom: 16 }}
+        onPress={() => setScreen('upgrade')}
+      >
+        <Text style={{ color: C.bg, fontWeight: '700', fontSize: 16 }}>Subscribe to Pro</Text>
+      </TouchableOpacity>
+      <Text style={{ color: C.textDim, fontSize: 11, textAlign: 'center', lineHeight: 16, marginTop: 8 }}>
+        Your data is preserved and will be restored upon subscribing.
+      </Text>
+    </SafeAreaView>
+  );
+  if (screen === 'cases')    return wrapAnimated(<CasesScreen onBack={goHome} activeCaseId={activeCaseId} onSetActiveCase={handleSetActiveCase} isPro={isPro} />);
   if (screen === 'geo_map')  return wrapAnimated(<MapScreen onBack={goHome} onSaveNote={(t) => { setNoteText(t); setShowNoteModal(true); }} />);
-  if (screen === 'settings') return wrapAnimated(<SettingsScreen onBack={goHome} />);
-  if (screen === 'one_input') return wrapAnimated(<OneInputScreen isPro={isPro} onBack={goHome} />);
+  if (screen === 'settings') return wrapAnimated(<SettingsScreen onBack={goHome} isPro={isPro} />);
+  if (screen === 'one_input') return wrapAnimated(<OneInputScreen isPro={isPro} onBack={goHome} onUpgrade={() => setScreen('upgrade')} />);
   if (screen === 'timeline') return wrapAnimated(<TimelineScreen isPro={isPro} onBack={goHome} />);
-  if (screen === 'upgrade') return wrapAnimated(<UpgradeScreen onBack={goHome} onSubscribe={async (tier) => { await Trial.setSubscription(tier); setSubscriptionTier(tier); setIsPro(tier === 'pro'); goHome(); }} />);
+  if (screen === 'upgrade') return wrapAnimated(<UpgradeScreen onBack={goHome} onSubscribe={async (tier) => { await Trial.setSubscription(tier); setSubscriptionTier(tier as SubscriptionTier); setIsPro(tier === 'pro'); goHome(); }} />);
   if (screen === 'watchlist') return wrapAnimated(<WatchListScreen isPro={isPro} onBack={goHome} />);
+  if (screen === 'case_intake') return wrapAnimated(<CaseIntakeScreen isPro={isPro} onBack={goHome} onUpgrade={() => setScreen('upgrade')} />);
   // ── Note modal component ──────────────────────────────────────────────────
   const NoteModal = () => (
     <Modal visible={showNoteModal} transparent animationType="slide">
@@ -390,7 +1004,6 @@ export default function App() {
   if (screen === 'home') {
     const modules = [
       { id: 'one_input', icon: '🎯', title: 'One-Input Search', desc: 'One query — full intelligence report' },
-      { id: 'person',   icon: '👤', title: 'Person Search',  desc: 'Name, background, profiles' },
       { id: 'phone',    icon: '📞', title: 'Phone Lookup',   desc: 'Owner, spam, carrier' },
       { id: 'email',    icon: '✉️',  title: 'Email Lookup',   desc: 'Breaches, owner, domain' },
       { id: 'social',   icon: '📱', title: 'Social Media',   desc: 'Username on 25+ platforms' },
@@ -398,7 +1011,7 @@ export default function App() {
       { id: 'domain',   icon: '🔗', title: 'Domain & WHOIS', desc: 'DNS, registration, history' },
       { id: 'company',  icon: '🏢', title: 'Company / Org',  desc: 'SEC, state regs, finance' },
       { id: 'vehicle',  icon: '🚗', title: 'Vehicle',        desc: 'Plate, VIN, history' },
-      { id: 'court',    icon: '⚖️',  title: 'Court Records', desc: 'PACER, state, criminal' },
+      { id: 'court',    icon: '🛡️',  title: 'Criminal & Public Safety', desc: 'NSOPW, VINE, PACER, criminal' },
       { id: 'geo',      icon: '📍', title: 'Geo / OSINT',   desc: 'Satellite, flights, vessels' },
       { id: 'geo_map',  icon: '🗺️', title: 'Map View',       desc: 'Pin locations, field map' },
       { id: 'image',    icon: '🖼️', title: 'Image Analysis', desc: 'EXIF, reverse search, AI' },
@@ -409,7 +1022,7 @@ export default function App() {
       { id: 'notes',    icon: '📋', title: 'Field Notes',    desc: `${notes.length} saved` },
       { id: 'history',  icon: '🕐', title: 'History',        desc: `${history.length} queries` },
       { id: 'settings', icon: '🔐', title: 'Security',       desc: 'Encryption & audit log' },
-      { id: 'upgrade', icon: '⭐', title: 'Upgrade to Pro', desc: 'Plans & pricing' },
+      { id: 'case_intake', icon: '📋', title: 'Case Intake', desc: 'AI pre-assessment & pricing' },
     ];
     return (
       <SafeAreaView style={s.safe}>
@@ -418,7 +1031,7 @@ export default function App() {
           <View style={s.homeHeader}>
             <View>
               <Text style={s.logo}>SENTINEL</Text>
-              <Text style={s.logoSub}>OSINT FIELD TOOLKIT · NA v2.4{IS_IPAD ? ' · iPad' : ''}</Text>
+              <Text style={s.logoSub}>FIELD INTELLIGENCE PLATFORM · NA v2.10{IS_IPAD ? ' · iPad' : ''}</Text>
               <Text style={s.aiPowered}>✦ Searches FBI · Interpol · 50 States · Canada</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -495,7 +1108,6 @@ export default function App() {
   // OSINT SEARCH SCREENS
   // ════════════════════════════════════════════════════════════════════════
   const cfgs: Record<string, { title: string; ph: string; ph2?: string; btn: string; action: () => void; hint?: string; tips?: string[] }> = {
-    person:  { title: '👤 Person Search',   ph: 'Full name',                     ph2: 'City, State (optional)',  btn: 'Search Person',   action: searchPerson,  hint: 'Use quotes: "John Smith"',        tips: ['Full legal name gives best results', 'Add city/state to narrow results', 'Works best with uncommon names'] },
     phone:   { title: '📞 Phone Lookup',    ph: '+1 555 000 0000',               btn: 'Lookup Number',           action: searchPhone,   hint: 'Include country code (+1)',       tips: ['Include country code for best results', 'Checks spam databases & carrier info', 'Works for US and Canadian numbers'] },
     email:   { title: '✉️ Email Lookup',    ph: 'address@domain.com',            btn: 'Lookup Email',            action: searchEmail,   hint: 'Check breaches & owner info',     tips: ['Searches breach databases', 'Finds linked social accounts', 'Checks domain registration'] },
     social:  { title: '📱 Social Media',    ph: 'Username (no @)',                btn: 'Find Profiles',           action: searchSocial,  hint: 'Checked on 25+ platforms',       tips: ['Do not include @ symbol', 'Checks 25+ platforms simultaneously', 'Case-insensitive search'] },
@@ -503,7 +1115,7 @@ export default function App() {
     domain:  { title: '🔗 Domain & WHOIS',  ph: 'example.com',                   btn: 'Lookup Domain',           action: searchDomain,  hint: 'Do not include https://',         tips: ['Enter domain without https://', 'Returns registration & DNS records', 'Checks domain reputation & history'] },
     company: { title: '🏢 Company / Org',   ph: 'Company name or EIN',           ph2: 'State (optional)',        btn: 'Search Company',  action: searchCompany, hint: 'SEC, state records & finance',   tips: ['Search by name or EIN/tax ID', 'Add state to narrow results', 'Checks SEC filings & state registrations'] },
     vehicle: { title: '🚗 Vehicle',         ph: 'License plate or VIN',          btn: 'Search Vehicle',          action: searchVehicle, hint: 'US and Canadian plates',          tips: ['US and Canadian plates supported', 'VIN returns full vehicle history', 'Plate format: ABC1234'] },
-    court:   { title: '⚖️ Court Records',   ph: 'Name, company, or case number', ph2: 'State (optional)',        btn: 'Search Records',  action: searchCourt,   hint: 'PACER, state & criminal records', tips: ['Search by name, company, or case #', 'Add state to limit jurisdiction', 'Covers federal and state courts'] },
+    court:   { title: '🛡️ Criminal & Public Safety',   ph: 'Name, company, or case number', ph2: 'State (optional)',        btn: 'Search Records',  action: searchCourt,   hint: 'NSOPW, VINE, PACER & criminal records', tips: ['Search by name, company, or case #', 'Includes sex offender & custody screening', 'Covers federal, state and Canadian courts'] },
     geo:     { title: '📍 Geo / OSINT',     ph: 'Coordinates or address',        btn: 'Search Location',         action: searchGeo,     hint: '40.7128,-74.0060 or address',     tips: ['Enter GPS coords or street address', 'Returns satellite & aerial imagery', 'Checks flight & vessel tracking'] },
     image:   { title: '🖼️ Image Analysis',  ph: 'Image URL',                     btn: 'Analyze Image',           action: searchImage,   hint: 'EXIF, reverse search & AI',       tips: ['Paste a direct image URL', 'Extracts EXIF metadata', 'Runs reverse image search across engines'] },
     breach:  { title: '🔓 Data Breaches',   ph: 'Email, username, or domain',    btn: 'Check Breaches',          action: searchBreach,  hint: 'HaveIBeenPwned & dark web',       tips: ['Search by email, username, or domain', 'Checks HaveIBeenPwned & dark web', 'Returns breach dates & exposed data types'] },
@@ -572,7 +1184,7 @@ export default function App() {
           {results.length > 0 && (
             <TouchableOpacity
               style={s.pdfBtn}
-              onPress={exportPDF}
+              onPress={() => { if (!isPro) { setScreen('upgrade'); return; } exportPDF(); }}
               disabled={exporting}
             >
               <Text style={s.pdfBtnText}>{exporting ? '…' : '↓  Export PDF'}</Text>

@@ -10,7 +10,7 @@
  *
  * All calls use Claude Sonnet via Anthropic API.
  * API key is stored encrypted in SecureStorage (never in code).
- * Usage is tracked per month with a 100-call soft cap per user.
+ * Usage is tracked per month with a 500-call soft cap per user.
  */
 
 import { SecureStorage } from './secureStorage';
@@ -24,13 +24,45 @@ const MAX_TOKENS = 1024;
 // Storage keys
 const USAGE_KEY  = 'sentinel_ai_usage_v1';
 const APIKEY_KEY = 'sentinel_anthropic_key_v1';
-const MONTHLY_CAP = 100;
+const MONTHLY_CAP = 500;
+const TRIAL_AI_CAP = 10;
+
+// New subscriber protection: limit AI queries during Apple's refund window
+// After 14 days, full monthly cap applies automatically
+const NEW_SUBSCRIBER_CAP = 50;
+const REFUND_WINDOW_DAYS = 14;
 
 // ── Usage tracking ────────────────────────────────────────────────────────────
 
 interface UsageRecord {
   month: string;   // "2026-03"
   count: number;
+}
+
+// Returns the date when the Pro subscription started
+// Uses the same TRIAL_KEY that Trial.initialize() sets in storage.ts
+async function getSubscriptionStartDate(): Promise<Date | null> {
+  try {
+    const { SecureStorage } = await import('./secureStorage');
+    const iso = await SecureStorage.get<string>('sentinel_trial_v1');
+    return iso ? new Date(iso) : null;
+  } catch { return null; }
+}
+
+// Returns the effective AI cap based on how long the subscription has been active
+async function getEffectiveAICap(): Promise<number> {
+  try {
+    const { Trial } = await import('./storage');
+    const tier = await Trial.getSubscriptionTier();
+    if (tier === 'trial') return TRIAL_AI_CAP; // Trial users get 10 AI queries
+    const startDate = await getSubscriptionStartDate();
+    if (!startDate) return NEW_SUBSCRIBER_CAP; // No start date — use conservative limit
+    const daysSinceStart = (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSinceStart < REFUND_WINDOW_DAYS) {
+      return NEW_SUBSCRIBER_CAP; // Still in refund window
+    }
+    return MONTHLY_CAP; // Refund window passed — full cap
+  } catch { return NEW_SUBSCRIBER_CAP; }
 }
 
 async function getUsage(): Promise<UsageRecord> {
@@ -51,9 +83,16 @@ async function incrementUsage(): Promise<number> {
   } catch { return 0; }
 }
 
-export async function getAIUsageThisMonth(): Promise<{ count: number; cap: number; remaining: number }> {
+export async function getAIUsageThisMonth(): Promise<{ count: number; cap: number; remaining: number; isNewSubscriber: boolean }> {
   const usage = await getUsage();
-  return { count: usage.count, cap: MONTHLY_CAP, remaining: Math.max(0, MONTHLY_CAP - usage.count) };
+  const effectiveCap = await getEffectiveAICap();
+  const isNewSubscriber = effectiveCap === NEW_SUBSCRIBER_CAP;
+  return {
+    count: usage.count,
+    cap: effectiveCap,
+    remaining: Math.max(0, effectiveCap - usage.count),
+    isNewSubscriber,
+  };
 }
 
 // ── API key management ────────────────────────────────────────────────────────
@@ -76,9 +115,10 @@ export async function hasAPIKey(): Promise<boolean> {
 // ── Core API call ─────────────────────────────────────────────────────────────
 
 async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
-  // Check usage cap
+  // Check usage cap — uses reduced limit during Apple's 14-day refund window
   const usage = await getUsage();
-  if (usage.count >= MONTHLY_CAP) throw new Error('USAGE_CAP_REACHED');
+  const effectiveCap = await getEffectiveAICap();
+  if (usage.count >= effectiveCap) throw new Error('USAGE_CAP_REACHED');
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -104,7 +144,9 @@ export function getAIErrorMessage(error: Error): string {
     case 'RATE_LIMITED':
       return 'Too many requests. Wait a moment and try again.';
     case 'USAGE_CAP_REACHED':
-      return `Monthly AI limit reached (${MONTHLY_CAP} queries). Resets on the 1st of next month.`;
+      return `AI query limit reached. To prevent misuse and protect platform integrity, ` +
+        `new Pro subscribers are limited to ${NEW_SUBSCRIBER_CAP} AI queries during the first ${REFUND_WINDOW_DAYS} days. ` +
+        `Your full limit of ${MONTHLY_CAP} queries/month unlocks automatically after day ${REFUND_WINDOW_DAYS}.`;
     default:
       return `AI error: ${error.message}`;
   }
@@ -126,22 +168,35 @@ export async function analyzeResults(
     throw new Error('No data to analyze. Run a search first.');
   }
 
-  const system = `You are an expert OSINT analyst assistant for licensed private investigators, 
-security professionals, and journalists. Analyze search results concisely and professionally. 
-Flag inconsistencies, notable findings, and suggested follow-up actions. 
-Never speculate beyond the data. Be direct and factual. Use bullet points.
-Do not include disclaimers about professional advice.`;
+  const system = `You are a senior OSINT analyst supporting licensed private investigators,
+corporate security professionals, bail enforcement agents, and process servers.
+Analyze intelligence data with precision and professionalism.
+Rules: Never speculate beyond the data. Be direct and factual. No disclaimers.
+Format responses with clear sections and bullet points.
+Prioritize actionable intelligence over general observations.`;
 
-  const user = `Module: ${module}
-Query: ${query}
+  const user = `MODULE: ${module}
+SUBJECT/QUERY: ${query}
 
-Search Results:
+INTELLIGENCE DATA:
 ${filteredResults}
 
-Provide:
-1. Key findings (2-3 bullets)
-2. Anomalies or inconsistencies worth noting
-3. Recommended follow-up searches`;
+Provide a structured analysis:
+
+## KEY FINDINGS
+- List 3-5 most significant findings with source attribution
+
+## RISK INDICATORS
+- Flag any wanted status, sanctions hits, criminal records, or suspicious patterns
+- Note if subject appears in multiple negative databases
+
+## ANOMALIES & INCONSISTENCIES
+- Identify conflicting data points across sources
+- Note missing expected data (e.g., no digital footprint for active professional)
+
+## RECOMMENDED NEXT STEPS
+- List 3 specific follow-up investigative actions
+- Suggest additional modules or databases to query`;
 
   await AuditLog.log('SEARCH_QUERY', `AI Analysis: ${module} – ${query}`);
   return await callClaude(system, user);
@@ -255,20 +310,38 @@ export async function generateRiskProfile(
   const findingsText = findings
     .map(f => `${f.label}: ${f.value}`)
     .join('\n');
-  const system = `You are an expert risk analyst specializing in OSINT-based subject profiling.
-Assess risk indicators from gathered intelligence data.
-Be objective, factual, and structured. Use professional investigative language.`;
-  const user = `Generate a risk profile for subject: ${subjectName}
+  const system = `You are a senior risk analyst specializing in OSINT-based subject profiling for
+licensed investigators and corporate security professionals.
+Assess risk indicators objectively and systematically.
+Use professional investigative language. Never speculate beyond available data.
+Respond ONLY with valid JSON, no markdown, no preamble.`;
+  const user = `Generate a comprehensive risk profile for subject: ${subjectName}
 
-OSINT findings:
+OSINT FINDINGS:
 ${findingsText}
 
-Provide:
-1. Overall risk level (Low/Medium/High/Critical)
-2. Key risk indicators identified
-3. Red flags or anomalies
-4. Recommended follow-up actions
-5. Confidence assessment based on available data`;
+Respond with this exact JSON structure:
+{
+  "riskScore": <0-100 integer>,
+  "riskLevel": "<LOW|MEDIUM|HIGH|CRITICAL>",
+  "summary": "<2-3 sentence professional overview>",
+  "keyFindings": ["<finding 1>", "<finding 2>", "<finding 3>"],
+  "riskIndicators": {
+    "criminal": "<None|Low|Medium|High>",
+    "financial": "<None|Low|Medium|High>",
+    "reputational": "<None|Low|Medium|High>",
+    "sanctions": "<None|Low|Medium|High>"
+  },
+  "redFlags": ["<red flag 1>"] or [],
+  "contradictions": ["<contradiction 1>"] or [],
+  "recommendedActions": ["<action 1>", "<action 2>", "<action 3>"],
+  "confidenceLevel": "<LOW|MEDIUM|HIGH>",
+  "confidenceNote": "<reason for confidence level>"
+}
+
+Risk scoring: 0-25=LOW, 26-50=MEDIUM, 51-75=HIGH, 76-100=CRITICAL.
+Base score on: wanted list matches (+40), sanctions hits (+35), criminal records (+25),
+financial irregularities (+15), reputational issues (+10), clean record (-10).`;
   await AuditLog.log('SEARCH_QUERY', `AI Risk Profile: ${subjectName}`);
   return await callClaude(system, user);
 }
@@ -279,18 +352,32 @@ export async function detectContradictions(
   const findingsText = findings
     .map(f => `${f.label}: ${f.value}`)
     .join('\n');
-  const system = `You are an expert investigative analyst specializing in cross-source verification.
-Identify contradictions, inconsistencies, and discrepancies across multiple data sources.
-Be precise and cite specific conflicting data points.`;
-  const user = `Analyze the following OSINT findings for contradictions and inconsistencies:
+  const system = `You are a senior investigative analyst specializing in cross-source verification
+and intelligence validation for licensed investigators and security professionals.
+Identify contradictions with precision and assess their investigative significance.
+Be specific — cite exact conflicting data points and their sources.
+No disclaimers. Professional language only.`;
+  const user = `Perform a cross-source contradiction analysis on the following OSINT findings:
 
 ${findingsText}
 
-Identify:
-1. Direct contradictions between sources
-2. Suspicious inconsistencies
-3. Missing or unverifiable data points
-4. Recommended verification steps`;
+Structure your analysis as follows:
+
+## CRITICAL CONTRADICTIONS (High investigative significance)
+- Direct conflicts that significantly affect subject credibility or risk assessment
+- Format: [Source A] states X, but [Source B] states Y — Significance: [explanation]
+
+## MINOR INCONSISTENCIES (Low-medium significance)
+- Minor discrepancies that may have innocent explanations
+
+## MISSING DATA FLAGS
+- Expected data points not found that warrant further investigation
+
+## DECEPTION INDICATORS
+- Patterns suggesting deliberate misrepresentation
+
+## VERIFICATION PRIORITIES
+- List 3 specific steps to resolve the most critical contradictions`;
   await AuditLog.log('SEARCH_QUERY', 'AI Contradiction Detection');
   return await callClaude(system, user);
 }

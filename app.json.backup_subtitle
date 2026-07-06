@@ -1,0 +1,87 @@
+{
+  "expo": {
+    "name": "Sentinel OSINT",
+    "slug": "sentinel-osint-na",
+    "version": "2.9.0",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#070b12"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sentinel.osint",
+      "buildNumber": "43",
+      "requireFullScreen": false,
+      "entitlements": {
+        "keychain-access-groups": [
+          "$(AppIdentifierPrefix)com.sentinel.osint",
+          "$(AppIdentifierPrefix)com.sentinel.osint"
+        ]
+      },
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Sentinel uses Face ID to protect your investigative data.",
+        "NSCameraUsageDescription": "Used for capturing images for EXIF metadata analysis.",
+        "NSPhotoLibraryUsageDescription": "Used for selecting images for reverse image search.",
+        "NSLocationWhenInUseUsageDescription": "Used to show your current position on the field map.",
+        "UIRequiresFullScreen": false,
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight",
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "UISupportedInterfaceOrientations~iphone": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortrait"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "icon": "./assets/icon.png"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#070b12"
+      },
+      "package": "com.sentinel.osint",
+      "versionCode": 7,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-local-authentication",
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "usesCleartextTraffic": false
+          }
+        }
+      ],
+      "expo-asset",
+      "@maplibre/maplibre-react-native",
+      "expo-iap",
+      "@react-native-voice/voice"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "35ddc2b0-ca53-4a1e-b40c-57d31915c35b"
+      },
+      "isReviewerBuild": false
+    },
+    "icon": "./assets/icon.png",
+    "owner": "hannuhuttunen"
+  }
+}

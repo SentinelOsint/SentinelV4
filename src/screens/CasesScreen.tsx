@@ -13,11 +13,12 @@ interface Props {
   onBack: () => void;
   activeCaseId: string | null;
   onSetActiveCase: (id: string | null) => void;
+  isPro?: boolean;
 }
 
 type CaseView = 'list' | 'detail' | 'create';
 
-export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase }: Props) {
+export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isPro = false }: Props) {
   const [cases, setCases] = useState<CaseReport[]>([]);
   const [view, setView] = useState<CaseView>('list');
   const [selectedCase, setSelectedCase] = useState<CaseReport | null>(null);
@@ -106,6 +107,7 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase }: P
 
   const exportPDF = async () => {
     if (!selectedCase) return;
+    if (!isPro) { Alert.alert('Pro Feature', 'PDF export requires a Pro subscription.'); return; }
     setExporting(true);
     try { await exportCasePDF(selectedCase); }
     catch { Alert.alert('Export Failed', 'Could not generate PDF. Ensure expo-print is installed.'); }
@@ -296,17 +298,17 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase }: P
         <View style={s.actionRow}>
           <TouchableOpacity
             style={[s.actionBtn, { backgroundColor: '#1a0a2e', borderColor: '#a855f7' }]}
-            onPress={() => setAiScreen({
-              mode: 'report',
-              title: selectedCase.title,
-              fetch: () => generateCaseReport(selectedCase),
-            })}
+            onPress={() => {
+              if (!isPro) { Alert.alert('Pro Feature', 'AI Report requires a Pro subscription.'); return; }
+              setAiScreen({ mode: 'report', title: selectedCase.title, fetch: () => generateCaseReport(selectedCase) });
+            }}
           >
             <Text style={[s.actionBtnText, { color: '#a855f7' }]}>🤖 AI Report</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[s.actionBtn, { backgroundColor: '#001a0a', borderColor: '#00ff88' }]}
             onPress={() => {
+              if (!isPro) { Alert.alert('Pro Feature', 'AI Summary requires a Pro subscription.'); return; }
               if (selectedCase.notes.length === 0) {
                 Alert.alert('No Notes', 'Add field notes to this case first.');
                 return;

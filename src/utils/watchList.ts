@@ -69,8 +69,8 @@ export async function toggleWatchItem(id: string): Promise<void> {
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export async function requestNotificationPermission(): Promise<boolean> {
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
+  const result = await Notifications.requestPermissionsAsync() as any;
+  return result.status === 'granted';
 }
 
 async function sendAlert(item: WatchItem, message: string): Promise<void> {
@@ -88,10 +88,11 @@ async function sendAlert(item: WatchItem, message: string): Promise<void> {
 
 async function checkDomain(item: WatchItem): Promise<string | null> {
   try {
-    const res = await fetch(`https://ipinfo.io/${item.value}/json`);
+    const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(item.value)}&type=A`);
     const data = await res.json();
-    const result = JSON.stringify({ org: data.org, country: data.country });
-    if (item.lastResult && item.lastResult !== result) return `Domain intel changed for ${item.value}`;
+    const ips = (data.Answer || []).map((a: any) => a.data).join(',');
+    const result = JSON.stringify({ ips });
+    if (item.lastResult && item.lastResult !== result) return `DNS records changed for ${item.value}`;
     return result;
   } catch { return null; }
 }
@@ -134,6 +135,11 @@ async function checkItem(item: WatchItem): Promise<void> {
       newResult = await checkEmail(item);
       break;
     }
+    case 'person':
+    case 'phone':
+      // Person and phone monitoring uses manual check reminder
+      newResult = item.lastResult || 'monitoring-active';
+      break;
     default:
       newResult = item.lastResult || 'monitored';
   }

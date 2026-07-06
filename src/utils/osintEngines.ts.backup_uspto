@@ -1,0 +1,333 @@
+/**
+ * SENTINEL – OSINT Search Engines
+ *
+ * Each function returns an array of OsintResult items.
+ * Results are curated links to public sources — no scraping,
+ * no direct API calls (except IP lookup via ipapi.co which is free).
+ *
+ * Modules:
+ *  1. IP & Network
+ *  2. Domain & WHOIS
+ *  3. Social Media (username)
+ *  4. Person Search
+ *  5. Phone Lookup
+ *  6. Email Lookup
+ *  7. Company / Org
+ *  8. Vehicle
+ *  9. Geo & Location
+ * 10. Image Analysis
+ * 11. Data Breaches
+ * 12. Court Records
+ */
+
+import { OsintResult } from '../types';
+
+// ── 1. IP & Network ──────────────────────────────────────────────────────────
+export function getIPResults(d: any): OsintResult[] {
+  return [
+    { label: 'IP ADDRESS', value: d.ip || 'Unknown', type: 'copy' },
+    { label: 'LOCATION', value: `${d.city || ''}, ${d.region || ''}, ${d.country_name || ''}`.replace(/^, |, $/g, ''), type: 'data' },
+    { label: 'COORDINATES', value: d.latitude && d.longitude ? `${d.latitude}, ${d.longitude}` : 'N/A', type: 'copy' },
+    { label: 'ISP / ORG', value: d.org || d.asn || 'Unknown', type: 'data' },
+    { label: 'ASN', value: d.asn || 'Unknown', type: 'data' },
+    { label: 'TIMEZONE', value: d.timezone || 'Unknown', type: 'data' },
+    { label: 'POSTAL CODE', value: d.postal || 'Unknown', type: 'data' },
+    { label: 'VPN / PROXY', value: d.threat?.is_proxy ? '⚠️ Proxy detected' : d.threat?.is_vpn ? '⚠️ VPN detected' : 'Not detected', type: 'data' },
+    { label: '─── THREAT INTELLIGENCE', value: '', type: 'info' },
+    { label: 'AbuseIPDB', value: `https://www.abuseipdb.com/check/${d.ip}`, type: 'link' },
+    { label: 'VirusTotal', value: `https://www.virustotal.com/gui/ip-address/${d.ip}`, type: 'link' },
+    { label: 'Shodan', value: `https://www.shodan.io/host/${d.ip}`, type: 'link' },
+    { label: 'Censys', value: `https://search.censys.io/hosts/${d.ip}`, type: 'link' },
+    { label: 'IPinfo', value: `https://ipinfo.io/${d.ip}`, type: 'link' },
+    { label: 'Grey Noise', value: `https://viz.greynoise.io/ip/${d.ip}`, type: 'link' },
+    { label: '─── GEOLOCATION', value: '', type: 'info' },
+    { label: 'Google Maps', value: d.latitude && d.longitude ? `https://maps.google.com/?q=${d.latitude},${d.longitude}` : 'https://maps.google.com', type: 'link' },
+  ];
+}
+
+// ── 2. Domain & WHOIS ────────────────────────────────────────────────────────
+export function getDomainResults(domain: string, ipData: any): OsintResult[] {
+  return [
+    { label: 'DOMAIN', value: domain, type: 'copy' },
+    { label: 'RESOLVED IP', value: ipData.ip || 'Could not resolve', type: 'data' },
+    { label: 'HOSTING ORG', value: ipData.org || 'Unknown', type: 'data' },
+    { label: 'HOSTING LOCATION', value: ipData.country_name || 'Unknown', type: 'data' },
+    { label: '─── WHOIS & REGISTRATION', value: '', type: 'info' },
+    { label: 'WHOIS Lookup', value: `https://www.whois.com/whois/${domain}`, type: 'link' },
+    { label: 'DomainTools WHOIS', value: `https://whois.domaintools.com/${domain}`, type: 'link' },
+    { label: 'ICANN WHOIS', value: `https://lookup.icann.org/en/lookup?name=${domain}`, type: 'link' },
+    { label: '─── DNS & INFRASTRUCTURE', value: '', type: 'info' },
+    { label: 'MXToolbox DNS', value: `https://mxtoolbox.com/SuperTool.aspx?action=dns%3a${domain}&run=toolpage`, type: 'link' },
+    { label: 'DNSdumpster', value: `https://dnsdumpster.com/`, type: 'link' },
+    { label: 'SecurityTrails', value: `https://securitytrails.com/domain/${domain}/dns`, type: 'link' },
+    { label: '─── REPUTATION & HISTORY', value: '', type: 'info' },
+    { label: 'Wayback Machine', value: `https://web.archive.org/web/*/${domain}`, type: 'link' },
+    { label: 'VirusTotal', value: `https://www.virustotal.com/gui/domain/${domain}`, type: 'link' },
+    { label: 'URLScan', value: `https://urlscan.io/search/#domain:${domain}`, type: 'link' },
+    { label: 'Shodan', value: `https://www.shodan.io/search?query=${domain}`, type: 'link' },
+    { label: 'Certificate Search', value: `https://crt.sh/?q=${domain}`, type: 'link' },
+    { label: 'Built With', value: `https://builtwith.com/${domain}`, type: 'link' },
+  ];
+}
+
+// ── 3. Social Media (username) ────────────────────────────────────────────────
+export function getSocialResults(username: string): OsintResult[] {
+  const u = username;
+  return [
+    { label: '─── MAJOR PLATFORMS', value: '', type: 'info' },
+    { label: 'Instagram', value: `https://www.instagram.com/${u}/`, type: 'link' },
+    { label: 'Twitter / X', value: `https://x.com/${u}`, type: 'link' },
+    { label: 'Facebook', value: `https://www.facebook.com/${u}`, type: 'link' },
+    { label: 'LinkedIn', value: `https://www.linkedin.com/in/${u}`, type: 'link' },
+    { label: 'TikTok', value: `https://www.tiktok.com/@${u}`, type: 'link' },
+    { label: 'YouTube', value: `https://www.youtube.com/@${u}`, type: 'link' },
+    { label: 'Pinterest', value: `https://www.pinterest.com/${u}/`, type: 'link' },
+    { label: 'Snapchat', value: `https://www.snapchat.com/add/${u}`, type: 'link' },
+    { label: 'Threads', value: `https://www.threads.net/@${u}`, type: 'link' },
+    { label: '─── TECH & DEVELOPER', value: '', type: 'info' },
+    { label: 'GitHub', value: `https://github.com/${u}`, type: 'link' },
+    { label: 'GitLab', value: `https://gitlab.com/${u}`, type: 'link' },
+    { label: 'Reddit', value: `https://www.reddit.com/user/${u}`, type: 'link' },
+    { label: 'Hacker News', value: `https://news.ycombinator.com/user?id=${u}`, type: 'link' },
+    { label: 'Stack Overflow', value: `https://stackoverflow.com/users/${u}`, type: 'link' },
+    { label: '─── OTHER PLATFORMS', value: '', type: 'info' },
+    { label: 'Twitch', value: `https://www.twitch.tv/${u}`, type: 'link' },
+    { label: 'Discord (Lookup)', value: `https://discord.id/`, type: 'link' },
+    { label: 'Telegram', value: `https://t.me/${u}`, type: 'link' },
+    { label: 'Medium', value: `https://medium.com/@${u}`, type: 'link' },
+    { label: 'Substack', value: `https://${u}.substack.com`, type: 'link' },
+    { label: 'Linktree', value: `https://linktr.ee/${u}`, type: 'link' },
+    { label: 'Venmo', value: `https://venmo.com/${u}`, type: 'link' },
+    { label: 'Cash App', value: `https://cash.app/$${u}`, type: 'link' },
+    { label: '─── OSINT AGGREGATORS', value: '', type: 'info' },
+    { label: 'Sherlock (Web)', value: `https://sherlock-project.github.io/`, type: 'link' },
+    { label: 'WhatsMyName', value: `https://whatsmyname.app/`, type: 'link' },
+    { label: 'Namechk', value: `https://namechk.com/`, type: 'link' },
+  ];
+}
+
+// ── 5. Phone Lookup ───────────────────────────────────────────────────────────
+export function getPhoneResults(phone: string): OsintResult[] {
+  return [
+    { label: 'PHONE', value: phone, type: 'copy' },
+    { label: '─── CARRIER & OWNER', value: '', type: 'info' },
+    { label: 'Truecaller', value: `https://www.truecaller.com/search/us/${phone}`, type: 'link' },
+    { label: 'Whitepages Reverse', value: `https://www.whitepages.com/phone/${phone}`, type: 'link' },
+    { label: 'Spokeo Phone', value: `https://www.spokeo.com/phone/${phone}`, type: 'link' },
+    { label: 'AnyWho', value: `https://www.anywho.com/reverse-lookup/${phone}`, type: 'link' },
+    { label: 'Zlookup', value: `https://www.zlookup.com/`, type: 'link' },
+    { label: '─── SPAM & FRAUD', value: '', type: 'info' },
+    { label: 'Should I Answer?', value: `https://www.shouldianswer.com/phone-number/${phone}`, type: 'link' },
+    { label: 'WhoCallsMe', value: `https://www.whocalledme.com/PhoneNumber/${phone}`, type: 'link' },
+    { label: 'CallerSmart', value: `https://www.callersmart.com/lookup/phone-number/${phone}`, type: 'link' },
+    { label: '─── CARRIER LOOKUP', value: '', type: 'info' },
+    { label: 'FCC Number Portability', value: `https://www.localcallingguide.com/lca_prefix.php?pre=${phone.slice(1,8)}`, type: 'link' },
+    { label: 'Twilio Lookup', value: `https://lookup.twilio.com/`, type: 'link' },
+    { label: '─── SOCIAL SEARCH', value: '', type: 'info' },
+    { label: 'Facebook Search', value: `https://www.facebook.com/search/top/?q=${phone}`, type: 'link' },
+    { label: 'Telegram Search', value: `https://t.me/+${phone}`, type: 'link' },
+    { label: 'Google Search', value: `https://www.google.com/search?q="${phone}"`, type: 'link' },
+    { label: '─── CANADIAN LOOKUP', value: '', type: 'info' },
+    { label: 'Canada411', value: `https://www.canada411.ca/search/reverse.html?ph=${phone}`, type: 'link' },
+    { label: 'Canada411 Business', value: `https://www.canada411.ca/search/?stype=ph&ph=${phone}`, type: 'link' },
+    { label: 'YellowPages Canada', value: `https://www.yellowpages.ca/search/si/1/${phone}/Canada`, type: 'link' },
+  ];
+}
+
+// ── 6. Email Lookup ───────────────────────────────────────────────────────────
+export function getEmailResults(email: string, domain: string): OsintResult[] {
+  return [
+    { label: 'EMAIL', value: email, type: 'copy' },
+    { label: 'DOMAIN', value: domain, type: 'data' },
+    { label: '─── BREACH DATABASES', value: '', type: 'info' },
+    { label: 'HaveIBeenPwned', value: `https://haveibeenpwned.com/account/${email}`, type: 'link' },
+    { label: 'DeHashed', value: `https://dehashed.com/search?query=${email}`, type: 'link' },
+    { label: 'LeakCheck', value: `https://leakcheck.io/?query=${email}`, type: 'link' },
+    { label: '─── EMAIL VERIFICATION', value: '', type: 'info' },
+    { label: 'Hunter.io', value: `https://hunter.io/email-verifier/${email}`, type: 'link' },
+    { label: 'EmailRep', value: `https://emailrep.io/${email}`, type: 'link' },
+    { label: 'MXToolbox (Domain)', value: `https://mxtoolbox.com/emailhealth/${domain}`, type: 'link' },
+    { label: '─── SOCIAL PRESENCE', value: '', type: 'info' },
+    { label: 'Gravatar', value: `https://en.gravatar.com/${email}`, type: 'link' },
+    { label: 'Google Search', value: `https://www.google.com/search?q="${email}"`, type: 'link' },
+    { label: 'Twitter / X', value: `https://x.com/search?q=${email}`, type: 'link' },
+    { label: 'Facebook', value: `https://www.facebook.com/search/top/?q=${email}`, type: 'link' },
+    { label: '─── DOMAIN INTEL', value: '', type: 'info' },
+    { label: 'WHOIS Domain', value: `https://www.whois.com/whois/${domain}`, type: 'link' },
+    { label: 'VirusTotal Domain', value: `https://www.virustotal.com/gui/domain/${domain}`, type: 'link' },
+  ];
+}
+
+// ── 7. Company / Org ──────────────────────────────────────────────────────────
+export function getCompanyResults(company: string): OsintResult[] {
+  return [
+    { label: '─── SEC & FINANCIAL', value: '', type: 'info' },
+    { label: 'SEC EDGAR', value: `https://efts.sec.gov/LATEST/search-index?q=${company}&dateRange=custom&startdt=2000-01-01&enddt=2099-01-01&forms=10-K`, type: 'link' },
+    { label: 'SEC Full-Text Search', value: `https://efts.sec.gov/LATEST/search-index?q=${company}`, type: 'link' },
+    { label: 'OpenCorporates', value: `https://opencorporates.com/companies?q=${company}&utf8=✓`, type: 'link' },
+    { label: '─── POLITICAL & NONPROFIT RESEARCH', value: '', type: 'info' },
+    { label: 'FollowTheMoney — Donor Search', value: `https://www.followthemoney.org/show-me?q=${company}&y=#tabs-6`, type: 'link' },
+    { label: 'FollowTheMoney — Candidate Search', value: `https://www.followthemoney.org/show-me?q=${company}#tabs-1`, type: 'link' },
+    { label: 'FollowTheMoney — Organization', value: `https://www.followthemoney.org/show-me?q=${company}&y=#tabs-3`, type: 'link' },
+    { label: 'ProPublica Nonprofit Explorer', value: `https://projects.propublica.org/nonprofits/search?q=${company}`, type: 'link' },
+    { label: 'ProPublica — IRS 990 Filings', value: `https://projects.propublica.org/nonprofits/search?q=${company}&state[id]=0&ntee[id]=0&c_code[id]=0`, type: 'link' },
+    { label: 'OpenSecrets — Org Search', value: `https://www.opensecrets.org/search?q=${company}&type=orgs`, type: 'link' },
+    { label: '─── STATE REGISTRATIONS', value: '', type: 'info' },
+    { label: 'SOS (Multi-State Search)', value: `https://www.bizapedia.com/search.html?term=${company}`, type: 'link' },
+    { label: 'NAICS/SIC Lookup', value: `https://www.naics.com/search/`, type: 'link' },
+    { label: '─── PEOPLE & OFFICERS', value: '', type: 'info' },
+    { label: 'LinkedIn Company', value: `https://www.linkedin.com/search/results/companies/?keywords=${company}`, type: 'link' },
+    { label: 'ZoomInfo', value: `https://www.zoominfo.com/s/#!search/company/${company}`, type: 'link' },
+    { label: 'OpenCorporates', value: `https://opencorporates.com/companies?q=${company}`, type: 'link' },
+    { label: '─── NEWS & REPUTATION', value: '', type: 'info' },
+    { label: 'Google News', value: `https://news.google.com/search?q=${company}`, type: 'link' },
+    { label: 'BBB', value: `https://www.bbb.org/search?find_text=${company}`, type: 'link' },
+    { label: 'Ripoff Report', value: `https://www.ripoffreport.com/results/${company}`, type: 'link' },
+    { label: 'Glassdoor', value: `https://www.glassdoor.com/Reviews/company-reviews.htm?sc.keyword=${company}`, type: 'link' },
+    { label: '─── CANADIAN CORPORATE REGISTRY', value: '', type: 'info' },
+    { label: 'Corporations Canada', value: `https://www.ic.gc.ca/app/scr/cc/CorporationsCanada/fdrlCrpSrch.html?locale=en_CA`, type: 'link' },
+    { label: 'Ontario Business Registry', value: `https://www.ontario.ca/page/ontario-business-registry`, type: 'link' },
+    { label: 'BC Company Search', value: `https://www.bcregistry.gov.bc.ca/businesses/search`, type: 'link' },
+    { label: 'Alberta Corporate Registry', value: `https://www.alberta.ca/corporate-registry.aspx`, type: 'link' },
+    { label: 'Quebec Enterprise Registry', value: `https://www.registreentreprises.gouv.qc.ca/en/default.aspx`, type: 'link' },
+    { label: '─── BENEFICIAL OWNERSHIP', value: '', type: 'info' },
+    { label: 'FinCEN BOI', value: `https://boiefiling.fincen.gov/`, type: 'link' },
+    { label: 'OFAC Sanctions', value: `https://sanctionssearch.ofac.treas.gov/`, type: 'link' },
+    { label: 'World-Check (Refinitiv)', value: `https://risk.thomsonreuters.com/en/products/world-check-know-your-customer.html`, type: 'link' },
+  ];
+}
+
+// ── 8. Vehicle ─────────────────────────────────────────────────────────────────
+export function getVehicleResults(plate: string, plateEncoded: string): OsintResult[] {
+  return [
+    { label: 'PLATE / VIN', value: plate, type: 'copy' },
+    { label: '─── TITLE & REGISTRATION', value: '', type: 'info' },
+    { label: 'NICB VINCheck', value: `https://www.nicb.org/vincheck`, type: 'link' },
+    { label: 'NHTSA VIN Decoder', value: `https://vpic.nhtsa.dot.gov/decoder/Decoder`, type: 'link' },
+    { label: 'VehicleHistory.com', value: `https://vehiclehistory.com/license-plate-search/${plateEncoded}`, type: 'link' },
+    { label: 'VinCheck.info', value: `https://www.vincheck.info/`, type: 'link' },
+    { label: '─── AUCTION & VALUE', value: '', type: 'info' },
+    { label: 'Copart', value: `https://www.copart.com/vehicleFinderSearch/?query=${plateEncoded}`, type: 'link' },
+    { label: 'IAAI Auctions', value: `https://www.iaai.com/search#${plateEncoded}`, type: 'link' },
+    { label: 'KBB Value', value: `https://www.kbb.com/`, type: 'link' },
+    { label: 'Carfax', value: `https://www.carfax.com/`, type: 'link' },
+    { label: '─── RECALL & SAFETY', value: '', type: 'info' },
+    { label: 'NHTSA Recalls', value: `https://www.nhtsa.gov/recalls`, type: 'link' },
+    { label: '─── STATE DMV', value: '', type: 'info' },
+    { label: 'DMV.org (State Links)', value: `https://www.dmv.org/`, type: 'link' },
+    { label: 'OpenDMV', value: `https://www.opendmv.com/`, type: 'link' },
+    { label: '─── FAA REGISTRY', value: '', type: 'info' },
+    { label: 'FAA Aircraft Registry', value: `https://registry.faa.gov/aircraftinquiry/Search/NNumberInquiry`, type: 'link' },
+    { label: 'FAA Airmen Registry', value: `https://amsrvs.registry.faa.gov/airmeninquiry/`, type: 'link' },
+    { label: 'FAA Aircraft by Owner', value: `https://registry.faa.gov/aircraftinquiry/Search/NameInquiry`, type: 'link' },
+    { label: 'FAA Accident Database', value: `https://www.ntsb.gov/safety/data/Pages/Data_Stats.aspx`, type: 'link' },
+    { label: 'FlightAware Owner Search', value: `https://www.flightaware.com/live/flight/${plate}`, type: 'link' },
+  ];
+}
+
+// ── 9. Geo & Location ─────────────────────────────────────────────────────────
+export function getGeoResults(query: string, rawQuery: string): OsintResult[] {
+  const coordMatch = rawQuery.match(/(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
+  const lat = coordMatch ? coordMatch[1] : '';
+  const lng = coordMatch ? coordMatch[2] : '';
+  return [
+    { label: '─── SATELLITE & MAPS', value: '', type: 'info' },
+    { label: 'Google Maps', value: lat && lng ? `https://maps.google.com/?q=${lat},${lng}` : `https://maps.google.com/?q=${query}`, type: 'link' },
+    { label: 'Google Earth', value: lat && lng ? `https://earth.google.com/web/@${lat},${lng},500a,500d,35y` : `https://earth.google.com/web/search/${query}`, type: 'link' },
+    { label: 'Bing Maps Bird\'s Eye', value: lat && lng ? `https://www.bing.com/maps?cp=${lat}~${lng}&sty=b&lvl=19` : `https://www.bing.com/maps?q=${query}`, type: 'link' },
+    { label: 'OpenStreetMap', value: lat && lng ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}` : `https://www.openstreetmap.org/search?query=${query}`, type: 'link' },
+    { label: 'What3Words', value: `https://what3words.com/${query}`, type: 'link' },
+    { label: '─── FLIGHT & VESSEL', value: '', type: 'info' },
+    { label: 'FlightAware', value: `https://flightaware.com/live/`, type: 'link' },
+    { label: 'Flightradar24', value: `https://www.flightradar24.com/${lat && lng ? `${lat},${lng}` : ''}`, type: 'link' },
+    { label: 'MarineTraffic', value: lat && lng ? `https://www.marinetraffic.com/en/ais/home/centerx:${lng}/centery:${lat}/zoom:12` : `https://www.marinetraffic.com/`, type: 'link' },
+    { label: 'VesselFinder', value: `https://www.vesselfinder.com/`, type: 'link' },
+    { label: '─── GEOSPATIAL INTEL', value: '', type: 'info' },
+    { label: 'Sentinel Hub EO Browser', value: `https://apps.sentinel-hub.com/eo-browser/`, type: 'link' },
+    { label: 'Zoom Earth (Live)', value: lat && lng ? `https://zoom.earth/#view=${lat},${lng},17z` : `https://zoom.earth/`, type: 'link' },
+    { label: 'Bing StreetSide', value: lat && lng ? `https://www.bing.com/maps?cp=${lat}~${lng}&sty=x&lvl=19` : `https://www.bing.com/maps?q=${query}`, type: 'link' },
+    { label: 'USGS Earth Explorer', value: `https://earthexplorer.usgs.gov/`, type: 'link' },
+  ];
+}
+
+// ── 10. Image Analysis ────────────────────────────────────────────────────────
+export function getImageResults(query: string, rawQuery: string): OsintResult[] {
+  const isURL = rawQuery.startsWith('http');
+  const encoded = encodeURIComponent(rawQuery);
+  return [
+    { label: '─── REVERSE IMAGE SEARCH', value: '', type: 'info' },
+    { label: 'Google Images', value: isURL ? `https://lens.google.com/uploadbyurl?url=${encoded}` : `https://images.google.com/`, type: 'link' },
+    { label: 'TinEye', value: isURL ? `https://tineye.com/search?url=${encoded}` : `https://tineye.com/`, type: 'link' },
+    { label: 'Yandex Images', value: isURL ? `https://yandex.com/images/search?source=collections&rpt=imageview&url=${encoded}` : `https://yandex.com/images/`, type: 'link' },
+    { label: 'Bing Visual Search', value: isURL ? `https://www.bing.com/images/searchbyimage?FORM=IRSBIQ&cbir=sbi&imgurl=${encoded}` : `https://www.bing.com/visualsearch`, type: 'link' },
+    { label: 'PimEyes (Face Search)', value: `https://pimeyes.com/en`, type: 'link' },
+    { label: 'FaceCheck.ID', value: `https://facecheck.id/`, type: 'link' },
+    { label: '─── METADATA & EXIF', value: '', type: 'info' },
+    { label: 'Jeffrey\'s EXIF Viewer', value: isURL ? `http://exif.regex.info/exif.cgi?url=${encoded}` : `http://exif.regex.info/exif.cgi`, type: 'link' },
+    { label: 'ExifTool Online', value: `https://www.metadata2go.com/`, type: 'link' },
+    { label: 'Jimpl EXIF', value: `https://jimpl.com/`, type: 'link' },
+    { label: '─── AI ANALYSIS', value: '', type: 'info' },
+    { label: 'Google Vision AI', value: `https://cloud.google.com/vision/`, type: 'link' },
+    { label: 'Hive Moderation', value: `https://hivemoderation.com/image-moderation`, type: 'link' },
+    { label: 'AI or Not (Deepfake)', value: `https://www.aiornot.com/`, type: 'link' },
+    { label: '─── FORENSICS', value: '', type: 'info' },
+    { label: 'FotoForensics', value: isURL ? `https://fotoforensics.com/analysis.php?url=${encoded}` : `https://fotoforensics.com/`, type: 'link' },
+    { label: 'Forensically', value: `https://29a.ch/photo-forensics/`, type: 'link' },
+    { label: 'izitru (Authenticity)', value: `https://www.izitru.com/`, type: 'link' },
+  ];
+}
+
+// ── 11. Data Breaches ─────────────────────────────────────────────────────────
+export function getBreachResults(query: string): OsintResult[] {
+  return [
+    { label: '─── BREACH DATABASES', value: '', type: 'info' },
+    { label: 'HaveIBeenPwned', value: `https://haveibeenpwned.com/account/${query}`, type: 'link' },
+    { label: 'DeHashed', value: `https://dehashed.com/search?query=${query}`, type: 'link' },
+    { label: 'LeakCheck', value: `https://leakcheck.io/?query=${query}`, type: 'link' },
+    { label: 'Snusbase', value: `https://snusbase.com/`, type: 'link' },
+    { label: 'IntelX', value: `https://intelx.io/?s=${query}`, type: 'link' },
+    { label: '─── PASTE MONITORING', value: '', type: 'info' },
+    { label: 'PasteHunter', value: `https://pastehunter.com/`, type: 'link' },
+    { label: 'Pastebin Search', value: `https://pastebin.com/search?q=${query}`, type: 'link' },
+    { label: 'GhostBin', value: `https://ghostbin.com/`, type: 'link' },
+    { label: '─── DARK WEB MONITORING', value: '', type: 'info' },
+    { label: 'Tor2Web (Dark Web)', value: `https://www.onion.ly/`, type: 'link' },
+    { label: 'DarkSearch', value: `https://darksearch.io/search?query=${query}`, type: 'link' },
+    { label: '─── CREDENTIAL CHECKS', value: '', type: 'info' },
+    { label: 'SpyCloud', value: `https://spycloud.com/`, type: 'link' },
+    { label: 'BreachDirectory', value: `https://breachdirectory.org/`, type: 'link' },
+    { label: '─── THREAT INTEL', value: '', type: 'info' },
+    { label: 'VirusTotal', value: `https://www.virustotal.com/gui/search/${query}`, type: 'link' },
+    { label: 'Pulsedive', value: `https://pulsedive.com/indicator/?ioc=${query}`, type: 'link' },
+  ];
+}
+
+// ── 12. Court Records ─────────────────────────────────────────────────────────
+export function getCourtResults(query: string): OsintResult[] {
+  return [
+    { label: '─── FEDERAL COURTS', value: '', type: 'info' },
+    { label: 'PACER (Federal)', value: `https://pacer.uscourts.gov/`, type: 'link' },
+    { label: 'CourtListener', value: `https://www.courtlistener.com/?q=${query}&type=r`, type: 'link' },
+    { label: 'RECAP Archive', value: `https://www.courtlistener.com/?q=${query}&type=d`, type: 'link' },
+    { label: 'Justia Federal', value: `https://www.justia.com/search?cx=004471346504245195276:efj_-s5eick&sa=Search&q=${query}`, type: 'link' },
+    { label: '─── CRIMINAL RECORDS', value: '', type: 'info' },
+    { label: 'National Sex Offender Registry', value: `https://www.nsopw.gov/Search/Results?PersonFirstName=&PersonLastName=${query}`, type: 'link' },
+    { label: 'Arrest.org', value: `https://arrest.org/search/?term=${query}`, type: 'link' },
+    { label: 'Busted Newspaper', value: `https://bustednewspaper.com/search?q=${query}`, type: 'link' },
+    { label: '─── STATE COURTS', value: '', type: 'info' },
+    { label: 'UniCourt', value: `https://unicourt.com/search/party?q=${query}`, type: 'link' },
+    { label: 'Docket Alarm', value: `https://www.docketalarm.com/search/?q=${query}`, type: 'link' },
+    { label: 'Case.net (MO)', value: `https://www.courts.mo.gov/casenet/cases/searchCases.do`, type: 'link' },
+    { label: '─── CIVIL & BANKRUPTCY', value: '', type: 'info' },
+    { label: 'PACER Bankruptcy', value: `https://pacer.uscourts.gov/`, type: 'link' },
+    { label: 'Court Records (Justia)', value: `https://dockets.justia.com/?query=${query}`, type: 'link' },
+    { label: 'Law360', value: `https://www.law360.com/search?q=${query}`, type: 'link' },
+    { label: '─── CANADIAN COURTS', value: '', type: 'info' },
+    { label: 'CanLII (Canadian Legal)', value: `https://www.canlii.org/en/#search/text=${query}`, type: 'link' },
+    { label: 'BC Court Services', value: `https://justice.gov.bc.ca/cso/esearch/civil/partySearch.do`, type: 'link' },
+    { label: 'Ontario Courts', value: `https://www.ontario.ca/page/court-case-search`, type: 'link' },
+    { label: '─── LIENS & JUDGMENTS', value: '', type: 'info' },
+    { label: 'SearchQuarry Liens', value: `https://www.searchquarry.com/liens/`, type: 'link' },
+    { label: 'LienHub', value: `https://www.lienhub.com/`, type: 'link' },
+  ];
+}

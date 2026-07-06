@@ -20,6 +20,7 @@ import { Storage } from '../utils/storage';
 interface Props {
   isPro: boolean;
   onBack: () => void;
+  onUpgrade: () => void;
 }
 
 const TYPE_COLORS: Record<InputType, string> = {
@@ -42,7 +43,7 @@ const TYPE_ICONS: Record<InputType, string> = {
   company: '🏢',
 };
 
-export default function OneInputScreen({ isPro, onBack }: Props) {
+export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [query, setQuery]           = useState('');
   const [result, setResult]         = useState<OneInputResult | null>(null);
   const [aiSummary, setAiSummary]   = useState<string>('');
@@ -481,11 +482,43 @@ Base score on: wanted list matches (critical), breach data, threat intel finding
                 {!isPro && <Text style={styles.proBadgeText}>PRO</Text>}
               </TouchableOpacity>
             )}
+
+
+            {/* Pro preview — Solo users only */}
             {!isPro && (
-              <View style={styles.upgradeCard}>
-                <Text style={styles.upgradeText}>
-                  🤖 Upgrade to Pro for AI-powered analysis of all findings
+              <View style={styles.proPreviewCard}>
+                <View style={styles.proPreviewHeader}>
+                  <Text style={styles.proPreviewTitle}>⭐ Pro Features</Text>
+                  <View style={styles.proPreviewBadge}>
+                    <Text style={styles.proPreviewBadgeText}>PRO ONLY</Text>
+                  </View>
+                </View>
+                <Text style={styles.proPreviewSubtitle}>
+                  Pro provides deeper analysis and broader coverage than Solo.
                 </Text>
+                <View style={styles.proPreviewList}>
+                  {[
+                    { icon: '🔒', text: 'AI Risk Score (0–100) — LOW / MEDIUM / HIGH / CRITICAL' },
+                    { icon: '🔒', text: 'Deep Background Analysis — comprehensive subject profile' },
+                    { icon: '🔒', text: 'Contradiction Detection — cross-source inconsistencies' },
+                    { icon: '🔒', text: 'FBI, Interpol & all 50 US state wanted checks' },
+                    { icon: '🔒', text: 'Canadian federal, provincial & city wanted databases' },
+                    { icon: '🔒', text: 'OFAC, UN, EU & BIS sanctions screening' },
+                    { icon: '🔒', text: 'Investigation Strategy — recommended next steps' },
+                    { icon: '🔒', text: 'AI Case Report Generation' },
+                  ].map((item, i) => (
+                    <View key={i} style={styles.proPreviewRow}>
+                      <Text style={styles.proPreviewIcon}>{item.icon}</Text>
+                      <Text style={styles.proPreviewItem}>{item.text}</Text>
+                    </View>
+                  ))}
+                </View>
+                <TouchableOpacity
+                  style={styles.proPreviewBtn}
+                  onPress={onUpgrade}
+                >
+                  <Text style={styles.proPreviewBtnText}>Upgrade to Pro →</Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -652,6 +685,22 @@ const styles = StyleSheet.create({
   upgradeCard:    { marginHorizontal: SPACE.md, marginBottom: SPACE.sm, backgroundColor: C.card,
                     borderRadius: 10, padding: SPACE.sm, borderWidth: 1, borderColor: C.border },
   upgradeText:    { color: C.textDim, fontSize: FONT.xs, textAlign: 'center' },
+
+  proPreviewCard:    { marginHorizontal: SPACE.md, marginBottom: SPACE.md, backgroundColor: '#0d1f0d',
+                       borderRadius: 12, padding: SPACE.md, borderWidth: 1.5, borderColor: '#2d5a2d' },
+  proPreviewHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                       marginBottom: 6 },
+  proPreviewTitle:   { color: '#4CAF50', fontSize: FONT.sm, fontWeight: '700' },
+  proPreviewBadge:   { backgroundColor: '#1a3a1a', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+  proPreviewBadgeText: { color: '#4CAF50', fontSize: 9, fontWeight: '700' },
+  proPreviewSubtitle: { color: '#81C784', fontSize: FONT.xs, marginBottom: SPACE.sm, lineHeight: 16 },
+  proPreviewList:    { gap: 6, marginBottom: SPACE.md },
+  proPreviewRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  proPreviewIcon:    { fontSize: 13, marginTop: 1 },
+  proPreviewItem:    { color: '#A5D6A7', fontSize: FONT.xs, flex: 1, lineHeight: 17 },
+  proPreviewBtn:     { backgroundColor: '#2d5a2d', borderRadius: 8, padding: 12,
+                       alignItems: 'center', borderWidth: 1, borderColor: '#4CAF50' },
+  proPreviewBtnText: { color: '#4CAF50', fontSize: FONT.sm, fontWeight: '700' },
 
   sectionTitle:   { color: C.textDim, fontSize: FONT.xs, marginHorizontal: SPACE.md,
                     marginBottom: SPACE.sm, textTransform: 'uppercase', letterSpacing: 1 },

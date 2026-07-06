@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  SafeAreaView, StatusBar, Alert, Modal, Share, Switch,
+  SafeAreaView, StatusBar, Alert, Modal, Share, TextInput,
 } from 'react-native';
-import { C, IS_IPAD, SPACE } from '../utils/theme';
+import { C, IS_IPAD } from '../utils/theme';
 import { SessionManager, TIMEOUT_OPTIONS } from '../utils/sessionManager';
 import { AuditLog, AuditEntry }            from '../utils/auditLog';
 import { SecureStorage }                   from '../utils/secureStorage';
 import { Storage }                         from '../utils/storage';
 import { runIntegrityCheck, IntegrityReport } from '../utils/integrityCheck';
 
-interface Props { onBack: () => void; }
+interface Props { onBack: () => void; isPro?: boolean; }
 
-export default function SettingsScreen({ onBack }: Props) {
+export default function SettingsScreen({ onBack, isPro = false }: Props) {
   const [timeoutMin,    setTimeoutMin]    = useState(15);
   const [auditEntries,  setAuditEntries]  = useState<AuditEntry[]>([]);
   const [intReport,     setIntReport]     = useState<IntegrityReport | null>(null);
@@ -20,16 +20,28 @@ export default function SettingsScreen({ onBack }: Props) {
   const [showIntReport, setShowIntReport] = useState(false);
   const [rotating,      setRotating]      = useState(false);
   const [scanning,      setScanning]      = useState(false);
+  const [abuseIPDBKey,  setAbuseIPDBKey]  = useState('');
+  const [greyNoiseKey,  setGreyNoiseKey]  = useState('');
+  const [tracerfyKey,   setTracerfyKey]   = useState('');
+  const [batchDataKey,  setBatchDataKey]  = useState('');
+  const [shodanKey,     setShodanKey]     = useState('');
+  const [showApiKeys,   setShowApiKeys]   = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    const [tm, entries] = await Promise.all([
+    const [tm, entries, settings] = await Promise.all([
       SessionManager.getTimeoutMinutes(),
       AuditLog.getRecent(100),
+      Storage.getSettings(),
     ]);
     setTimeoutMin(tm);
     setAuditEntries(entries);
+    if (settings.abuseIPDBKey)  setAbuseIPDBKey(settings.abuseIPDBKey as string);
+    if (settings.greyNoiseKey)  setGreyNoiseKey(settings.greyNoiseKey as string);
+    if (settings.tracerfyKey)   setTracerfyKey(settings.tracerfyKey as string);
+    if (settings.batchDataKey)  setBatchDataKey(settings.batchDataKey as string);
+    if (settings.shodanKey)     setShodanKey(settings.shodanKey as string);
   };
 
   const handleSetTimeout = async (min: number) => {
@@ -100,6 +112,16 @@ export default function SettingsScreen({ onBack }: Props) {
         }},
       ]
     );
+  };
+
+  const handleSaveAPIKeys = async () => {
+    await Storage.saveSetting('abuseIPDBKey', abuseIPDBKey.trim());
+    await Storage.saveSetting('greyNoiseKey', greyNoiseKey.trim());
+    await Storage.saveSetting('tracerfyKey',  tracerfyKey.trim());
+    await Storage.saveSetting('batchDataKey', batchDataKey.trim());
+    await Storage.saveSetting('shodanKey',    shodanKey.trim());
+    await AuditLog.log('SETTINGS_CHANGE', 'API keys updated');
+    Alert.alert('✓ Saved', 'API keys saved securely on this device.');
   };
 
   const scoreColor = (score: number) => score >= 85 ? C.green : score >= 60 ? C.amber : C.red;
@@ -204,6 +226,89 @@ export default function SettingsScreen({ onBack }: Props) {
           <TouchableOpacity style={[s.halfBtn, { borderColor: C.purple, backgroundColor: C.purpleDim }]} onPress={handleExportAudit}>
             <Text style={[s.halfBtnText, { color: C.purple }]}>↑ Export</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* ── API Keys ─────────────────────────────────────────────── */}
+        <Text style={s.sectionTitle}>API Keys</Text>
+        <View style={s.card}>
+          <TouchableOpacity style={s.timeoutRow} onPress={() => setShowApiKeys(!showApiKeys)}>
+            <Text style={s.timeoutLabel}>🔑 Configure API Keys</Text>
+            <Text style={{ color: C.accent }}>{showApiKeys ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+          {showApiKeys && (
+            <View style={{ padding: 14 }}>
+              <Text style={s.apiLabel}>AbuseIPDB API Key</Text>
+              <Text style={s.apiHint}>Free at abuseipdb.com — 1,000 checks/day</Text>
+              <TextInput
+                style={s.apiInput}
+                value={abuseIPDBKey}
+                onChangeText={setAbuseIPDBKey}
+                placeholder="Paste your AbuseIPDB key"
+                placeholderTextColor={C.textDim}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={true}
+              />
+              <Text style={s.apiLabel}>GreyNoise API Key</Text>
+              <Text style={s.apiHint}>Free community tier at greynoise.io</Text>
+              <TextInput
+                style={s.apiInput}
+                value={greyNoiseKey}
+                onChangeText={setGreyNoiseKey}
+                placeholder="Paste your GreyNoise key"
+                placeholderTextColor={C.textDim}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={true}
+              />
+              {isPro && (<><Text style={[s.apiLabel, { marginTop: 16, color: C.accent }]}>PRO — Paid API Keys</Text>
+              <Text style={[s.apiHint, { marginBottom: 12 }]}>These keys unlock additional Pro data sources. Costs apply per search.</Text>
+
+              <Text style={s.apiLabel}>Tracerfy API Key</Text>
+              <Text style={s.apiHint}>$0.02/search — skip trace & people search at tracerfy.com</Text>
+              <TextInput
+                style={s.apiInput}
+                value={tracerfyKey}
+                onChangeText={setTracerfyKey}
+                placeholder="Paste your Tracerfy key"
+                placeholderTextColor={C.textDim}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={true}
+              />
+
+              <Text style={s.apiLabel}>BatchData API Key</Text>
+              <Text style={s.apiHint}>Phone & address intelligence at batchdata.io</Text>
+              <TextInput
+                style={s.apiInput}
+                value={batchDataKey}
+                onChangeText={setBatchDataKey}
+                placeholder="Paste your BatchData key"
+                placeholderTextColor={C.textDim}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={true}
+              />
+
+              <Text style={s.apiLabel}>Shodan API Key</Text>
+              <Text style={s.apiHint}>Network intelligence & device search at shodan.io</Text>
+              <TextInput
+                style={s.apiInput}
+                value={shodanKey}
+                onChangeText={setShodanKey}
+                placeholder="Paste your Shodan key"
+                placeholderTextColor={C.textDim}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={true}
+              />
+
+              </>)}
+              <TouchableOpacity style={[s.actionBtn, { borderColor: C.green, backgroundColor: C.greenDim, marginBottom: 0 }]} onPress={handleSaveAPIKeys}>
+                <Text style={[s.actionBtnText, { color: C.green }]}>💾 Save API Keys</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* ── Data Management ──────────────────────────────────────── */}
@@ -313,6 +418,9 @@ const s = StyleSheet.create({
   auditDetail:{ color: C.textMid, fontSize: 12 },
   auditTime:  { color: C.textDim, fontSize: 11 },
   emptyText:  { color: C.textDim, textAlign: 'center', padding: 24 },
+  apiLabel:   { color: C.textMid, fontSize: 12, fontWeight: '700', marginBottom: 4, marginTop: 12 },
+  apiHint:    { color: C.textDim, fontSize: 11, marginBottom: 8 },
+  apiInput:   { backgroundColor: C.bg, borderRadius: 8, borderWidth: 1, borderColor: C.border, padding: 12, color: C.text, fontSize: 13, marginBottom: 4 },
   modalCloseBtn:    { backgroundColor: C.card, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 16 },
   modalCloseBtnText:{ color: C.textMid, fontWeight: '600' },
 });

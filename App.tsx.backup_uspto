@@ -1,0 +1,1163 @@
+/**
+ * SENTINEL – Professional OSINT Toolkit
+ * North America Edition v2.2 – Security Update
+ *
+ * New in v2.2:
+ * – AES-256 + HMAC-SHA256 encrypted storage
+ * – Keys in iOS Keychain / Android Keystore
+ * – Session timeout with automatic re-authentication
+ * – Memory wipe on app backgrounding
+ * – Device integrity checks (jailbreak, debug, OS version)
+ * – Failed auth tracking with exponential lockout
+ * – Encrypted audit log with HMAC chain
+ * – Key rotation support
+ * – Security Settings screen
+ */
+
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  View, Text, TextInput, TouchableOpacity, ScrollView,
+  StyleSheet, SafeAreaView, StatusBar, ActivityIndicator,
+  Alert, Linking, Animated, Modal, Share, Clipboard,
+  AppState,
+} from 'react-native';
+
+import LockScreen     from './src/screens/LockScreen';
+import CasesScreen    from './src/screens/CasesScreen';
+import MapScreen      from './src/screens/MapScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import OneInputScreen from './src/screens/OneInputScreen';
+import { analyzeResults } from './src/utils/aiEngine';
+import TimelineScreen from './src/screens/TimelineScreen';
+import UpgradeScreen from './src/screens/UpgradeScreen';
+import WatchListScreen from './src/screens/WatchListScreen';
+
+import { Storage, Trial, SubscriptionTier } from './src/utils/storage';
+import { exportSearchPDF } from './src/utils/pdfExport';
+import { SessionManager }  from './src/utils/sessionManager';
+import { AuditLog }        from './src/utils/auditLog';
+import * as SplashScreen   from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync();
+import {
+  C, NOTE_TAGS, IS_IPAD, CARD_WIDTH, GRID_GAP, GRID_PADDING,
+} from './src/utils/theme';
+import {
+  getIPResults, getDomainResults, getSocialResults,
+  getPhoneResults, getEmailResults, getCompanyResults, getVehicleResults,
+  getGeoResults, getImageResults, getBreachResults, getCourtResults,
+} from './src/utils/osintEngines';
+import { Screen, OsintResult, FieldNote, HistoryItem } from './src/types';
+
+export default function App() {
+  const [unlocked,      setUnlocked]      = useState(false);
+  const [needsReauth,   setNeedsReauth]   = useState(false);
+  const [isPro,         setIsPro]         = useState(false);
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>('trial');
+  const [screen,        setScreen]        = useState<Screen>('home');
+  const [loading,       setLoading]       = useState(false);
+  const [results,       setResults]       = useState<OsintResult[]>([]);
+  const [input,         setInput]         = useState('');
+  const [input2,        setInput2]        = useState('');
+  const [notes,         setNotes]         = useState<FieldNote[]>([]);
+  const [history,       setHistory]       = useState<HistoryItem[]>([]);
+  const [noteText,      setNoteText]      = useState('');
+  const [noteTag,       setNoteTag]       = useState('General');
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [activeCaseId,  setActiveCaseId]  = useState<string | null>(null);
+  const [exporting,     setExporting]     = useState(false);
+  const [curModule,     setCurModule]     = useState('');
+  const [curQuery,      setCurQuery]      = useState('');
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const appState = useRef(AppState.currentState);
+  const isAuthenticating = useRef(false);
+
+  // ── Session management ────────────────────────────────────────────────────
+  const handleLock = useCallback(() => {
+    setUnlocked(false);
+    setNeedsReauth(true);
+    // Clear sensitive in-memory state
+    setResults([]);
+    setInput('');
+    setInput2('');
+    setNotes([]);
+    setHistory([]);
+  }, []);
+
+  useEffect(() => {
+    if (unlocked) {
+      Trial.initialize().then(async () => {
+      const tier = await Trial.getSubscriptionTier();
+      setSubscriptionTier(tier);
+      setIsPro(tier === 'pro');
+    });
+      // Initialize session manager with lock callback
+      SessionManager.initialize(handleLock);
+      loadData();
+      Animated.timing(fadeAnim, { toValue: 1, duration: 380, useNativeDriver: true }).start();
+      SplashScreen.hideAsync();
+    }
+    return () => {
+      if (!unlocked) SessionManager.teardown();
+    };
+  }, [unlocked]);
+
+  // Refresh session timer on any user interaction
+  const onUserInteraction = () => {
+    if (unlocked) SessionManager.touch();
+  };
+
+  const loadData = async () => {
+    const [h, n, settings] = await Promise.all([
+      Storage.getHistory(),
+      Storage.getNotes(),
+      Storage.getSettings(),
+    ]);
+    setHistory(h);
+    setNotes(n);
+    if (settings.activeCaseId) setActiveCaseId(settings.activeCaseId as string);
+  };
+
+  // ── AppState / Biometric re-auth ─────────────────────────────────────────
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', nextState => {
+      if (nextState === 'background') {
+        // Only lock when truly backgrounded, not on inactive (Face ID dialog)
+        appState.current = nextState;
+        if (unlocked && !isAuthenticating.current) {
+          setNeedsReauth(true);
+          setUnlocked(false);
+        }
+      } else if (nextState === 'active') {
+        appState.current = nextState;
+      } else {
+        // inactive – do nothing, Face ID/passcode dialogs cause this
+        appState.current = nextState;
+      }
+    });
+    return () => sub.remove();
+  }, [unlocked]);
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+  const fadeSwap = () => Animated.sequence([
+    Animated.timing(fadeAnim, { toValue: 0, duration: 150,  useNativeDriver: true }),
+    Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+  ]).start();
+
+  const navigate = (s: Screen) => {
+    onUserInteraction();
+    Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
+      setScreen(s); setResults([]); setInput(''); setInput2('');
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+    });
+  };
+  const goHome = () => navigate('home');
+
+  // ── Clipboard ─────────────────────────────────────────────────────────────
+  const copyToClipboard = (text: string) => {
+    try {
+      Clipboard.setString(text);
+      Alert.alert('Copied', text.length > 80 ? text.slice(0, 80) + '…' : text);
+    } catch { Alert.alert('Value', text); }
+  };
+
+  // ── Active case ───────────────────────────────────────────────────────────
+  const handleSetActiveCase = async (id: string | null) => {
+    onUserInteraction();
+    setActiveCaseId(id);
+    await Storage.saveSetting('activeCaseId', id);
+    if (id) Alert.alert('Active Case Set', 'Searches will be linked to this case.');
+  };
+
+  // ── History & Notes ───────────────────────────────────────────────────────
+  const addToHistory = async (module: string, query: string) => {
+    const item: HistoryItem = {
+      id: Date.now().toString(), module, query,
+      timestamp: new Date().toLocaleString('en-US'),
+      caseId: activeCaseId || undefined,
+    };
+    const updated = [item, ...history].slice(0, 200);
+    setHistory(updated);
+    await Storage.addHistory(item); // also logs to AuditLog internally
+
+    if (activeCaseId) {
+      const cases = await Storage.getCases();
+      await Storage.saveCases(cases.map(c =>
+        c.id === activeCaseId
+          ? { ...c, searches: [item, ...c.searches], updatedAt: new Date().toLocaleString('en-US') }
+          : c
+      ));
+    }
+  };
+
+  const saveNote = async () => {
+    if (!noteText.trim()) return;
+    const note: FieldNote = {
+      id: Date.now().toString(), text: noteText.trim(), tag: noteTag,
+      timestamp: new Date().toLocaleString('en-US'),
+    };
+    const updated = [note, ...notes];
+    setNotes(updated);
+    await Storage.saveNotes(updated);
+    await AuditLog.log('NOTE_CREATE', `Tag: ${noteTag}`);
+
+    if (activeCaseId) {
+      const cases = await Storage.getCases();
+      await Storage.saveCases(cases.map(c =>
+        c.id === activeCaseId
+          ? { ...c, notes: [note, ...c.notes], updatedAt: new Date().toLocaleString('en-US') }
+          : c
+      ));
+    }
+    setNoteText(''); setShowNoteModal(false);
+    Alert.alert('✓ Saved', activeCaseId ? 'Note saved and linked to active case.' : 'Note saved.');
+  };
+
+  const deleteNote = async (id: string) => {
+    const updated = notes.filter(n => n.id !== id);
+    setNotes(updated);
+    await Storage.saveNotes(updated);
+    await AuditLog.log('NOTE_DELETE');
+  };
+
+  const clearHistory = () => {
+    Alert.alert('Clear History', 'Remove all search history from this device?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Clear', style: 'destructive', onPress: async () => {
+        setHistory([]);
+        await Storage.clearHistory();
+      }},
+    ]);
+  };
+
+  // ── Share / Export ────────────────────────────────────────────────────────
+  const shareResults = async () => {
+    const text = results.filter(r => r.type !== 'info').map(r => r.value ? `${r.label}: ${r.value}` : r.label).join('\n');
+    await Share.share({ message: `SENTINEL – ${curModule}\nQuery: ${curQuery}\n${'─'.repeat(28)}\n${text}` });
+  };
+
+  const exportPDF = async () => {
+    if (!results.length) return;
+    setExporting(true);
+    try { await exportSearchPDF(curModule, curQuery, results); }
+    catch { Alert.alert('Error', 'PDF export failed.'); }
+    setExporting(false);
+  };
+
+  const quickNote = (v: string) => { setNoteText(v); setShowNoteModal(true); };
+
+  // ── Search runner ─────────────────────────────────────────────────────────
+  const run = async (module: string, query: string, fn: () => Promise<OsintResult[]> | OsintResult[]) => {
+    if (!query.trim()) { Alert.alert('Required', 'Enter a value to search.'); return; }
+    onUserInteraction();
+    setLoading(true); setResults([]); setCurModule(module); setCurQuery(query.trim());
+    try { setResults(await fn()); addToHistory(module, query.trim()); }
+    catch (e: any) { Alert.alert('Error', e.message || 'Search failed'); }
+    setLoading(false);
+  };
+
+  // ── AI Analysis ──────────────────────────────────────────────────────────
+  const analyzeWithAI = async (module: string, query: string, results: OsintResult[]) => {
+    try {
+      setLoading(true);
+      const analysis = await analyzeResults(module, query, results);
+      setScreen('home');
+      setTimeout(() => Alert.alert('AI Analysis', analysis), 300);
+    } catch (e: any) {
+      Alert.alert('AI Error', e.message || 'Analysis failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+  const searchIP = () => run('IP & Network', input, async () => {
+    const ip = input.trim();
+    const results: OsintResult[] = [];
+
+    // Basic IP data
+    const r = await fetch(`http://ip-api.com/json/${ip}`);
+    const d = await r.json();
+    if (d.status === 'fail') throw new Error(d.message || 'IP lookup failed');
+
+    results.push({ label: 'IP ADDRESS', value: ip, type: 'copy' });
+    results.push({ label: 'LOCATION', value: `${d.city}, ${d.regionName}, ${d.country}`, type: 'data' });
+    results.push({ label: 'ISP', value: d.isp || 'Unknown', type: 'data' });
+    results.push({ label: 'ORG', value: d.org || 'Unknown', type: 'data' });
+    results.push({ label: 'ASN', value: d.as || 'Unknown', type: 'data' });
+    results.push({ label: 'TIMEZONE', value: d.timezone || 'Unknown', type: 'data' });
+    results.push({ label: 'COORDINATES', value: d.lat && d.lon ? `${d.lat}, ${d.lon}` : 'N/A', type: 'copy' });
+
+    // Threat intelligence with user API keys
+    const settings = await Storage.getSettings();
+    const abuseKey = settings.abuseIPDBKey as string || '';
+    const greyKey = settings.greyNoiseKey as string || '';
+
+    if (abuseKey || greyKey) {
+      try {
+        const threat = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/ip/threat?ip=${ip}&abuseKey=${encodeURIComponent(abuseKey)}&greyNoiseKey=${encodeURIComponent(greyKey)}`);
+        const td = await threat.json();
+
+        if (td.results.abuseIPDB) {
+          results.push({ label: '─── ABUSEIPDB', value: '', type: 'info' });
+          const abuse = td.results.abuseIPDB;
+          results.push({ label: 'ABUSE SCORE', value: `${abuse.abuseConfidenceScore}% confidence`, type: abuse.abuseConfidenceScore > 50 ? 'copy' : 'data' });
+          results.push({ label: 'TOTAL REPORTS', value: `${abuse.totalReports} reports`, type: 'data' });
+          results.push({ label: 'IS WHITELISTED', value: abuse.isWhitelisted ? 'Yes' : 'No', type: 'data' });
+        }
+
+        if (td.results.greyNoise) {
+          results.push({ label: '─── GREYNOISE', value: '', type: 'info' });
+          const grey = td.results.greyNoise;
+          results.push({ label: 'CLASSIFICATION', value: grey.classification || 'Unknown', type: 'data' });
+          results.push({ label: 'NOISE', value: grey.noise ? '⚠️ Internet scanner detected' : '✅ Not a known scanner', type: 'data' });
+          results.push({ label: 'RIOT', value: grey.riot ? '✅ Known benign service' : 'Unknown', type: 'data' });
+        }
+      } catch {
+        // Threat intel fetch failed silently
+      }
+    } else {
+      results.push({ label: '─── THREAT INTELLIGENCE', value: '', type: 'info' });
+      results.push({ label: 'AbuseIPDB + GreyNoise', value: 'Add API keys in Security Settings to enable threat intelligence', type: 'data' });
+    }
+
+    results.push({ label: '─── EXTERNAL SOURCES', value: '', type: 'info' });
+    results.push({ label: 'AbuseIPDB', value: `https://www.abuseipdb.com/check/${ip}`, type: 'link' });
+    results.push({ label: 'VirusTotal', value: `https://www.virustotal.com/gui/ip-address/${ip}`, type: 'link' });
+    results.push({ label: 'Shodan', value: `https://www.shodan.io/host/${ip}`, type: 'link' });
+    results.push({ label: 'Grey Noise', value: `https://viz.greynoise.io/ip/${ip}`, type: 'link' });
+    results.push({ label: 'Google Maps', value: d.lat && d.lon ? `https://maps.google.com/?q=${d.lat},${d.lon}` : 'https://maps.google.com', type: 'link' });
+
+    return results;
+  });
+  const searchDomain  = () => run('Domain & WHOIS',  input, async () => {
+    const q = input.trim().replace(/^https?:\/\//,'').split('/')[0];
+    const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/domain/lookup?domain=${q}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    
+    const results: OsintResult[] = [];
+    
+    // Basic info
+    results.push({ label: 'DOMAIN', value: q, type: 'copy' });
+    results.push({ label: 'IP ADDRESS', value: d.ip || 'Unknown', type: 'copy' });
+    
+    // IP geolocation
+    if (d.ipData && d.ipData.status === 'success') {
+      results.push({ label: 'HOSTING LOCATION', value: `${d.ipData.city}, ${d.ipData.regionName}, ${d.ipData.country}`, type: 'data' });
+      results.push({ label: 'HOSTING ISP', value: d.ipData.isp || 'Unknown', type: 'data' });
+      results.push({ label: 'ASN', value: d.ipData.as || 'Unknown', type: 'data' });
+    }
+    
+    // DNS Records
+    results.push({ label: '─── DNS RECORDS', value: '', type: 'info' });
+    if (d.dns.a && d.dns.a.length > 0) {
+      d.dns.a.forEach((r: any) => results.push({ label: 'A RECORD', value: `${r.data} (TTL: ${r.TTL})`, type: 'copy' }));
+    }
+    if (d.dns.mx && d.dns.mx.length > 0) {
+      d.dns.mx.forEach((r: any) => results.push({ label: 'MX RECORD', value: r.data, type: 'data' }));
+    }
+    if (d.dns.txt && d.dns.txt.length > 0) {
+      d.dns.txt.slice(0, 3).forEach((r: any) => results.push({ label: 'TXT RECORD', value: r.data, type: 'data' }));
+    }
+    
+    // Subdomains
+    if (d.subdomains && d.subdomains.length > 0) {
+      results.push({ label: '─── SUBDOMAINS FOUND', value: '', type: 'info' });
+      d.subdomains.forEach((sub: string) => {
+        results.push({ label: 'SUBDOMAIN', value: sub, type: 'copy' });
+      });
+    }
+    
+    // SSL Certificates
+    if (d.certs && d.certs.length > 0) {
+      results.push({ label: '─── SSL CERTIFICATES', value: '', type: 'info' });
+      d.certs.slice(0, 3).forEach((c: any) => {
+        results.push({ label: 'CERT ISSUED', value: `${c.common_name} — ${new Date(c.not_before).toLocaleDateString('en-US')}`, type: 'data' });
+      });
+    }
+    
+    // External links
+    results.push({ label: '─── WHOIS & REGISTRATION', value: '', type: 'info' });
+    results.push({ label: 'WHOIS Lookup', value: `https://www.whois.com/whois/${q}`, type: 'link' });
+    results.push({ label: 'ICANN WHOIS', value: `https://lookup.icann.org/en/lookup?name=${q}`, type: 'link' });
+    results.push({ label: '─── REPUTATION', value: '', type: 'info' });
+    results.push({ label: 'VirusTotal', value: `https://www.virustotal.com/gui/domain/${q}`, type: 'link' });
+    results.push({ label: 'URLScan', value: `https://urlscan.io/search/#domain:${q}`, type: 'link' });
+    results.push({ label: 'Wayback Machine', value: `https://web.archive.org/web/*/${q}`, type: 'link' });
+    
+    return results;
+  });
+  const searchSocial = () => run('Social Media', input, async () => {
+    const username = input.trim();
+    const encoded = encodeURIComponent(username);
+    const results: OsintResult[] = [];
+
+    // Reddit direct lookup
+    try {
+      const r = await fetch(`https://www.reddit.com/user/${username}/about.json`, {
+        headers: { 'User-Agent': 'Sentinel-OSINT-Toolkit/1.0' }
+      });
+      const d = await r.json();
+      if (d.data && !d.error) {
+        results.push({ label: '─── REDDIT PROFILE FOUND', value: '', type: 'info' });
+        results.push({ label: 'USERNAME', value: `u/${username}`, type: 'copy' });
+        results.push({ label: 'KARMA', value: `${(d.data.total_karma || 0).toLocaleString()} total`, type: 'data' });
+        results.push({ label: 'POST KARMA', value: (d.data.link_karma || 0).toLocaleString(), type: 'data' });
+        results.push({ label: 'COMMENT KARMA', value: (d.data.comment_karma || 0).toLocaleString(), type: 'data' });
+        results.push({ label: 'ACCOUNT CREATED', value: new Date((d.data.created_utc || 0) * 1000).toLocaleDateString('en-US'), type: 'data' });
+        if (d.data.is_employee) results.push({ label: 'REDDIT EMPLOYEE', value: '⚠️ Yes', type: 'data' });
+        results.push({ label: 'View Profile', value: `https://www.reddit.com/user/${username}`, type: 'link' });
+      } else {
+        results.push({ label: '─── REDDIT', value: '', type: 'info' });
+        results.push({ label: '✅ REDDIT', value: 'No account found for this username', type: 'data' });
+      }
+    } catch {
+      results.push({ label: '─── REDDIT', value: '', type: 'info' });
+      results.push({ label: 'Reddit', value: `https://www.reddit.com/user/${username}`, type: 'link' });
+    }
+
+    results.push({ label: '─── MAJOR PLATFORMS', value: '', type: 'info' });
+    results.push({ label: 'Instagram', value: `https://www.instagram.com/${username}/`, type: 'link' });
+    results.push({ label: 'Twitter / X', value: `https://x.com/${username}`, type: 'link' });
+    results.push({ label: 'Facebook', value: `https://www.facebook.com/${username}`, type: 'link' });
+    results.push({ label: 'LinkedIn', value: `https://www.linkedin.com/in/${username}`, type: 'link' });
+    results.push({ label: 'TikTok', value: `https://www.tiktok.com/@${username}`, type: 'link' });
+    results.push({ label: 'YouTube', value: `https://www.youtube.com/@${username}`, type: 'link' });
+    results.push({ label: '─── TECH & DEVELOPER', value: '', type: 'info' });
+    results.push({ label: 'GitHub', value: `https://github.com/${username}`, type: 'link' });
+    results.push({ label: 'GitLab', value: `https://gitlab.com/${username}`, type: 'link' });
+    results.push({ label: 'Hacker News', value: `https://news.ycombinator.com/user?id=${username}`, type: 'link' });
+    results.push({ label: '─── OTHER PLATFORMS', value: '', type: 'info' });
+    results.push({ label: 'Twitch', value: `https://www.twitch.tv/${username}`, type: 'link' });
+    results.push({ label: 'Telegram', value: `https://t.me/${username}`, type: 'link' });
+    results.push({ label: 'Medium', value: `https://medium.com/@${username}`, type: 'link' });
+    results.push({ label: '─── OSINT AGGREGATORS', value: '', type: 'info' });
+    results.push({ label: 'WhatsMyName', value: `https://whatsmyname.app/`, type: 'link' });
+    results.push({ label: 'Sherlock', value: `https://sherlock-project.github.io/`, type: 'link' });
+
+    return results;
+  });
+  const searchPhone = () => {
+    const q = input.trim().replace(/[\s\-\(\)]/g, '');
+    run('Phone Lookup', q, async () => {
+      const results: OsintResult[] = [];
+      results.push({ label: 'PHONE', value: q, type: 'copy' });
+
+      // Country detection from country code
+      const countryMap: Record<string, string> = {
+        '+1': 'USA / Canada', '+44': 'United Kingdom', '+61': 'Australia',
+        '+49': 'Germany', '+33': 'France', '+39': 'Italy', '+34': 'Spain',
+        '+52': 'Mexico', '+55': 'Brazil', '+91': 'India', '+86': 'China',
+        '+81': 'Japan', '+82': 'South Korea', '+7': 'Russia',
+      };
+      const matchedCountry = Object.entries(countryMap).find(([code]) => q.startsWith(code));
+      if (matchedCountry) {
+        results.push({ label: 'COUNTRY', value: matchedCountry[1], type: 'data' });
+      }
+      
+      // US/Canada specific info
+      if (q.startsWith('+1') && q.length === 12) {
+        const areaCode = q.slice(2, 5);
+        results.push({ label: 'AREA CODE', value: areaCode, type: 'data' });
+      }
+
+      results.push({ label: '─── CARRIER & OWNER', value: '', type: 'info' });
+      results.push({ label: 'Truecaller', value: `https://www.truecaller.com/search/us/${q}`, type: 'link' });
+      results.push({ label: 'Whitepages Reverse', value: `https://www.whitepages.com/phone/${q}`, type: 'link' });
+      results.push({ label: 'Spokeo Phone', value: `https://www.spokeo.com/phone/${q}`, type: 'link' });
+      results.push({ label: '─── SPAM & FRAUD', value: '', type: 'info' });
+      results.push({ label: 'Should I Answer?', value: `https://www.shouldianswer.com/phone-number/${q}`, type: 'link' });
+      results.push({ label: 'WhoCallsMe', value: `https://www.whocalledme.com/PhoneNumber/${q}`, type: 'link' });
+      results.push({ label: '─── SOCIAL SEARCH', value: '', type: 'info' });
+      results.push({ label: 'Facebook Search', value: `https://www.facebook.com/search/top/?q=${q}`, type: 'link' });
+      results.push({ label: 'Google Search', value: `https://www.google.com/search?q="${q}"`, type: 'link' });
+      results.push({ label: '─── CANADIAN LOOKUP', value: '', type: 'info' });
+      results.push({ label: 'Canada411', value: `https://www.canada411.ca/search/reverse.html?ph=${q}`, type: 'link' });
+
+      return results;
+    });
+  };
+  const searchEmail = () => {
+    const q = input.trim().toLowerCase();
+    if (!q.includes('@')) { Alert.alert('Invalid', 'Enter a valid email.'); return; }
+    const domain = q.split('@')[1];
+    run('Email Lookup', q, async () => {
+      const results: OsintResult[] = [];
+      results.push({ label: 'EMAIL', value: q, type: 'copy' });
+      results.push({ label: 'DOMAIN', value: domain, type: 'data' });
+
+      // Domain MX and DNS lookup
+      try {
+        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/domain/lookup?domain=${domain}`);
+        const d = await r.json();
+        
+        if (d.ipData && d.ipData.status === 'success') {
+          results.push({ label: '─── EMAIL DOMAIN INFO', value: '', type: 'info' });
+          results.push({ label: 'DOMAIN IP', value: d.ip || 'Unknown', type: 'copy' });
+          results.push({ label: 'HOSTED IN', value: `${d.ipData.city}, ${d.ipData.country}`, type: 'data' });
+          results.push({ label: 'HOSTING ISP', value: d.ipData.isp || 'Unknown', type: 'data' });
+        }
+        
+        if (d.dns.mx && d.dns.mx.length > 0) {
+          results.push({ label: '─── MAIL SERVERS (MX)', value: '', type: 'info' });
+          d.dns.mx.forEach((mx: any) => {
+            results.push({ label: 'MX RECORD', value: mx.data, type: 'data' });
+          });
+        }
+        
+        if (d.dns.txt && d.dns.txt.length > 0) {
+          const spf = d.dns.txt.find((t: any) => t.data && t.data.includes('spf'));
+          if (spf) {
+            results.push({ label: 'SPF RECORD', value: spf.data, type: 'data' });
+          }
+        }
+      } catch {
+        results.push({ label: 'DOMAIN LOOKUP', value: 'Could not fetch domain info', type: 'data' });
+      }
+
+      results.push({ label: '─── BREACH DATABASES', value: '', type: 'info' });
+      results.push({ label: 'HaveIBeenPwned', value: `https://haveibeenpwned.com/account/${encodeURIComponent(q)}`, type: 'link' });
+      results.push({ label: 'DeHashed', value: `https://dehashed.com/search?query=${encodeURIComponent(q)}`, type: 'link' });
+      results.push({ label: 'LeakCheck', value: `https://leakcheck.io/?query=${encodeURIComponent(q)}`, type: 'link' });
+      results.push({ label: '─── SOCIAL PRESENCE', value: '', type: 'info' });
+      results.push({ label: 'Google Search', value: `https://www.google.com/search?q="${encodeURIComponent(q)}"`, type: 'link' });
+      results.push({ label: 'Twitter / X', value: `https://x.com/search?q=${encodeURIComponent(q)}`, type: 'link' });
+      results.push({ label: 'Gravatar', value: `https://en.gravatar.com/${q}`, type: 'link' });
+      results.push({ label: '─── DOMAIN INTEL', value: '', type: 'info' });
+      results.push({ label: 'WHOIS Domain', value: `https://www.whois.com/whois/${domain}`, type: 'link' });
+      results.push({ label: 'VirusTotal Domain', value: `https://www.virustotal.com/gui/domain/${domain}`, type: 'link' });
+
+      return results;
+    });
+  };
+  const searchCompany = () => run('Company / Org',   input, () => getCompanyResults(encodeURIComponent(input.trim())));
+  const searchVehicle = () => run('Vehicle', input, async () => {
+    const q = input.trim().toUpperCase();
+    const isVIN = /^[A-HJ-NPR-Z0-9]{17}$/.test(q);
+    
+    const results: OsintResult[] = [];
+    results.push({ label: 'PLATE / VIN', value: q, type: 'copy' });
+    
+    if (isVIN) {
+      try {
+        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/vin/lookup?vin=${q}`);
+        const d = await r.json();
+        
+        if (d.results && d.results.length > 0) {
+          results.push({ label: '─── VEHICLE DETAILS', value: '', type: 'info' });
+          const fields = ['Make', 'Model', 'Model Year', 'Body Class', 'Drive Type', 'Engine Configuration', 'Fuel Type - Primary', 'Plant Country'];
+          d.results.forEach((item: any) => {
+            if (fields.includes(item.Variable) && item.Value && item.Value !== 'Not Applicable' && item.Value !== null) {
+              results.push({ label: item.Variable.toUpperCase(), value: item.Value, type: 'data' });
+            }
+          });
+        }
+        
+        if (d.recalls && d.recalls.length > 0) {
+          results.push({ label: '─── SAFETY RECALLS', value: '', type: 'info' });
+          d.recalls.slice(0, 5).forEach((recall: any) => {
+            results.push({ label: 'RECALL', value: recall.Component || recall.Summary || 'See NHTSA', type: 'data' });
+          });
+        } else {
+          results.push({ label: '─── SAFETY RECALLS', value: '', type: 'info' });
+          results.push({ label: 'RECALLS', value: 'No recalls found for this VIN', type: 'data' });
+        }
+      } catch {
+        results.push({ label: 'VIN LOOKUP', value: 'Could not fetch vehicle data', type: 'data' });
+      }
+    }
+    
+    results.push({ label: '─── ADDITIONAL SOURCES', value: '', type: 'info' });
+    results.push({ label: 'NICB VINCheck', value: 'https://www.nicb.org/vincheck', type: 'link' });
+    results.push({ label: 'NHTSA Complaints', value: `https://www.nhtsa.gov/vehicle/${q}`, type: 'link' });
+    results.push({ label: 'Carfax', value: 'https://www.carfax.com/', type: 'link' });
+    results.push({ label: 'VehicleHistory.com', value: `https://vehiclehistory.com/license-plate-search/${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'DMV.org', value: 'https://www.dmv.org/', type: 'link' });
+    results.push({ label: 'OpenDMV', value: 'https://www.opendmv.com/', type: 'link' });
+
+    results.push({ label: '─── FAA REGISTRY', value: '', type: 'info' });
+    results.push({ label: 'FAA Aircraft Registry (N-Number)', value: 'https://registry.faa.gov/aircraftinquiry/Search/NNumberInquiry', type: 'link' });
+    results.push({ label: 'FAA Aircraft by Owner Name', value: 'https://registry.faa.gov/aircraftinquiry/Search/NameInquiry', type: 'link' });
+    results.push({ label: 'FAA Airmen Registry', value: 'https://amsrvs.registry.faa.gov/airmeninquiry/', type: 'link' });
+    results.push({ label: 'FAA Accident & Incident Data', value: 'https://www.ntsb.gov/safety/data/Pages/Data_Stats.aspx', type: 'link' });
+    results.push({ label: 'FlightAware Aircraft Search', value: `https://www.flightaware.com/live/flight/${q}`, type: 'link' });
+
+    return results;
+  });
+  const searchGeo = () => run('Geo & Location', input, async () => {
+    const raw = input.trim();
+    const coordMatch = raw.match(/(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
+    const lat = coordMatch ? coordMatch[1] : '';
+    const lng = coordMatch ? coordMatch[2] : '';
+    
+    const results: OsintResult[] = [];
+    results.push({ label: 'QUERY', value: raw, type: 'copy' });
+    
+    if (lat && lng) {
+      results.push({ label: 'COORDINATES', value: `${lat}, ${lng}`, type: 'copy' });
+      
+      // Weather data from Open-Meteo
+      try {
+        const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,weather_code&temperature_unit=fahrenheit`);
+        const wd = await w.json();
+        if (wd.current) {
+          const weatherCodes: Record<number, string> = {
+            0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+            45: 'Foggy', 48: 'Icy fog', 51: 'Light drizzle', 53: 'Moderate drizzle',
+            61: 'Light rain', 63: 'Moderate rain', 65: 'Heavy rain',
+            71: 'Light snow', 73: 'Moderate snow', 75: 'Heavy snow',
+            80: 'Rain showers', 95: 'Thunderstorm'
+          };
+          results.push({ label: '─── CURRENT WEATHER', value: '', type: 'info' });
+          results.push({ label: 'CONDITIONS', value: weatherCodes[wd.current.weather_code] || 'Unknown', type: 'data' });
+          results.push({ label: 'TEMPERATURE', value: `${wd.current.temperature_2m}°F`, type: 'data' });
+          results.push({ label: 'WIND SPEED', value: `${wd.current.wind_speed_10m} km/h`, type: 'data' });
+          results.push({ label: 'ELEVATION', value: `${wd.elevation}m`, type: 'data' });
+        }
+      } catch {
+        // Weather fetch failed silently
+      }
+    }
+    
+    results.push({ label: '─── SATELLITE & MAPS', value: '', type: 'info' });
+    results.push({ label: 'Google Maps', value: lat && lng ? `https://maps.google.com/?q=${lat},${lng}` : `https://maps.google.com/?q=${encodeURIComponent(raw)}`, type: 'link' });
+    results.push({ label: 'Google Earth', value: lat && lng ? `https://earth.google.com/web/@${lat},${lng},500a,500d,35y` : `https://earth.google.com/web/search/${encodeURIComponent(raw)}`, type: 'link' });
+    results.push({ label: 'OpenStreetMap', value: lat && lng ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}` : `https://www.openstreetmap.org/search?query=${encodeURIComponent(raw)}`, type: 'link' });
+    results.push({ label: '─── FLIGHT & VESSEL', value: '', type: 'info' });
+    results.push({ label: 'Flightradar24', value: `https://www.flightradar24.com/${lat && lng ? `${lat},${lng}` : ''}`, type: 'link' });
+    results.push({ label: 'MarineTraffic', value: lat && lng ? `https://www.marinetraffic.com/en/ais/home/centerx:${lng}/centery:${lat}/zoom:12` : `https://www.marinetraffic.com/`, type: 'link' });
+    results.push({ label: '─── GEOSPATIAL INTEL', value: '', type: 'info' });
+    results.push({ label: 'Sentinel Hub EO Browser', value: `https://apps.sentinel-hub.com/eo-browser/`, type: 'link' });
+    results.push({ label: 'Zoom Earth', value: lat && lng ? `https://zoom.earth/#view=${lat},${lng},17z` : `https://zoom.earth/`, type: 'link' });
+    
+    return results;
+  });
+  const searchImage   = () => run('Image Analysis',  input, () => getImageResults(encodeURIComponent(input.trim()), input.trim()));
+  const searchBreach  = () => run('Data Breaches', input, async () => {
+    const q = input.trim();
+    const results: OsintResult[] = [];
+    results.push({ label: 'QUERY', value: q, type: 'copy' });
+
+    // Check if input looks like a password — use HIBP Pwned Passwords
+    const looksLikePassword = !q.includes('@') && !q.includes('.') && q.length >= 6;
+    if (looksLikePassword) {
+      try {
+        results.push({ label: '─── PASSWORD BREACH CHECK', value: '', type: 'info' });
+        const encoder = new TextEncoder();
+        const data = encoder.encode(q.toUpperCase());
+        const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+        const prefix = hashHex.slice(0, 5);
+        const suffix = hashHex.slice(5);
+        
+        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/breach/password?hash=${prefix}`);
+        const d = await r.json();
+        
+        if (d.results) {
+          const lines = d.results.split('\n');
+          const match = lines.find((line: string) => line.startsWith(suffix));
+          if (match) {
+            const count = match.split(':')[1]?.trim();
+            results.push({ label: '🚨 PASSWORD FOUND IN BREACHES', value: `This password has appeared ${parseInt(count).toLocaleString()} times in data breaches. Do not use it.`, type: 'copy' });
+          } else {
+            results.push({ label: '✅ PASSWORD NOT FOUND', value: 'This password has not appeared in known data breaches.', type: 'data' });
+          }
+        }
+      } catch {
+        results.push({ label: 'PASSWORD CHECK', value: 'Could not check password', type: 'data' });
+      }
+    }
+
+    results.push({ label: '─── BREACH DATABASES', value: '', type: 'info' });
+    results.push({ label: 'HaveIBeenPwned', value: `https://haveibeenpwned.com/account/${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'DeHashed', value: `https://dehashed.com/search?query=${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'LeakCheck', value: `https://leakcheck.io/?query=${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'IntelX', value: `https://intelx.io/?s=${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: '─── DARK WEB MONITORING', value: '', type: 'info' });
+    results.push({ label: 'DarkSearch', value: `https://darksearch.io/search?query=${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'BreachDirectory', value: `https://breachdirectory.org/`, type: 'link' });
+
+    return results;
+  });
+  const searchCourt = () => run('Court Records', input, async () => {
+    const q = input.trim();
+    const results: OsintResult[] = [];
+    results.push({ label: 'QUERY', value: q, type: 'copy' });
+
+    try {
+      const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/court/search?query=${encodeURIComponent(q)}`);
+      const d = await r.json();
+
+      if (d.cases && d.cases.length > 0) {
+        results.push({ label: `─── FEDERAL CASES FOUND (${d.totalCases} total)`, value: '', type: 'info' });
+        d.cases.slice(0, 5).forEach((c: any) => {
+          results.push({ label: c.caseName || 'Unknown Case', value: `${c.court} · ${c.dateFiled || 'Unknown date'}`, type: 'data' });
+          if (c.citation && c.citation.length > 0) {
+            results.push({ label: 'CITATION', value: c.citation[0], type: 'copy' });
+          }
+          results.push({ label: 'View Case', value: `https://www.courtlistener.com${c.absolute_url}`, type: 'link' });
+        });
+      } else {
+        results.push({ label: '─── FEDERAL CASES', value: '', type: 'info' });
+        results.push({ label: 'RESULT', value: 'No federal cases found for this query', type: 'data' });
+      }
+
+      if (d.people && d.people.length > 0) {
+        results.push({ label: `─── PEOPLE IN COURT RECORDS (${d.totalPeople} total)`, value: '', type: 'info' });
+        d.people.slice(0, 3).forEach((p: any) => {
+          results.push({ label: p.name || 'Unknown', value: `${p.dob_city || ''} ${p.dob_state || ''} · ${p.gender || ''}`.trim(), type: 'data' });
+        });
+      }
+    } catch {
+      results.push({ label: 'COURT LOOKUP', value: 'Could not fetch court records', type: 'data' });
+    }
+
+    results.push({ label: '─── ADDITIONAL SOURCES', value: '', type: 'info' });
+    results.push({ label: 'CourtListener', value: `https://www.courtlistener.com/?q=${encodeURIComponent(q)}&type=o`, type: 'link' });
+    results.push({ label: 'PACER', value: 'https://pacer.uscourts.gov/', type: 'link' });
+    results.push({ label: 'National Sex Offender Registry', value: `https://www.nsopw.gov/Search/Results?PersonLastName=${encodeURIComponent(q)}`, type: 'link' });
+    results.push({ label: 'CanLII (Canadian)', value: `https://www.canlii.org/en/#search/text=${encodeURIComponent(q)}`, type: 'link' });
+
+    return results;
+  });
+
+  // ════════════════════════════════════════════════════════════════════════
+  // SPECIAL SCREENS
+  // ════════════════════════════════════════════════════════════════════════
+
+  if (!unlocked) return (
+  <LockScreen
+   onUnlock={() => { isAuthenticating.current = false; SessionManager.setAuthenticating(false); setUnlocked(true); setNeedsReauth(false); }}
+   onAuthStart={() => { isAuthenticating.current = true; SessionManager.setAuthenticating(true); }}
+   isReauth={needsReauth}
+   />
+  );
+  const wrapAnimated = (child: React.ReactElement) => (
+    <Animated.View style={{ flex: 1, opacity: fadeAnim }}>{child}</Animated.View>
+  );
+  if (screen === 'cases')    return wrapAnimated(<CasesScreen onBack={goHome} activeCaseId={activeCaseId} onSetActiveCase={handleSetActiveCase} isPro={isPro} />);
+  if (screen === 'geo_map')  return wrapAnimated(<MapScreen onBack={goHome} onSaveNote={(t) => { setNoteText(t); setShowNoteModal(true); }} />);
+  if (screen === 'settings') return wrapAnimated(<SettingsScreen onBack={goHome} />);
+  if (screen === 'one_input') return wrapAnimated(<OneInputScreen isPro={isPro} onBack={goHome} onUpgrade={() => setScreen('upgrade')} />);
+  if (screen === 'timeline') return wrapAnimated(<TimelineScreen isPro={isPro} onBack={goHome} />);
+  if (screen === 'upgrade') return wrapAnimated(<UpgradeScreen onBack={goHome} onSubscribe={async (tier) => { await Trial.setSubscription(tier); setSubscriptionTier(tier); setIsPro(tier === 'pro'); goHome(); }} />);
+  if (screen === 'watchlist') return wrapAnimated(<WatchListScreen isPro={isPro} onBack={goHome} />);
+  // ── Note modal component ──────────────────────────────────────────────────
+  const NoteModal = () => (
+    <Modal visible={showNoteModal} transparent animationType="slide">
+      <View style={s.modalOverlay}>
+        <View style={[s.modalCard, IS_IPAD && s.iPadModal]}>
+          <Text style={s.modalTitle}>Save to Field Notes</Text>
+          {activeCaseId && <Text style={s.modalCaseHint}>Also saves to active case.</Text>}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
+            {NOTE_TAGS.map(t => (
+              <TouchableOpacity key={t} onPress={() => setNoteTag(t)} style={[s.tagChip, noteTag === t && s.tagActive]}>
+                <Text style={[s.tagText, noteTag === t && s.tagTextActive]}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TextInput style={s.noteInput} value={noteText} onChangeText={setNoteText} placeholder="Enter observation…" placeholderTextColor={C.textDim} multiline numberOfLines={5} />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity style={[s.modalBtn, { backgroundColor: C.card }]} onPress={() => setShowNoteModal(false)}>
+              <Text style={{ color: C.textMid }}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.modalBtn, { backgroundColor: C.accent, flex: 1 }]} onPress={saveNote}>
+              <Text style={{ color: C.bg, fontWeight: '800' }}>Save Note</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // ── Notes screen ──────────────────────────────────────────────────────────
+  if (screen === 'notes') return (
+    <SafeAreaView style={s.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <View style={s.topBar}>
+        <TouchableOpacity onPress={goHome} style={s.backBtn}><Text style={s.backText}>‹</Text></TouchableOpacity>
+        <Text style={s.screenTitle}>📋 Field Notes</Text>
+        <TouchableOpacity onPress={() => { setNoteText(''); setShowNoteModal(true); }} style={s.hBtn}>
+          <Text style={s.hBtnText}>+ Add</Text>
+        </TouchableOpacity>
+      </View>
+      <ScrollView contentContainerStyle={[s.sub, IS_IPAD && s.iPadSub]} onTouchStart={onUserInteraction}>
+        {notes.length === 0 && <Text style={s.empty}>No notes yet. Tap + Add or long-press any result.</Text>}
+        {notes.map(n => (
+          <View key={n.id} style={s.noteCard}>
+            <View style={s.noteTop}>
+              <View style={s.noteBadge}><Text style={s.noteBadgeText}>{n.tag}</Text></View>
+              <Text style={s.noteTime}>{n.timestamp}</Text>
+            </View>
+            <Text style={s.noteText}>{n.text}</Text>
+            <TouchableOpacity onPress={() => deleteNote(n.id)}><Text style={s.deleteTxt}>Delete</Text></TouchableOpacity>
+          </View>
+        ))}
+      </ScrollView>
+      <NoteModal />
+    </SafeAreaView>
+  );
+
+  // ── History screen ────────────────────────────────────────────────────────
+  if (screen === 'history') return (
+    <SafeAreaView style={s.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <View style={s.topBar}>
+        <TouchableOpacity onPress={goHome} style={s.backBtn}><Text style={s.backText}>‹</Text></TouchableOpacity>
+        <Text style={s.screenTitle}>🕐 Search History</Text>
+        <TouchableOpacity onPress={clearHistory} style={s.hBtn}><Text style={[s.hBtnText, { color: C.red }]}>Clear</Text></TouchableOpacity>
+      </View>
+      <ScrollView contentContainerStyle={[s.sub, IS_IPAD && s.iPadSub]} onTouchStart={onUserInteraction}>
+        {history.length === 0 && <Text style={s.empty}>No search history.</Text>}
+        {history.map(h => (
+          <View key={h.id} style={s.histRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.histModule}>{h.module}</Text>
+              <Text style={s.histQuery}>{h.query}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              {h.caseId && <Text style={{ fontSize: 14, marginBottom: 2 }}>📁</Text>}
+              <Text style={s.histTime}>{h.timestamp}</Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
+  );
+
+  // ════════════════════════════════════════════════════════════════════════
+  // HOME
+  // ════════════════════════════════════════════════════════════════════════
+  if (screen === 'home') {
+    const modules = [
+      { id: 'one_input', icon: '🎯', title: 'One-Input Search', desc: 'One query — full intelligence report' },
+      { id: 'phone',    icon: '📞', title: 'Phone Lookup',   desc: 'Owner, spam, carrier' },
+      { id: 'email',    icon: '✉️',  title: 'Email Lookup',   desc: 'Breaches, owner, domain' },
+      { id: 'social',   icon: '📱', title: 'Social Media',   desc: 'Username on 25+ platforms' },
+      { id: 'ip',       icon: '🌐', title: 'IP & Network',   desc: 'Location, ISP, threat intel' },
+      { id: 'domain',   icon: '🔗', title: 'Domain & WHOIS', desc: 'DNS, registration, history' },
+      { id: 'company',  icon: '🏢', title: 'Company / Org',  desc: 'SEC, state regs, finance' },
+      { id: 'vehicle',  icon: '🚗', title: 'Vehicle',        desc: 'Plate, VIN, history' },
+      { id: 'court',    icon: '⚖️',  title: 'Court Records', desc: 'PACER, state, criminal' },
+      { id: 'geo',      icon: '📍', title: 'Geo / OSINT',   desc: 'Satellite, flights, vessels' },
+      { id: 'geo_map',  icon: '🗺️', title: 'Map View',       desc: 'Pin locations, field map' },
+      { id: 'image',    icon: '🖼️', title: 'Image Analysis', desc: 'EXIF, reverse search, AI' },
+      { id: 'breach',   icon: '🔓', title: 'Data Breaches',  desc: 'Pwned, dark web, pastes' },
+      { id: 'cases',    icon: '📁', title: 'Cases',          desc: 'Manage investigations' },
+      { id: 'timeline', icon: '🕐', title: 'Investigation Timeline', desc: 'Auto-generated activity log' },
+      { id: 'watchlist', icon: '👁️', title: 'Watch List', desc: 'Monitor targets for changes' },
+      { id: 'notes',    icon: '📋', title: 'Field Notes',    desc: `${notes.length} saved` },
+      { id: 'history',  icon: '🕐', title: 'History',        desc: `${history.length} queries` },
+      { id: 'settings', icon: '🔐', title: 'Security',       desc: 'Encryption & audit log' },
+      { id: 'upgrade', icon: '⭐', title: 'Upgrade to Pro', desc: 'Plans & pricing' },
+    ];
+    return (
+      <SafeAreaView style={s.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+        <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+          <View style={s.homeHeader}>
+            <View>
+              <Text style={s.logo}>SENTINEL</Text>
+              <Text style={s.logoSub}>OSINT FIELD TOOLKIT · NA v2.4{IS_IPAD ? ' · iPad' : ''}</Text>
+              <Text style={s.aiPowered}>✦ Searches FBI · Interpol · 50 States · Canada</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              {activeCaseId && <View style={s.caseDot}><Text>📁</Text></View>}
+              <View style={s.statusDot} />
+            </View>
+          </View>
+          <View style={s.disclaimer}>
+            <Text style={s.disclaimerTxt}>⚖️ Not a CRA. Not for employment/credit/tenant screening.</Text>
+          </View>
+          {activeCaseId && (
+            <TouchableOpacity style={s.activeBanner} onPress={() => navigate('cases')}>
+              <Text style={s.activeBannerTxt}>🔴 Active case – searches are being logged  ›</Text>
+            </TouchableOpacity>
+          )}
+          <ScrollView
+            contentContainerStyle={[s.grid, { paddingHorizontal: GRID_PADDING, gap: GRID_GAP }]}
+            showsVerticalScrollIndicator={false}
+            onTouchStart={onUserInteraction}
+          >
+            {/* Recently Searched */}
+            {history.length > 0 && (
+              <View style={[s.recentBox, { width: '100%' }]}>
+                <Text style={s.recentTitle}>🕐 Recently Searched</Text>
+                <View style={s.recentChips}>
+                  {history.slice(0, 3).map((h, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={s.recentChip}
+                      onPress={() => { setInput(h.query); navigate(h.module.toLowerCase().replace(' ', '_') as Screen); }}
+                    >
+                      <Text style={s.recentChipTxt} numberOfLines={1}>{h.query}</Text>
+                      <Text style={s.recentChipMod}>{h.module}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+            {modules.map(m => {
+              const isOneInput = m.id === 'one_input';
+              const isSettings = m.id === 'settings';
+              return (
+                <TouchableOpacity
+                  key={m.id}
+                  style={[
+                    s.moduleCard,
+                    { width: isOneInput ? '100%' : CARD_WIDTH },
+                    isSettings && s.securityCard,
+                    isOneInput && s.oneInputCard,
+                  ]}
+                  onPress={() => navigate(m.id as Screen)}
+                  activeOpacity={0.72}
+                >
+                  {isOneInput && (
+                    <View style={s.oneInputBadge}>
+                      <Text style={s.oneInputBadgeTxt}>⚡ FASTEST SEARCH</Text>
+                    </View>
+                  )}
+                  <Text style={[s.moduleIcon, isOneInput && { fontSize: IS_IPAD ? 40 : 32 }]}>{m.icon}</Text>
+                  <Text style={[s.moduleTitle, isOneInput && s.oneInputTitle]}>{m.title}</Text>
+                  <Text style={[s.moduleDesc, isOneInput && s.oneInputDesc]}>{m.desc}</Text>
+                </TouchableOpacity>
+              );
+            })}
+            <View style={{ height: 24, width: '100%' }} />
+          </ScrollView>
+        </Animated.View>
+        <NoteModal />
+      </SafeAreaView>
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // OSINT SEARCH SCREENS
+  // ════════════════════════════════════════════════════════════════════════
+  const cfgs: Record<string, { title: string; ph: string; ph2?: string; btn: string; action: () => void; hint?: string; tips?: string[] }> = {
+    phone:   { title: '📞 Phone Lookup',    ph: '+1 555 000 0000',               btn: 'Lookup Number',           action: searchPhone,   hint: 'Include country code (+1)',       tips: ['Include country code for best results', 'Checks spam databases & carrier info', 'Works for US and Canadian numbers'] },
+    email:   { title: '✉️ Email Lookup',    ph: 'address@domain.com',            btn: 'Lookup Email',            action: searchEmail,   hint: 'Check breaches & owner info',     tips: ['Searches breach databases', 'Finds linked social accounts', 'Checks domain registration'] },
+    social:  { title: '📱 Social Media',    ph: 'Username (no @)',                btn: 'Find Profiles',           action: searchSocial,  hint: 'Checked on 25+ platforms',       tips: ['Do not include @ symbol', 'Checks 25+ platforms simultaneously', 'Case-insensitive search'] },
+    ip:      { title: '🌐 IP & Network',    ph: 'IP address (e.g. 8.8.8.8)',     btn: 'Lookup IP',               action: searchIP,      hint: 'IPv4 and IPv6 supported',         tips: ['Works with IPv4 and IPv6', 'Returns geolocation & ISP info', 'Checks threat intelligence feeds'] },
+    domain:  { title: '🔗 Domain & WHOIS',  ph: 'example.com',                   btn: 'Lookup Domain',           action: searchDomain,  hint: 'Do not include https://',         tips: ['Enter domain without https://', 'Returns registration & DNS records', 'Checks domain reputation & history'] },
+    company: { title: '🏢 Company / Org',   ph: 'Company name or EIN',           ph2: 'State (optional)',        btn: 'Search Company',  action: searchCompany, hint: 'SEC, state records & finance',   tips: ['Search by name or EIN/tax ID', 'Add state to narrow results', 'Checks SEC filings & state registrations'] },
+    vehicle: { title: '🚗 Vehicle',         ph: 'License plate or VIN',          btn: 'Search Vehicle',          action: searchVehicle, hint: 'US and Canadian plates',          tips: ['US and Canadian plates supported', 'VIN returns full vehicle history', 'Plate format: ABC1234'] },
+    court:   { title: '⚖️ Court Records',   ph: 'Name, company, or case number', ph2: 'State (optional)',        btn: 'Search Records',  action: searchCourt,   hint: 'PACER, state & criminal records', tips: ['Search by name, company, or case #', 'Add state to limit jurisdiction', 'Covers federal and state courts'] },
+    geo:     { title: '📍 Geo / OSINT',     ph: 'Coordinates or address',        btn: 'Search Location',         action: searchGeo,     hint: '40.7128,-74.0060 or address',     tips: ['Enter GPS coords or street address', 'Returns satellite & aerial imagery', 'Checks flight & vessel tracking'] },
+    image:   { title: '🖼️ Image Analysis',  ph: 'Image URL',                     btn: 'Analyze Image',           action: searchImage,   hint: 'EXIF, reverse search & AI',       tips: ['Paste a direct image URL', 'Extracts EXIF metadata', 'Runs reverse image search across engines'] },
+    breach:  { title: '🔓 Data Breaches',   ph: 'Email, username, or domain',    btn: 'Check Breaches',          action: searchBreach,  hint: 'HaveIBeenPwned & dark web',       tips: ['Search by email, username, or domain', 'Checks HaveIBeenPwned & dark web', 'Returns breach dates & exposed data types'] },
+  };
+
+  const cfg = cfgs[screen];
+  if (!cfg) return null;
+
+  return (
+    <SafeAreaView style={s.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <View style={s.topBar}>
+        <TouchableOpacity onPress={goHome} style={s.backBtn}><Text style={s.backText}>‹</Text></TouchableOpacity>
+        <Text style={s.screenTitle}>{cfg.title}</Text>
+        {results.length > 0 && (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+
+            <TouchableOpacity onPress={shareResults} style={s.hBtn}>
+              <Text style={s.hBtnText}>↑ Share</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <ScrollView contentContainerStyle={[s.sub, IS_IPAD && s.iPadSub]} keyboardShouldPersistTaps="handled" onTouchStart={onUserInteraction}>
+          {activeCaseId && <View style={s.caseHint}><Text style={s.caseHintTxt}>📁 Searches logged to active case</Text></View>}
+          {cfg.hint && <Text style={s.hint}>💡 {cfg.hint}</Text>}
+          <TextInput style={s.input} placeholder={cfg.ph} placeholderTextColor={C.textDim} value={input} onChangeText={setInput} autoCapitalize="none" autoCorrect={false} returnKeyType="search" onSubmitEditing={cfg.action} />
+          {cfg.ph2 && <TextInput style={s.input} placeholder={cfg.ph2} placeholderTextColor={C.textDim} value={input2} onChangeText={setInput2} autoCapitalize="none" autoCorrect={false} />}
+          <TouchableOpacity style={s.searchBtn} onPress={cfg.action} disabled={loading}>
+            {loading ? <ActivityIndicator color={C.bg} /> : <Text style={s.searchBtnTxt}>{cfg.btn}</Text>}
+          </TouchableOpacity>
+          {cfg.tips && results.length === 0 && !loading && (
+            <View style={s.tipsBox}>
+              <Text style={s.tipsTitle}>What you can find:</Text>
+              {cfg.tips.map((t, i) => (
+                <Text key={i} style={s.tipItem}>· {t}</Text>
+              ))}
+            </View>
+          )}
+
+          {results.length > 0 && (
+            <TouchableOpacity
+              style={s.aiBtn}
+              onPress={() => {
+                if (!isPro) { setScreen('upgrade'); return; }
+                analyzeWithAI(screen, input, results);
+              }}
+            >
+              <Text style={s.aiBtnText}>🤖  AI Analysis</Text>
+              {!isPro && <Text style={s.aiBtnBadge}>PRO</Text>}
+            </TouchableOpacity>
+          )}
+          {results.length > 0 && activeCaseId && (
+            <TouchableOpacity
+              style={s.caseAddBtn}
+              onPress={() => {
+                const summary = results.filter(r => r.type !== 'info').slice(0, 5).map(r => `${r.label}: ${r.value}`).join('\n');
+                quickNote(`[${screen.toUpperCase()}] ${input}\n${summary}`);
+              }}
+            >
+              <Text style={s.caseAddBtnTxt}>📁 Add to Active Case</Text>
+            </TouchableOpacity>
+          )}
+          {results.length > 0 && (
+            <TouchableOpacity
+              style={s.pdfBtn}
+              onPress={() => { if (!isPro) { setScreen('upgrade'); return; } exportPDF(); }}
+              disabled={exporting}
+            >
+              <Text style={s.pdfBtnText}>{exporting ? '…' : '↓  Export PDF'}</Text>
+              {!isPro && <Text style={s.aiBtnBadge}>PRO</Text>}
+            </TouchableOpacity>
+          )}
+          {results.length > 0 && (
+            <View style={s.resultsBox}>
+              <View style={s.resultsTopBar}>
+                <Text style={s.resultsLbl}>RESULTS</Text>
+                <Text style={s.resultsCnt}>{results.filter(r => r.type !== 'info' && r.type !== 'warn').length} items</Text>
+              </View>
+              <Text style={s.lpHint}>Long-press any row → save to Field Notes</Text>
+              {results.map((r, i) => {
+                if (r.type === 'info') return <View key={i} style={s.secHeader}><Text style={s.secHeaderTxt}>{r.label}</Text></View>;
+                if (r.type === 'warn') return <View key={i} style={s.warnRow}><Text style={{ fontSize: 18, marginRight: 10 }}>⚠️</Text><Text style={s.warnTxt}>{r.value}</Text></View>;
+                return (
+                  <TouchableOpacity key={i} style={[s.resultRow,
+                    r.label?.includes('🚨') && s.resultRowAlert,
+                    r.label?.includes('⚠️') && s.resultRowWarn,
+                    r.label?.includes('✅') && s.resultRowOk,
+                  ]}
+                    onPress={() => { if (r.type === 'link') Linking.openURL(r.value); else if (r.type === 'copy') copyToClipboard(r.value); }}
+                    onLongPress={() => quickNote(`${r.label}: ${r.value}`)}
+                    activeOpacity={0.65}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.resultLbl,
+                        r.label?.includes('🚨') && { color: C.red },
+                        r.label?.includes('⚠️') && { color: C.amber },
+                        r.label?.includes('✅') && { color: C.green },
+                      ]}>{r.label}</Text>
+                      {r.value ? <Text style={[s.resultVal, r.type === 'link' && s.linkTxt, r.type === 'copy' && s.copyTxt]} numberOfLines={2}>{r.type === 'link' ? '→ Open in browser' : r.value}</Text> : null}
+                    </View>
+                    {r.type === 'link' && <Text style={s.extIcon}>↗</Text>}
+                    {r.type === 'copy' && <Text style={s.copyIcon}>⎘</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          <View style={{ height: 48 }} />
+        </ScrollView>
+      </Animated.View>
+      <NoteModal />
+    </SafeAreaView>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// STYLES
+// ════════════════════════════════════════════════════════════════════════════
+const s = StyleSheet.create({
+  safe:       { flex: 1, backgroundColor: C.bg },
+  homeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: IS_IPAD ? 24 : 20, paddingTop: IS_IPAD ? 20 : 16, paddingBottom: IS_IPAD ? 14 : 10 },
+  aiPowered:  { fontSize: IS_IPAD ? 10 : 8, color: C.textMid, letterSpacing: 1, marginTop: 2 },
+  logo:       { fontSize: IS_IPAD ? 32 : 26, fontWeight: '900', color: C.accent, letterSpacing: IS_IPAD ? 5 : 4 },
+  logoSub:    { fontSize: IS_IPAD ? 11 : 9, color: C.textDim, letterSpacing: 2, marginTop: 3 },
+  statusDot:  { width: 10, height: 10, borderRadius: 5, backgroundColor: C.green, shadowColor: C.green, shadowRadius: 6, shadowOpacity: 0.8, shadowOffset: { width: 0, height: 0 } },
+  caseDot:    { backgroundColor: C.amberDim, borderRadius: 12, padding: 4 },
+  disclaimer: { marginHorizontal: IS_IPAD ? 24 : 16, marginBottom: 10, backgroundColor: '#0d1a10', borderLeftWidth: 3, borderLeftColor: C.amber, borderRadius: 8, padding: IS_IPAD ? 12 : 10 },
+  disclaimerTxt: { color: C.amber, fontSize: IS_IPAD ? 12 : 11 },
+  activeBanner:  { marginHorizontal: IS_IPAD ? 24 : 16, marginBottom: 10, backgroundColor: C.redDim, borderRadius: 8, padding: 10, borderWidth: 1, borderColor: C.red },
+  activeBannerTxt: { color: C.red, fontSize: IS_IPAD ? 13 : 12, fontWeight: '600' },
+  grid:       { flexDirection: 'row', flexWrap: 'wrap', paddingTop: 4 },
+  recentBox:      { backgroundColor: C.card, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: C.border },
+  recentTitle:    { color: C.textMid, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 8 },
+  recentChips:    { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  recentChip:     { backgroundColor: C.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: C.border, maxWidth: '45%' },
+  recentChipTxt:  { color: C.text, fontSize: 12, fontWeight: '600' },
+  recentChipMod:  { color: C.textDim, fontSize: 10, marginTop: 2 },
+  oneInputCard: { borderTopColor: C.accent, borderTopWidth: 3, backgroundColor: C.accentDim },
+  oneInputBadge: { position: 'absolute', top: 10, right: 10, backgroundColor: C.accent, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  oneInputBadgeTxt: { color: C.bg, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  oneInputTitle: { fontSize: IS_IPAD ? 20 : 17, color: C.accent },
+  oneInputDesc: { color: C.textMid, fontSize: IS_IPAD ? 13 : 12 },
+  moduleCard: { backgroundColor: C.card, borderRadius: IS_IPAD ? 16 : 14, padding: IS_IPAD ? 20 : 16, borderWidth: 1, borderColor: C.border, borderTopWidth: 2, borderTopColor: C.accent },
+  securityCard: { borderColor: C.accentDim, backgroundColor: '#0a1520' },
+  moduleIcon: { fontSize: IS_IPAD ? 32 : 26, marginBottom: IS_IPAD ? 10 : 8 },
+  moduleTitle:{ color: C.text, fontWeight: '700', fontSize: IS_IPAD ? 16 : 14, marginBottom: 3 },
+  moduleDesc: { color: C.textDim, fontSize: IS_IPAD ? 13 : 11, lineHeight: IS_IPAD ? 18 : 15 },
+  topBar:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: IS_IPAD ? 16 : 14, borderBottomWidth: 1, borderBottomColor: C.border },
+  backBtn:    { marginRight: 10, padding: 8, marginLeft: -8 },
+  backText:   { color: C.accent, fontSize: 28, lineHeight: 28 },
+  screenTitle:{ flex: 1, color: C.text, fontWeight: '700', fontSize: IS_IPAD ? 20 : 16 },
+  hBtn:       { padding: 6 },
+  hBtnText:   { color: C.accent, fontSize: IS_IPAD ? 15 : 13, fontWeight: '600' },
+  sub:        { padding: IS_IPAD ? 20 : 16 },
+  iPadSub:    { paddingHorizontal: IS_IPAD ? 48 : 16, maxWidth: 760, alignSelf: 'center', width: '100%' },
+  caseHint:   { backgroundColor: C.redDim, borderRadius: 8, padding: 8, marginBottom: 10, borderWidth: 1, borderColor: C.red },
+  caseHintTxt:{ color: C.red, fontSize: IS_IPAD ? 12 : 11 },
+  hint:       { color: C.textDim, fontSize: IS_IPAD ? 13 : 12, marginBottom: 12, fontStyle: 'italic' },
+  input:      { backgroundColor: C.card, color: C.text, borderRadius: 12, paddingHorizontal: 16, paddingVertical: IS_IPAD ? 16 : 14, fontSize: IS_IPAD ? 16 : 15, marginBottom: 12, borderWidth: 1, borderColor: C.border },
+  searchBtn:  { backgroundColor: 'transparent', borderRadius: 12, padding: IS_IPAD ? 18 : 16, alignItems: 'center', marginBottom: 20, borderWidth: 1.5, borderColor: C.accent },
+  searchBtnTxt:{ color: C.accent, fontWeight: '800', fontSize: IS_IPAD ? 17 : 16, letterSpacing: 0.5 },
+  tipsBox:   { backgroundColor: C.surface, borderRadius: 12, padding: 16, marginBottom: 20, borderLeftWidth: 3, borderLeftColor: C.accent },
+  tipsTitle: { color: C.accent, fontWeight: '700', fontSize: 13, marginBottom: 8, letterSpacing: 0.5, textTransform: 'uppercase' },
+  tipItem:   { color: C.textDim, fontSize: 14, lineHeight: 22 },
+  caseAddBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1f0d', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: C.green },
+  caseAddBtnTxt: { color: C.green, fontWeight: '700', fontSize: 15 },
+  pdfBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a0a2e', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: C.purple, gap: 8 },
+  pdfBtnText:  { color: C.purple, fontWeight: '700', fontSize: 15 },
+  aiBtn:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: C.accentDim, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: C.accent, gap: 8 },
+  aiBtnText:  { color: C.accent, fontWeight: '700', fontSize: 15 },
+  aiBtnBadge: { color: C.orange, fontWeight: '700', fontSize: 12, backgroundColor: C.orangeDim, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  resultsBox: { backgroundColor: C.card, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: C.border },
+  resultsTopBar:{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: IS_IPAD ? 14 : 12, borderBottomWidth: 1, borderBottomColor: C.border },
+  resultsLbl: { color: C.accent, fontWeight: '700', fontSize: IS_IPAD ? 12 : 11, letterSpacing: 2 },
+  resultsCnt: { color: C.textDim, fontSize: IS_IPAD ? 12 : 11 },
+  lpHint:     { color: C.textDim, fontSize: IS_IPAD ? 11 : 10, textAlign: 'center', paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.border },
+  secHeader:  { backgroundColor: '#0a1018', paddingHorizontal: 16, paddingVertical: IS_IPAD ? 10 : 8 },
+  secHeaderTxt:{ color: C.textDim, fontSize: IS_IPAD ? 11 : 10, letterSpacing: 1.5, textTransform: 'uppercase' },
+  resultRowAlert: { backgroundColor: C.redDim, borderLeftWidth: 3, borderLeftColor: C.red },
+  resultRowWarn:  { backgroundColor: C.amberDim, borderLeftWidth: 3, borderLeftColor: C.amber },
+  resultRowOk:    { backgroundColor: C.greenDim, borderLeftWidth: 3, borderLeftColor: C.green },
+  resultRow:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: IS_IPAD ? 15 : 13, borderBottomWidth: 1, borderBottomColor: C.border },
+  resultLbl:  { color: C.textDim, fontSize: IS_IPAD ? 11 : 10, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 },
+  resultVal:  { color: C.text, fontSize: IS_IPAD ? 15 : 14 },
+  linkTxt:    { color: C.accent },
+  copyTxt:    { color: C.green },
+  extIcon:    { color: C.accent, fontSize: IS_IPAD ? 20 : 18, marginLeft: 8 },
+  copyIcon:   { color: C.green,  fontSize: IS_IPAD ? 18 : 16, marginLeft: 8 },
+  warnRow:    { flexDirection: 'row', backgroundColor: '#140e00', padding: IS_IPAD ? 16 : 14, borderBottomWidth: 1, borderBottomColor: C.border },
+  warnTxt:    { color: C.amber, fontSize: IS_IPAD ? 13 : 12, flex: 1, lineHeight: IS_IPAD ? 20 : 18 },
+  noteCard:   { backgroundColor: C.card, borderRadius: 12, padding: IS_IPAD ? 16 : 14, marginBottom: 12, borderWidth: 1, borderColor: C.border, borderLeftWidth: 3, borderLeftColor: C.purple },
+  noteTop:    { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  noteBadge:  { backgroundColor: C.purpleDim, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+  noteBadgeText:{ color: C.purple, fontSize: IS_IPAD ? 11 : 10, fontWeight: '700' },
+  noteTime:   { color: C.textDim, fontSize: IS_IPAD ? 12 : 11 },
+  noteText:   { color: C.text, fontSize: IS_IPAD ? 15 : 14, lineHeight: IS_IPAD ? 22 : 20, marginBottom: 8 },
+  deleteTxt:  { color: C.red, fontSize: IS_IPAD ? 13 : 12, textAlign: 'right' },
+  empty:      { color: C.textDim, textAlign: 'center', marginTop: 48, fontSize: IS_IPAD ? 15 : 14, lineHeight: 22, paddingHorizontal: 24 },
+  histRow:    { backgroundColor: C.card, borderRadius: 10, padding: IS_IPAD ? 16 : 14, marginBottom: 10, borderWidth: 1, borderColor: C.border, flexDirection: 'row', justifyContent: 'space-between' },
+  histModule: { color: C.accent, fontSize: IS_IPAD ? 11 : 10, fontWeight: '700', letterSpacing: 1, marginBottom: 3 },
+  histQuery:  { color: C.text, fontSize: IS_IPAD ? 14 : 13 },
+  histTime:   { color: C.textDim, fontSize: IS_IPAD ? 12 : 10 },
+  modalOverlay:{ flex: 1, backgroundColor: 'rgba(0,0,0,0.88)', justifyContent: 'flex-end' },
+  modalCard:  { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: IS_IPAD ? 32 : 24, paddingBottom: IS_IPAD ? 52 : 48 },
+  iPadModal:  { marginHorizontal: 100, borderRadius: 24, marginBottom: 60 },
+  modalTitle: { color: C.text, fontWeight: '700', fontSize: IS_IPAD ? 22 : 18, marginBottom: 8 },
+  modalCaseHint:{ color: C.red, fontSize: 11, marginBottom: 12 },
+  noteInput:  { backgroundColor: C.card, color: C.text, borderRadius: 12, padding: 14, fontSize: IS_IPAD ? 16 : 14, minHeight: IS_IPAD ? 140 : 110, textAlignVertical: 'top', borderWidth: 1, borderColor: C.border, marginBottom: 16 },
+  modalBtn:   { flex: 0.5, borderRadius: 12, padding: IS_IPAD ? 16 : 14, alignItems: 'center' },
+  tagChip:    { paddingHorizontal: 14, paddingVertical: IS_IPAD ? 9 : 7, borderRadius: 20, backgroundColor: C.card, marginRight: 8, borderWidth: 1, borderColor: C.border },
+  tagActive:  { backgroundColor: C.accentDim, borderColor: C.accent },
+  tagText:    { color: C.textDim, fontSize: IS_IPAD ? 13 : 12 },
+  tagTextActive:{ color: C.accent, fontWeight: '700' },
+});

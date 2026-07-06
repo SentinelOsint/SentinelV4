@@ -1,0 +1,243 @@
+/**
+ * SENTINEL – Upgrade / Paywall Screen
+ * Uses react-native-iap for real App Store purchases
+ */
+import React, { useEffect, useState } from 'react';
+import {
+  View, Text, TouchableOpacity, ScrollView,
+  StyleSheet, SafeAreaView, StatusBar, Alert, ActivityIndicator, Linking,
+} from 'react-native';
+import { C, IS_IPAD, SPACE } from '../utils/theme';
+import { Trial, SubscriptionTier } from '../utils/storage';
+import {
+  initIAP, endIAP, getProducts, purchaseSubscription,
+  restorePurchasesIAP, PRODUCT_IDS,
+} from '../utils/iapManager';
+
+interface Props {
+  reason?: 'expired' | 'ai' | 'pdf' | 'cases' | 'one_input';
+  onBack:  () => void;
+  onSubscribe: (tier: 'solo' | 'pro') => void;
+}
+
+const REASONS: Record<string, { title: string; desc: string }> = {
+  expired:   { title: 'Your trial has ended', desc: 'Subscribe to continue using Sentinel.' },
+  ai:        { title: 'AI features are Pro only', desc: 'Upgrade to Pro to access AI-powered analysis, risk profiling, and investigation summaries.' },
+  pdf:       { title: 'PDF export requires a subscription', desc: 'Subscribe to Solo or Pro to export professional investigation reports.' },
+  cases:     { title: 'Case limit reached', desc: 'Trial allows 1 active case. Subscribe to manage unlimited investigations.' },
+  one_input: { title: 'Daily search limit reached', desc: 'Trial allows 2 One-Input searches per day. Subscribe for unlimited searches.' },
+};
+
+export default function UpgradeScreen({ reason = 'expired', onBack, onSubscribe }: Props) {
+  const [daysLeft,   setDaysLeft]   = useState<number>(0);
+  const [tier,       setTier]       = useState<SubscriptionTier>('trial');
+  const [loading,    setLoading]    = useState(false);
+  const [restoring,  setRestoring]  = useState(false);
+  const [iapReady,   setIapReady]   = useState(false);
+  const [soloPrice,  setSoloPrice]  = useState('$29.99');
+  const [proPrice,   setProPrice]   = useState('$79.99');
+
+  useEffect(() => {
+    (async () => {
+      const days = await Trial.getDaysRemaining();
+      const t    = await Trial.getSubscriptionTier();
+      setDaysLeft(days);
+      setTier(t);
+      const ok = await initIAP();
+      if (ok) {
+        setIapReady(true);
+        const products = await getProducts();
+        (products || []).forEach((p: any) => {
+          if (p.productId === PRODUCT_IDS.SOLO && p.localizedPrice) setSoloPrice(p.localizedPrice);
+          if (p.productId === PRODUCT_IDS.PRO  && p.localizedPrice) setProPrice(p.localizedPrice);
+        });
+      }
+    })();
+    return () => { endIAP(); };
+  }, []);
+
+  const handlePurchase = async (productId: string, tier: 'solo' | 'pro') => {
+    if (!iapReady) {
+      Alert.alert('Not Available', 'App Store connection not ready. Please try again.');
+      return;
+    }
+    setLoading(true);
+    await purchaseSubscription(
+      productId,
+      (purchasedTier) => {
+        setLoading(false);
+        Alert.alert('✅ Success', `Welcome to Sentinel ${purchasedTier === 'pro' ? 'Pro' : 'Solo'}!`, [
+          { text: 'Get Started', onPress: () => onSubscribe(purchasedTier) }
+        ]);
+      },
+      (msg) => {
+        setLoading(false);
+        Alert.alert('Purchase Failed', msg);
+      }
+    );
+    setLoading(false);
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    await restorePurchasesIAP(
+      (restoredTier) => {
+        setRestoring(false);
+        Alert.alert('✅ Restored', `Your ${restoredTier === 'pro' ? 'Pro' : 'Solo'} subscription has been restored.`, [
+          { text: 'Continue', onPress: () => onSubscribe(restoredTier) }
+        ]);
+      },
+      () => {
+        setRestoring(false);
+        Alert.alert('No Purchases Found', 'No previous subscriptions found for this Apple ID.');
+      }
+    );
+  };
+
+  const { title, desc } = REASONS[reason] || REASONS.expired;
+
+  return (
+    <SafeAreaView style={s.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <View style={s.header}>
+        <TouchableOpacity onPress={onBack} style={s.backBtn}>
+          <Text style={s.backTxt}>← Back</Text>
+        </TouchableOpacity>
+      </View>
+      <ScrollView contentContainerStyle={s.scroll}>
+        <Text style={s.logo}>SENTINEL</Text>
+        <Text style={s.logoSub}>OSINT FIELD TOOLKIT</Text>
+
+        {tier === 'trial' && daysLeft > 0 && (
+          <View style={s.trialBadge}>
+            <Text style={s.trialTxt}>⏱ {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining in trial</Text>
+          </View>
+        )}
+
+        <Text style={s.headline}>{title}</Text>
+        <Text style={s.subhead}>{desc}</Text>
+
+        {/* Solo Card */}
+        <View style={s.planCard}>
+          <View style={s.planHeader}>
+            <Text style={s.planName}>Solo</Text>
+            <Text style={s.planPrice}>{soloPrice}<Text style={s.planPer}>/mo</Text></Text>
+          </View>
+          <View style={s.featureList}>
+            {[
+              '✓ All 12 OSINT modules',
+              '✓ Unlimited cases',
+              '✓ Investigation Timeline',
+              '✓ Court-ready PDF export',
+              '✓ Watch List monitoring',
+              '✓ AES-256 encryption',
+            ].map((f, i) => <Text key={i} style={s.feature}>{f}</Text>)}
+          </View>
+          <TouchableOpacity
+            style={[s.buyBtn, s.soloBtn]}
+            onPress={() => handlePurchase(PRODUCT_IDS.SOLO, 'solo')}
+            disabled={loading}
+          >
+            {loading ? <ActivityIndicator color={C.bg} /> : <Text style={s.buyBtnTxt}>Subscribe to Solo</Text>}
+          </TouchableOpacity>
+        </View>
+
+        {/* Pro Card */}
+        <View style={[s.planCard, s.proCard]}>
+          <View style={s.foundingBadge}>
+            <Text style={s.foundingTxt}>⭐ FOUNDING MEMBER — Lock in $79.99/mo forever</Text>
+          </View>
+          <View style={s.planHeader}>
+            <Text style={[s.planName, s.proName]}>Pro</Text>
+            <Text style={[s.planPrice, s.proPrice]}>{proPrice}<Text style={s.planPer}>/mo</Text></Text>
+          </View>
+          <View style={s.featureList}>
+            {[
+              '✓ Everything in Solo',
+              '✓ FBI + Interpol wanted checks',
+              '✓ All 50 US state wanted lists',
+              '✓ Canadian provincial databases',
+              '✓ OFAC · UN · EU · BIS sanctions',
+              '✓ AI Risk Score (0–100) — LOW / MEDIUM / HIGH / CRITICAL',
+              '✓ AI Deep Background Analysis',
+              '✓ AI Contradiction Detection',
+              '✓ AI Investigation Strategy',
+              '✓ AI Case Report Generation',
+              '✓ AI Field Notes Summary',
+              '✓ AI Image Intelligence',
+              '✓ 100 AI queries/month',
+            ].map((f, i) => <Text key={i} style={[s.feature, s.proFeature]}>{f}</Text>)}
+          </View>
+          <TouchableOpacity
+            style={[s.buyBtn, s.proBtn]}
+            onPress={() => handlePurchase(PRODUCT_IDS.PRO, 'pro')}
+            disabled={loading}
+          >
+            {loading ? <ActivityIndicator color={C.bg} /> : <Text style={s.buyBtnTxt}>Subscribe to Pro</Text>}
+          </TouchableOpacity>
+        </View>
+
+        {/* Restore */}
+        <TouchableOpacity style={s.restoreBtn} onPress={handleRestore} disabled={restoring}>
+          {restoring
+            ? <ActivityIndicator color={C.textDim} size="small" />
+            : <Text style={s.restoreTxt}>Restore previous purchases</Text>
+          }
+        </TouchableOpacity>
+
+        <Text style={s.legal}>
+          Payment will be charged to your Apple ID account. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage or cancel in App Store Settings.
+        </Text>
+        <Text style={s.cra}>Sentinel is not a Consumer Reporting Agency (CRA).</Text>
+
+        <View style={s.legalLinks}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://sentinelosint.github.io/sentinel-privacy/')}>
+            <Text style={s.legalLink}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <Text style={s.legalLinkSep}>·</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+            <Text style={s.legalLink}>Terms of Use (EULA)</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const s = StyleSheet.create({
+  safe:          { flex: 1, backgroundColor: C.bg },
+  header:        { paddingHorizontal: 16, paddingVertical: 12 },
+  backBtn:       { padding: 8 },
+  backTxt:       { color: C.accent, fontSize: 16 },
+  scroll:        { padding: IS_IPAD ? 48 : 24, paddingBottom: 60 },
+  logo:          { fontSize: IS_IPAD ? 32 : 26, fontWeight: '900', color: C.accent, letterSpacing: 4, textAlign: 'center' },
+  logoSub:       { fontSize: 9, color: C.textDim, letterSpacing: 3, textAlign: 'center', marginBottom: 24 },
+  trialBadge:    { backgroundColor: C.amberDim, borderRadius: 8, padding: 10, marginBottom: 16, borderWidth: 1, borderColor: C.amber },
+  trialTxt:      { color: C.amber, fontSize: 13, textAlign: 'center', fontWeight: '600' },
+  headline:      { color: C.text, fontSize: IS_IPAD ? 24 : 20, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  subhead:       { color: C.textMid, fontSize: 14, textAlign: 'center', marginBottom: 28, lineHeight: 20 },
+  planCard:      { backgroundColor: C.card, borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: C.border },
+  proCard:       { borderColor: C.accent, borderWidth: 1.5 },
+  foundingBadge: { backgroundColor: C.accentDim, borderRadius: 8, padding: 8, marginBottom: 12 },
+  foundingTxt:   { color: C.accent, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  planHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  planName:      { color: C.text, fontSize: 20, fontWeight: '700' },
+  proName:       { color: C.accent },
+  planPrice:     { color: C.text, fontSize: 24, fontWeight: '900' },
+  proPrice:      { color: C.accent },
+  planPer:       { fontSize: 14, fontWeight: '400', color: C.textDim },
+  featureList:   { marginBottom: 16, gap: 6 },
+  feature:       { color: C.textMid, fontSize: 14, lineHeight: 22 },
+  proFeature:    { color: C.text },
+  buyBtn:        { borderRadius: 12, padding: 16, alignItems: 'center' },
+  soloBtn:       { backgroundColor: C.card, borderWidth: 1, borderColor: C.border },
+  proBtn:        { backgroundColor: C.accent },
+  buyBtnTxt:     { color: C.text, fontWeight: '700', fontSize: 16 },
+  restoreBtn:    { alignItems: 'center', padding: 16, marginTop: 8 },
+  restoreTxt:    { color: C.textDim, fontSize: 14 },
+  legal:         { color: C.textDim, fontSize: 11, textAlign: 'center', lineHeight: 16, marginTop: 16 },
+  cra:           { color: C.amber, fontSize: 11, textAlign: 'center', marginTop: 8 },
+  legalLinks:    { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 12, gap: 8 },
+  legalLink:     { color: C.accent, fontSize: 12, textDecorationLine: 'underline' },
+  legalLinkSep:  { color: C.textDim, fontSize: 12 },
+});

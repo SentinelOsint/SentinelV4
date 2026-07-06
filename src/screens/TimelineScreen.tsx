@@ -12,9 +12,6 @@ import {
 import { C, IS_IPAD, SPACE } from '../utils/theme';
 import { AuditLog, AuditEntry, AuditEventType } from '../utils/auditLog';
 
-// ─── AI (Claude Sonnet) ────────────────────────────────────────────────────
-const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
-
 interface TimelineSummary {
   summary:    string;
   findings:   string[];
@@ -30,18 +27,20 @@ interface Props {
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
-function formatTime(iso: string): string {
+function formatTime(timestamp: string): string {
   try {
-    const d = new Date(iso);
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return timestamp.slice(0, 8);
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-  } catch { return iso.slice(11, 16); }
+  } catch { return ''; }
 }
 
-function formatDate(iso: string): string {
+function formatDate(timestamp: string): string {
   try {
-    const d = new Date(iso);
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return timestamp;
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch { return iso.slice(0, 10); }
+  } catch { return timestamp; }
 }
 
 function eventIcon(type: AuditEventType): string {
@@ -105,7 +104,7 @@ function eventLabel(type: AuditEventType, detail?: string): string {
 function groupByDate(entries: AuditEntry[]): { date: string; items: AuditEntry[] }[] {
   const map = new Map<string, AuditEntry[]>();
   for (const e of entries) {
-    const d = e.timestamp.slice(0, 10);
+    const d = new Date(e.timestamp).toLocaleDateString('en-US');
     if (!map.has(d)) map.set(d, []);
     map.get(d)!.push(e);
   }
@@ -149,22 +148,37 @@ export default function TimelineScreen({ isPro, apiKey, onBack }: Props) {
         .map(e => `[${formatTime(e.timestamp)}] ${e.type}${e.detail ? ': ' + e.detail : ''}`)
         .join('\n');
 
-      const prompt = `You are an OSINT investigation analyst. Analyze the following investigation activity log from a professional investigator's session and provide a structured intelligence summary.
+      const prompt = `You are a senior OSINT investigation analyst supporting licensed private investigators, corporate security professionals, and bail enforcement agents. Analyze the following investigation activity log and provide a structured professional intelligence summary.
 
 ACTIVITY LOG:
 ${logText}
 
 Respond ONLY with valid JSON in this exact format:
 {
-  "summary": "2-3 sentence overview of the investigation session",
-  "findings": ["finding 1", "finding 2", "finding 3"],
-  "risks": ["risk or concern 1", "risk or concern 2"],
-  "questions": ["open question 1", "open question 2", "open question 3"]
+  "summary": "2-3 sentence professional overview of the investigation session — what was investigated, key patterns observed, overall assessment",
+  "findings": [
+    "Most significant finding from the session with source",
+    "Second key finding — pattern or connection identified",
+    "Third finding — any anomalies or notable results"
+  ],
+  "risks": [
+    "Primary risk indicator identified during session",
+    "Secondary concern or red flag worth noting"
+  ],
+  "questions": [
+    "Most critical open question requiring follow-up investigation",
+    "Second unanswered question based on findings",
+    "Recommended next investigative step"
+  ]
 }
 
-Keep each item concise (max 15 words). Base findings only on actual log entries.`;
+Rules:
+- Base ALL findings strictly on actual log entries — never speculate
+- Keep each item under 20 words
+- Use professional investigative language
+- Prioritize actionable intelligence`;
 
-      const systemPrompt = 'You are an OSINT investigation analyst. Respond ONLY with valid JSON, no markdown, no preamble.';
+      const systemPrompt = 'You are a senior OSINT investigation analyst. Respond ONLY with valid JSON, no markdown, no preamble. Never speculate beyond the provided data.';
       const res = await fetch('https://sentinel-backend-production-05e1.up.railway.app/ai/analyze', {
         method: 'POST',
         headers: {
