@@ -13,8 +13,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sentinel.osint",
-      "buildNumber": "45",
-      "marketingVersion": "2.9.0",
+      "buildNumber": "53",
+      "marketingVersion": "2.11.0",
       "subtitle": "Background Check, Skip Trace & AI",
       "requireFullScreen": false,
       "entitlements": {
