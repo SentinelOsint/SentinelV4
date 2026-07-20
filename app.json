@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sentinel OSINT",
     "slug": "sentinel-osint-na",
-    "version": "2.11.0",
+    "version": "2.12.0",
     "orientation": "default",
     "userInterfaceStyle": "dark",
     "splash": {
@@ -13,8 +13,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sentinel.osint",
-      "buildNumber": "53",
-      "marketingVersion": "2.11.0",
+      "buildNumber": "55",
+      "marketingVersion": "2.12.0",
       "subtitle": "Background Check, Skip Trace & AI",
       "requireFullScreen": false,
       "entitlements": {
@@ -52,7 +52,7 @@
         "backgroundColor": "#070b12"
       },
       "package": "com.sentinel.osint",
-      "versionCode": 8,
+      "versionCode": 9,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",

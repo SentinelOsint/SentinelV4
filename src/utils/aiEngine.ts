@@ -403,3 +403,79 @@ Provide:
   await AuditLog.log('SEARCH_QUERY', 'AI Image Analysis');
   return await callClaude(system, user);
 }
+
+// ─── Pre-Contact Intelligence Brief ────────────────────────────────────────
+
+export async function generatePreContactBrief(
+  query: string,
+  inputType: string,
+  findings: OsintResult[]
+): Promise<string> {
+  const findingsText = findings
+    .filter(f => f.value && f.value.trim())
+    .map(f => `${f.label}: ${f.value}`)
+    .join('\n');
+
+  if (!findingsText.trim()) {
+    throw new Error('No data available for Pre-Contact Brief. Run searches first.');
+  }
+
+  const system = `You are a senior field intelligence analyst supporting licensed private investigators,
+bail enforcement agents, process servers, executive protection specialists, and corporate security professionals.
+Your role is to produce operationally useful Pre-Contact Intelligence Briefs — not general summaries.
+Critical rules:
+- Clearly distinguish between: CONFIRMED FACTS, POSSIBLE ASSOCIATIONS, UNCERTAIN FINDINGS, and AI INTERPRETATIONS
+- Never state a person is dangerous, criminal, or fraudulent without direct evidence
+- Use language like: "possible risk indicator", "requires verification", "inconsistent with available records", "identity association is uncertain", "further checks recommended"
+- Be concise. Field professionals read this before contact — brevity and clarity are essential
+- Always include confidence level and source basis for each section
+Respond ONLY with valid JSON. No markdown, no preamble, no explanation outside JSON.`;
+
+  const user = `Generate a Pre-Contact Intelligence Brief for the following subject/query.
+
+QUERY: ${query}
+INPUT TYPE: ${inputType}
+
+INTELLIGENCE FINDINGS:
+${findingsText}
+
+Respond with this exact JSON structure:
+{
+  "subjectQuery": "${query}",
+  "inputType": "${inputType}",
+  "briefTimestamp": "<ISO timestamp>",
+  "identityConfidence": {
+    "level": "<HIGH|MEDIUM|LOW|INSUFFICIENT>",
+    "basis": "<what evidence supports this confidence level>",
+    "uncertainties": ["<uncertainty 1>", "<uncertainty 2>"]
+  },
+  "knownInformation": [
+    { "finding": "<confirmed finding>", "source": "<source name>", "confidence": "<CONFIRMED|PROBABLE|UNVERIFIED>" }
+  ],
+  "potentialRiskIndicators": [
+    { "indicator": "<risk description>", "category": "<CRIMINAL|SANCTIONS|FINANCIAL|IDENTITY|REPUTATIONAL|LOCATION|VEHICLE|BREACH>", "severity": "<HIGH|MEDIUM|LOW>", "status": "<CONFIRMED|POSSIBLE|REQUIRES_VERIFICATION>" }
+  ],
+  "contradictionsAndInconsistencies": [
+    { "description": "<what conflicts>", "sources": ["<source A>", "<source B>"], "significance": "<HIGH|MEDIUM|LOW>" }
+  ],
+  "informationGaps": [
+    { "gap": "<what is missing>", "importance": "<HIGH|MEDIUM|LOW>", "suggestedCheck": "<how to address this>" }
+  ],
+  "recommendedChecksBeforeContact": [
+    { "module": "<Sentinel module name>", "reason": "<why this check is recommended>", "priority": "<HIGH|MEDIUM|LOW>" }
+  ],
+  "operationalConsiderations": [
+    "<consideration 1>",
+    "<consideration 2>"
+  ],
+  "confidenceAndLimitations": {
+    "overallConfidence": "<HIGH|MEDIUM|LOW>",
+    "basis": "<what this brief is based on>",
+    "limitations": ["<limitation 1>", "<limitation 2>"],
+    "disclaimer": "This brief is based on available open-source intelligence at the time of query. All findings require professional verification before operational use."
+  }
+}`;
+
+  await AuditLog.log('SEARCH_QUERY', `AI Pre-Contact Brief: ${query}`);
+  return await callClaude(system, user);
+}

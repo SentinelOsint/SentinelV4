@@ -47,7 +47,7 @@ import * as StoreReview from 'expo-store-review';
 import {
   getIPResults, getDomainResults, getSocialResults,
   getPhoneResults, getEmailResults, getCompanyResults, getVehicleResults,
-  getGeoResults, getImageResults, getBreachResults, getCourtResults,
+  getGeoResults, getImageResults, getBreachResults, getCourtResults, getFAAResults,
 } from './src/utils/osintEngines';
 import { Screen, OsintResult, FieldNote, HistoryItem } from './src/types';
 
@@ -695,12 +695,6 @@ export default function App() {
     results.push({ label: 'DMV.org', value: 'https://www.dmv.org/', type: 'link' });
     results.push({ label: 'OpenDMV', value: 'https://www.opendmv.com/', type: 'link' });
 
-    results.push({ label: '─── FAA REGISTRY', value: '', type: 'info' });
-    results.push({ label: 'FAA Aircraft Registry (N-Number)', value: 'https://registry.faa.gov/aircraftinquiry/Search/NNumberInquiry', type: 'link' });
-    results.push({ label: 'FAA Aircraft by Owner Name', value: 'https://registry.faa.gov/aircraftinquiry/Search/NameInquiry', type: 'link' });
-    results.push({ label: 'FAA Airmen Registry', value: 'https://amsrvs.registry.faa.gov/airmeninquiry/', type: 'link' });
-    results.push({ label: 'FAA Accident & Incident Data', value: 'https://www.ntsb.gov/safety/data/Pages/Data_Stats.aspx', type: 'link' });
-    results.push({ label: 'FlightAware Aircraft Search', value: `https://www.flightaware.com/live/flight/${q}`, type: 'link' });
 
     return results;
   });
@@ -800,6 +794,8 @@ export default function App() {
 
     return results;
   });
+  const searchFAA = () => run('FAA Registry', input, () => getFAAResults(input.trim()));
+
   const searchCourt = () => run('Criminal & Public Safety', input, async () => {
     const q = input.trim();
     const results: OsintResult[] = [];
@@ -1003,7 +999,7 @@ export default function App() {
   // ════════════════════════════════════════════════════════════════════════
   if (screen === 'home') {
     const modules = [
-      { id: 'one_input', icon: '🎯', title: 'One-Input Search', desc: 'One query — full intelligence report' },
+      { id: 'one_input', icon: '🎯', title: 'One-Input Search', desc: 'One query → intelligence sweep → Pre-Contact Brief' },
       { id: 'phone',    icon: '📞', title: 'Phone Lookup',   desc: 'Owner, spam, carrier' },
       { id: 'email',    icon: '✉️',  title: 'Email Lookup',   desc: 'Breaches, owner, domain' },
       { id: 'social',   icon: '📱', title: 'Social Media',   desc: 'Username on 25+ platforms' },
@@ -1011,6 +1007,7 @@ export default function App() {
       { id: 'domain',   icon: '🔗', title: 'Domain & WHOIS', desc: 'DNS, registration, history' },
       { id: 'company',  icon: '🏢', title: 'Company / Org',  desc: 'SEC, state regs, finance' },
       { id: 'vehicle',  icon: '🚗', title: 'Vehicle',        desc: 'Plate, VIN, history' },
+      { id: 'faa',      icon: '✈️',  title: 'FAA Registry',           desc: 'Aircraft, airmen, drones, flights' },
       { id: 'court',    icon: '🛡️',  title: 'Criminal & Public Safety', desc: 'NSOPW, VINE, PACER, criminal' },
       { id: 'geo',      icon: '📍', title: 'Geo / OSINT',   desc: 'Satellite, flights, vessels' },
       { id: 'geo_map',  icon: '🗺️', title: 'Map View',       desc: 'Pin locations, field map' },
@@ -1115,6 +1112,7 @@ export default function App() {
     domain:  { title: '🔗 Domain & WHOIS',  ph: 'example.com',                   btn: 'Lookup Domain',           action: searchDomain,  hint: 'Do not include https://',         tips: ['Enter domain without https://', 'Returns registration & DNS records', 'Checks domain reputation & history'] },
     company: { title: '🏢 Company / Org',   ph: 'Company name or EIN',           ph2: 'State (optional)',        btn: 'Search Company',  action: searchCompany, hint: 'SEC, state records & finance',   tips: ['Search by name or EIN/tax ID', 'Add state to narrow results', 'Checks SEC filings & state registrations'] },
     vehicle: { title: '🚗 Vehicle',         ph: 'License plate or VIN',          btn: 'Search Vehicle',          action: searchVehicle, hint: 'US and Canadian plates',          tips: ['US and Canadian plates supported', 'VIN returns full vehicle history', 'Plate format: ABC1234'] },
+    faa:     { title: '✈️ FAA Registry',        ph: 'N-number, name, or tail number',       btn: 'Search FAA',              action: searchFAA,     hint: 'Aircraft, airmen & drone registry',  tips: ['Enter N-number for aircraft lookup', 'Search by owner name or company', 'Includes drone registry and flight tracking'] },
     court:   { title: '🛡️ Criminal & Public Safety',   ph: 'Name, company, or case number', ph2: 'State (optional)',        btn: 'Search Records',  action: searchCourt,   hint: 'NSOPW, VINE, PACER & criminal records', tips: ['Search by name, company, or case #', 'Includes sex offender & custody screening', 'Covers federal, state and Canadian courts'] },
     geo:     { title: '📍 Geo / OSINT',     ph: 'Coordinates or address',        btn: 'Search Location',         action: searchGeo,     hint: '40.7128,-74.0060 or address',     tips: ['Enter GPS coords or street address', 'Returns satellite & aerial imagery', 'Checks flight & vessel tracking'] },
     image:   { title: '🖼️ Image Analysis',  ph: 'Image URL',                     btn: 'Analyze Image',           action: searchImage,   hint: 'EXIF, reverse search & AI',       tips: ['Paste a direct image URL', 'Extracts EXIF metadata', 'Runs reverse image search across engines'] },

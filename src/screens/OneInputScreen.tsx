@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { C, SPACE, FONT } from '../utils/theme';
 import { buildOneInputResult, OneInputResult, InputType } from '../utils/oneInputSearch';
-import { analyzeResults } from '../utils/aiEngine';
+import { analyzeResults, generatePreContactBrief } from '../utils/aiEngine';
 import { exportSearchPDF, exportInvestigationReport } from '../utils/pdfExport';
 import { Storage } from '../utils/storage';
 
@@ -208,43 +208,16 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
     setLoadingAI(true);
     setRiskData(null);
     try {
-      const moduleSummary = result.modules.map(m =>
-        `${m.module}: ${m.links.map(l => l.label).join(', ')}`
-      ).join('\n');
-
-      const systemPrompt = 'You are an OSINT intelligence analyst. Respond ONLY with valid JSON, no markdown.';
-      const userPrompt = `Analyze this OSINT intelligence report for "${result.query}" and provide a structured risk assessment.
-
-INTELLIGENCE DATA:
-${moduleSummary}
-
-Respond with this exact JSON structure:
-{
-  "riskScore": <0-100 integer>,
-  "riskLevel": "<LOW|MEDIUM|HIGH|CRITICAL>",
-  "summary": "<2-3 sentence overview>",
-  "keyFindings": ["<finding 1>", "<finding 2>", "<finding 3>"],
-  "contradictions": ["<contradiction 1>"] or [],
-  "redFlags": ["<red flag 1>"] or [],
-  "recommendedActions": ["<action 1>", "<action 2>"]
-}
-
-Risk scoring: 0-25=LOW, 26-50=MEDIUM, 51-75=HIGH, 76-100=CRITICAL.
-Base score on: wanted list matches (critical), breach data, threat intel findings.`;
-
-      const res = await fetch('https://sentinel-backend-production-05e1.up.railway.app/ai/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ systemPrompt, userPrompt }),
-      });
-      const data = await res.json();
-      const text = data.result || '';
-      const clean = text.replace(/```json|```/g, '').trim();
+      const allFindings = result.modules.flatMap(m =>
+        m.links.map(l => ({ label: `${m.module} — ${l.label}`, value: l.url, type: 'link' as const }))
+      );
+      const briefJson = await generatePreContactBrief(result.query, result.detectedAs, allFindings);
+      const clean = briefJson.replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(clean);
       setRiskData(parsed);
-      setAiSummary(parsed.summary);
+      setAiSummary(parsed.confidenceAndLimitations?.disclaimer || '');
     } catch (e: any) {
-      Alert.alert('AI Error', 'Could not generate risk assessment.');
+      Alert.alert('AI Error', 'Could not generate Pre-Contact Brief.');
     } finally {
       setLoadingAI(false);
     }
@@ -382,7 +355,7 @@ Base score on: wanted list matches (critical), breach data, threat intel finding
             {isPro && (
               <View style={styles.aiCard}>
                 <View style={styles.aiCardHeader}>
-                  <Text style={styles.aiCardTitle}>🤖 AI Intelligence Summary</Text>
+                  <Text style={styles.aiCardTitle}>📋 Pre-Contact Intelligence Brief</Text>
                   <View style={styles.proBadge}>
                     <Text style={styles.proBadgeText}>PRO</Text>
                   </View>
@@ -409,44 +382,89 @@ Base score on: wanted list matches (critical), breach data, threat intel finding
                         <Text style={styles.riskSummary}>{riskData.summary}</Text>
                       </View>
                     </View>
-                    {/* Key Findings */}
-                    {riskData.keyFindings?.length > 0 && (
+                    {/* Identity Confidence */}
+                    {riskData.identityConfidence && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>KEY FINDINGS</Text>
-                        {riskData.keyFindings.map((f: string, i: number) => (
-                          <Text key={i} style={styles.riskBulletGreen}>◆ {f}</Text>
+                        <Text style={styles.riskSectionTitle}>🪪 IDENTITY CONFIDENCE</Text>
+                        <Text style={[styles.riskBulletGreen, {
+                          color: riskData.identityConfidence.level === 'HIGH' ? '#30d158' :
+                                 riskData.identityConfidence.level === 'MEDIUM' ? '#ffcc00' :
+                                 riskData.identityConfidence.level === 'LOW' ? '#ff9500' : '#ff3b30'
+                        }]}>◆ {riskData.identityConfidence.level} — {riskData.identityConfidence.basis}</Text>
+                        {riskData.identityConfidence.uncertainties?.map((u: string, i: number) => (
+                          <Text key={i} style={styles.riskBulletAmber}>△ {u}</Text>
+                        ))}
+                      </View>
+                    )}
+                    {/* Known Information */}
+                    {riskData.knownInformation?.length > 0 && (
+                      <View style={styles.riskSection}>
+                        <Text style={styles.riskSectionTitle}>✅ KNOWN INFORMATION</Text>
+                        {riskData.knownInformation.map((k: any, i: number) => (
+                          <Text key={i} style={styles.riskBulletGreen}>◆ [{k.confidence}] {k.finding} — {k.source}</Text>
+                        ))}
+                      </View>
+                    )}
+                    {/* Potential Risk Indicators */}
+                    {riskData.potentialRiskIndicators?.length > 0 && (
+                      <View style={styles.riskSection}>
+                        <Text style={styles.riskSectionTitle}>🚨 POTENTIAL RISK INDICATORS</Text>
+                        {riskData.potentialRiskIndicators.map((r: any, i: number) => (
+                          <Text key={i} style={r.severity === 'HIGH' ? styles.riskBulletRed : r.severity === 'MEDIUM' ? styles.riskBulletAmber : styles.riskBulletBlue}>
+                            ● [{r.severity}] {r.indicator} — {r.status}
+                          </Text>
                         ))}
                       </View>
                     )}
                     {/* Contradictions */}
-                    {riskData.contradictions?.length > 0 && (
+                    {riskData.contradictionsAndInconsistencies?.length > 0 && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>⚠️ CONTRADICTIONS</Text>
-                        {riskData.contradictions.map((c: string, i: number) => (
-                          <Text key={i} style={styles.riskBulletAmber}>▲ {c}</Text>
+                        <Text style={styles.riskSectionTitle}>⚠️ CONTRADICTIONS & INCONSISTENCIES</Text>
+                        {riskData.contradictionsAndInconsistencies.map((c: any, i: number) => (
+                          <Text key={i} style={styles.riskBulletAmber}>▲ [{c.significance}] {c.description}</Text>
                         ))}
                       </View>
                     )}
-                    {/* Red Flags */}
-                    {riskData.redFlags?.length > 0 && (
+                    {/* Information Gaps */}
+                    {riskData.informationGaps?.length > 0 && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>🚨 RED FLAGS</Text>
-                        {riskData.redFlags.map((r: string, i: number) => (
-                          <Text key={i} style={styles.riskBulletRed}>● {r}</Text>
+                        <Text style={styles.riskSectionTitle}>🔍 INFORMATION GAPS</Text>
+                        {riskData.informationGaps.map((g: any, i: number) => (
+                          <Text key={i} style={styles.riskBulletBlue}>→ [{g.importance}] {g.gap} — {g.suggestedCheck}</Text>
                         ))}
                       </View>
                     )}
-                    {/* Recommended Actions */}
-                    {riskData.recommendedActions?.length > 0 && (
+                    {/* Recommended Checks */}
+                    {riskData.recommendedChecksBeforeContact?.length > 0 && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>RECOMMENDED ACTIONS</Text>
-                        {riskData.recommendedActions.map((a: string, i: number) => (
-                          <Text key={i} style={styles.riskBulletBlue}>→ {a}</Text>
+                        <Text style={styles.riskSectionTitle}>📋 RECOMMENDED CHECKS BEFORE CONTACT</Text>
+                        {riskData.recommendedChecksBeforeContact.map((c: any, i: number) => (
+                          <Text key={i} style={styles.riskBulletBlue}>→ [{c.priority}] {c.module} — {c.reason}</Text>
                         ))}
+                      </View>
+                    )}
+                    {/* Operational Considerations */}
+                    {riskData.operationalConsiderations?.length > 0 && (
+                      <View style={styles.riskSection}>
+                        <Text style={styles.riskSectionTitle}>🎯 OPERATIONAL CONSIDERATIONS</Text>
+                        {riskData.operationalConsiderations.map((o: string, i: number) => (
+                          <Text key={i} style={styles.riskBulletGreen}>◆ {o}</Text>
+                        ))}
+                      </View>
+                    )}
+                    {/* Confidence & Limitations */}
+                    {riskData.confidenceAndLimitations && (
+                      <View style={styles.riskSection}>
+                        <Text style={styles.riskSectionTitle}>📊 CONFIDENCE & LIMITATIONS</Text>
+                        <Text style={styles.riskBulletGreen}>◆ Overall: {riskData.confidenceAndLimitations.overallConfidence} — {riskData.confidenceAndLimitations.basis}</Text>
+                        {riskData.confidenceAndLimitations.limitations?.map((l: string, i: number) => (
+                          <Text key={i} style={styles.riskBulletAmber}>△ {l}</Text>
+                        ))}
+                        <Text style={[styles.riskSummary, { marginTop: 8, fontStyle: 'italic' }]}>{riskData.confidenceAndLimitations.disclaimer}</Text>
                       </View>
                     )}
                     <TouchableOpacity style={styles.aiBtn} onPress={handleAISummary} disabled={loadingAI}>
-                      <Text style={styles.aiBtnText}>↺ Regenerate</Text>
+                      <Text style={styles.aiBtnText}>↺ Regenerate Brief</Text>
                     </TouchableOpacity>
                   </View>
                 ) : aiSummary ? (
@@ -454,7 +472,7 @@ Base score on: wanted list matches (critical), breach data, threat intel finding
                 ) : (
                   <>
                     <Text style={styles.aiCardHint}>
-                      Run AI analysis across all identified sources
+                      Generate a structured Pre-Contact Intelligence Brief — identity confidence, risk indicators, contradictions, information gaps, and recommended checks before contact.
                     </Text>
                     <TouchableOpacity
                       style={styles.aiBtn}
@@ -464,7 +482,7 @@ Base score on: wanted list matches (critical), breach data, threat intel finding
                       {loadingAI ? (
                         <ActivityIndicator color="#fff" size="small" />
                       ) : (
-                        <Text style={styles.aiBtnText}>Generate AI Summary</Text>
+                        <Text style={styles.aiBtnText}>Generate Pre-Contact Brief</Text>
                       )}
                     </TouchableOpacity>
                   </>

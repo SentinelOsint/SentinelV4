@@ -194,6 +194,16 @@ export function getCompanyResults(company: string): OsintResult[] {
     { label: 'USPTO Trademark Search', value: `https://tmsearch.uspto.gov/search/search-information?searchInput=${company}&searchOption=BASIC`, type: 'link' },
     { label: 'USPTO Patent Search', value: `https://ppubs.uspto.gov/pubwebapp/external.html#/search?query=${company}`, type: 'link' },
     { label: 'USPTO Trademark by Owner', value: `https://tmsearch.uspto.gov/search/search-information?searchInput=${company}&searchOption=OWNER`, type: 'link' },
+    { label: '─── TRANSPORTATION & PROFESSIONAL', value: '', type: 'info' },
+    { label: 'FMCSA — Carrier Search', value: `https://safer.fmcsa.dot.gov/keywordx.asp?searchstring=${company}&SEARCHTYPE=`, type: 'link' },
+    { label: 'FMCSA — Company Snapshot', value: `https://safer.fmcsa.dot.gov/`, type: 'link' },
+    { label: 'FMCSA — Safety Ratings', value: `https://ai.fmcsa.dot.gov/SMS/`, type: 'link' },
+    { label: 'NPI Registry — Provider Lookup', value: `https://npiregistry.cms.hhs.gov/search?searchType=NPI_ORG&country_code=US&limit=10&version=2.1&organization_name=${company}`, type: 'link' },
+    { label: 'NPI Registry — Individual', value: `https://npiregistry.cms.hhs.gov/search?searchType=NPI_INDTYPE&country_code=US&limit=10&version=2.1&last_name=${company}`, type: 'link' },
+    { label: '─── GOVERNMENT & COMPLIANCE', value: '', type: 'info' },
+    { label: 'GSA SAM.gov — Entity Search', value: `https://sam.gov/content/entity-information`, type: 'link' },
+    { label: 'GSA SAM.gov — Exclusions', value: `https://sam.gov/content/exclusions`, type: 'link' },
+    { label: 'GSA Debarment Search', value: `https://www.sam.gov/SAM/pages/public/searchRecords/search.jsf`, type: 'link' },
     { label: '─── BENEFICIAL OWNERSHIP', value: '', type: 'info' },
     { label: 'FinCEN BOI', value: `https://boiefiling.fincen.gov/`, type: 'link' },
     { label: 'OFAC Sanctions', value: `https://sanctionssearch.ofac.treas.gov/`, type: 'link' },
@@ -220,12 +230,6 @@ export function getVehicleResults(plate: string, plateEncoded: string): OsintRes
     { label: '─── STATE DMV', value: '', type: 'info' },
     { label: 'DMV.org (State Links)', value: `https://www.dmv.org/`, type: 'link' },
     { label: 'OpenDMV', value: `https://www.opendmv.com/`, type: 'link' },
-    { label: '─── FAA REGISTRY', value: '', type: 'info' },
-    { label: 'FAA Aircraft Registry', value: `https://registry.faa.gov/aircraftinquiry/Search/NNumberInquiry`, type: 'link' },
-    { label: 'FAA Airmen Registry', value: `https://amsrvs.registry.faa.gov/airmeninquiry/`, type: 'link' },
-    { label: 'FAA Aircraft by Owner', value: `https://registry.faa.gov/aircraftinquiry/Search/NameInquiry`, type: 'link' },
-    { label: 'FAA Accident Database', value: `https://www.ntsb.gov/safety/data/Pages/Data_Stats.aspx`, type: 'link' },
-    { label: 'FlightAware Owner Search', value: `https://www.flightaware.com/live/flight/${plate}`, type: 'link' },
   ];
 }
 
@@ -306,7 +310,32 @@ export function getBreachResults(query: string): OsintResult[] {
   ];
 }
 
-// ── 12. Court Records ─────────────────────────────────────────────────────────
+// ── 12. FAA Registry ─────────────────────────────────────────────────────────
+export function getFAAResults(query: string): OsintResult[] {
+  const enc = encodeURIComponent(query);
+  return [
+    { label: '─── AIRCRAFT REGISTRY', value: '', type: 'info' },
+    { label: 'FAA Aircraft by N-Number', value: `https://registry.faa.gov/aircraftinquiry/Search/NNumberInquiry`, type: 'link' },
+    { label: 'FAA Aircraft by Owner', value: `https://registry.faa.gov/aircraftinquiry/Search/NameInquiry`, type: 'link' },
+    { label: 'FAA Aircraft by Serial', value: `https://registry.faa.gov/aircraftinquiry/Search/SerialInquiry`, type: 'link' },
+    { label: '─── AIRMEN REGISTRY', value: '', type: 'info' },
+    { label: 'FAA Airmen Certificate', value: `https://amsrvs.registry.faa.gov/airmeninquiry/`, type: 'link' },
+    { label: '─── DRONE REGISTRY', value: '', type: 'info' },
+    { label: 'FAA DroneZone Registry', value: `https://faadronezone.faa.gov/`, type: 'link' },
+    { label: 'FAA UAS Lookup', value: `https://registry.faa.gov/UASRobotics/Search`, type: 'link' },
+    { label: 'FAA B4UFLY — Airspace', value: `https://b4ufly.faa.gov/`, type: 'link' },
+    { label: '─── SAFETY & ACCIDENTS', value: '', type: 'info' },
+    { label: 'NTSB Accident Database', value: `https://www.ntsb.gov/safety/data/Pages/Data_Stats.aspx`, type: 'link' },
+    { label: 'FAA Accident & Incident Data', value: `https://www.asias.faa.gov/apex/f?p=100:1`, type: 'link' },
+    { label: '─── FLIGHT TRACKING', value: '', type: 'info' },
+    { label: 'FlightAware', value: `https://www.flightaware.com/live/flight/${enc}`, type: 'link' },
+    { label: 'Flightradar24', value: `https://www.flightradar24.com/`, type: 'link' },
+    { label: 'ADS-B Exchange', value: `https://globe.adsbexchange.com/`, type: 'link' },
+    { label: 'OpenSky Network', value: `https://opensky-network.org/`, type: 'link' },
+  ];
+}
+
+// ── 13. Court Records ─────────────────────────────────────────────────────────
 export function getCourtResults(query: string): OsintResult[] {
   return [
     { label: '─── FEDERAL COURTS', value: '', type: 'info' },
