@@ -19,7 +19,7 @@ import { OsintResult, FieldNote, CaseReport } from '../types';
 
 const API_URL   = 'https://sentinel-backend-production-05e1.up.railway.app/ai/analyze';
 const MODEL     = 'claude-sonnet-4-20250514';
-const MAX_TOKENS = 1024;
+const MAX_TOKENS = 4096;
 
 // Storage keys
 const USAGE_KEY  = 'sentinel_ai_usage_v1';
@@ -444,6 +444,13 @@ Respond with this exact JSON structure:
   "subjectQuery": "${query}",
   "inputType": "${inputType}",
   "briefTimestamp": "<ISO timestamp>",
+  "preContactOverview": {
+    "identityConfidence": "<HIGH|MEDIUM|LOW|INSUFFICIENT>",
+    "operationalRiskStatus": "<LOW_INDICATED_RISK|REQUIRES_VERIFICATION|REQUIRES_IDENTITY_VERIFICATION|ELEVATED_CAUTION|NOT_DETERMINED|INSUFFICIENT_IDENTIFIERS>",
+    "primaryFinding": "<one or two sentences describing the most important finding — be specific, not generic>",
+    "immediateVerificationRequirement": "<the single most important thing to verify before contact>",
+    "evidenceStrength": "<HIGH|MEDIUM|LOW>"
+  },
   "identityConfidence": {
     "level": "<HIGH|MEDIUM|LOW|INSUFFICIENT>",
     "basis": "<what evidence supports this confidence level>",
@@ -474,7 +481,15 @@ Respond with this exact JSON structure:
     "limitations": ["<limitation 1>", "<limitation 2>"],
     "disclaimer": "This brief is based on available open-source intelligence at the time of query. All findings require professional verification before operational use."
   }
-}`;
+}
+
+Operational Risk Status logic:
+- LOW_INDICATED_RISK: identity confidently matched, no meaningful risk indicators found
+- REQUIRES_VERIFICATION: identity possible but unconfirmed, some indicators present
+- REQUIRES_IDENTITY_VERIFICATION: identity uncertain, serious name-based risk indicators exist
+- ELEVATED_CAUTION: confirmed risk indicators regardless of identity confidence
+- NOT_DETERMINED: insufficient data to assess risk meaningfully
+- INSUFFICIENT_IDENTIFIERS: query does not provide enough to assess risk`;
 
   await AuditLog.log('SEARCH_QUERY', `AI Pre-Contact Brief: ${query}`);
   return await callClaude(system, user);

@@ -58,7 +58,16 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const scoreAnim = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<any>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set([0, 1, 2]));
+  const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['identity', 'risk']));
+  const toggleSection = (key: string) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
   const [showTemplates, setShowTemplates] = useState(false);
   const [evidenceTags, setEvidenceTags] = useState<Record<string, string>>({});
 
@@ -176,7 +185,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
       );
 
       if (riskData) {
-        // Full investigation report with Risk Score
+        // Full investigation report with Pre-Contact Brief
         await exportInvestigationReport({
           caseData: {
             id: Date.now().toString(),
@@ -189,7 +198,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
             notes: [],
             searches: osintResults.map((r, i) => ({ id: `ois-${Date.now()}-${i}`, module: 'One-Input Search', query: result.query, results: [r], timestamp: new Date().toISOString() })),
             location: '',
-            description: `AI Risk Score: ${riskData.riskScore}/100 · Risk Level: ${riskData.riskLevel}`,
+            description: `Pre-Contact Brief · Identity: ${riskData.preContactOverview?.identityConfidence || 'UNKNOWN'} · Status: ${riskData.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' ') || 'NOT DETERMINED'}`,
             tags: ['one-input', 'ai-analysis', result.inputType],
           },
           aiSummary: riskData.summary,
@@ -212,12 +221,13 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
         m.links.map(l => ({ label: `${m.module} — ${l.label}`, value: l.url, type: 'link' as const }))
       );
       const briefJson = await generatePreContactBrief(result.query, result.detectedAs, allFindings);
-      const clean = briefJson.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(clean);
+      const jsonMatch = briefJson.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No JSON found in response');
+      const parsed = JSON.parse(jsonMatch[0]);
       setRiskData(parsed);
       setAiSummary(parsed.confidenceAndLimitations?.disclaimer || '');
     } catch (e: any) {
-      Alert.alert('AI Error', 'Could not generate Pre-Contact Brief.');
+      Alert.alert('AI Error', `Could not generate Pre-Contact Brief: ${e?.message || 'Unknown error'}`);
     } finally {
       setLoadingAI(false);
     }
@@ -362,45 +372,76 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                 </View>
                 {riskData ? (
                   <View>
-                    {/* Risk Score */}
-                    <View style={[styles.riskScoreBox, {
-                      backgroundColor: riskData.riskLevel === 'CRITICAL' ? '#3d0000' :
-                                       riskData.riskLevel === 'HIGH' ? '#2d1500' :
-                                       riskData.riskLevel === 'MEDIUM' ? '#2d2200' : '#001a00'
-                    }]}>
-                      <Text style={[styles.riskScoreNum, { fontSize: 52, fontWeight: '900' }, {
-                        color: riskData.riskLevel === 'CRITICAL' ? '#ff3b30' :
-                               riskData.riskLevel === 'HIGH' ? '#ff9500' :
-                               riskData.riskLevel === 'MEDIUM' ? '#ffcc00' : '#30d158'
-                      }]}>{displayScore}</Text>
-                      <View>
-                        <Text style={[styles.riskLevel, {
-                          color: riskData.riskLevel === 'CRITICAL' ? '#ff3b30' :
-                                 riskData.riskLevel === 'HIGH' ? '#ff9500' :
-                                 riskData.riskLevel === 'MEDIUM' ? '#ffcc00' : '#30d158'
-                        }]}>{riskData.riskLevel} RISK</Text>
-                        <Text style={styles.riskSummary}>{riskData.summary}</Text>
-                      </View>
-                    </View>
+                    {/* Pre-Contact Overview */}
+                    {riskData.preContactOverview && (() => {
+                      const ov = riskData.preContactOverview;
+                      const statusColors: Record<string, string> = {
+                        'LOW_INDICATED_RISK': '#30d158',
+                        'REQUIRES_VERIFICATION': '#ffcc00',
+                        'REQUIRES_IDENTITY_VERIFICATION': '#ff9500',
+                        'ELEVATED_CAUTION': '#ff3b30',
+                        'NOT_DETERMINED': '#8e8e93',
+                        'INSUFFICIENT_IDENTIFIERS': '#8e8e93',
+                      };
+                      const confColors: Record<string, string> = {
+                        'HIGH': '#30d158', 'MEDIUM': '#ffcc00', 'LOW': '#ff9500', 'INSUFFICIENT': '#ff3b30'
+                      };
+                      const statusColor = statusColors[ov.operationalRiskStatus] || '#8e8e93';
+                      const confColor = confColors[ov.identityConfidence] || '#8e8e93';
+                      return (
+                        <View style={{ backgroundColor: '#0a0f1a', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#1e3a5f' }}>
+                          <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 12 }}>PRE-CONTACT OVERVIEW</Text>
+                          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                            <View style={{ flex: 1, backgroundColor: confColor + '15', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: confColor + '40' }}>
+                              <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>IDENTITY CONFIDENCE</Text>
+                              <Text style={{ color: confColor, fontSize: 14, fontWeight: '800' }}>{ov.identityConfidence}</Text>
+                            </View>
+                            <View style={{ flex: 1, backgroundColor: statusColor + '15', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: statusColor + '40' }}>
+                              <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>OPERATIONAL STATUS</Text>
+                              <Text style={{ color: statusColor, fontSize: 11, fontWeight: '800' }}>{ov.operationalRiskStatus?.replace(/_/g, ' ')}</Text>
+                            </View>
+                          </View>
+                          <View style={{ marginBottom: 10 }}>
+                            <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>PRIMARY FINDING</Text>
+                            <Text style={{ color: '#e8eaf0', fontSize: 13, lineHeight: 19 }}>{ov.primaryFinding}</Text>
+                          </View>
+                          <View style={{ backgroundColor: '#ff950015', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#ff950040' }}>
+                            <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>IMMEDIATE VERIFICATION REQUIRED</Text>
+                            <Text style={{ color: '#ff9500', fontSize: 12, lineHeight: 18 }}>{ov.immediateVerificationRequirement}</Text>
+                          </View>
+                          <Text style={{ color: '#4a5568', fontSize: 10, marginTop: 10, fontStyle: 'italic' }}>This status reflects available evidence and does not confirm that contact is safe.</Text>
+                        </View>
+                      );
+                    })()}
                     {/* Identity Confidence */}
                     {riskData.identityConfidence && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>🪪 IDENTITY CONFIDENCE</Text>
-                        <Text style={[styles.riskBulletGreen, {
-                          color: riskData.identityConfidence.level === 'HIGH' ? '#30d158' :
-                                 riskData.identityConfidence.level === 'MEDIUM' ? '#ffcc00' :
-                                 riskData.identityConfidence.level === 'LOW' ? '#ff9500' : '#ff3b30'
-                        }]}>◆ {riskData.identityConfidence.level} — {riskData.identityConfidence.basis}</Text>
-                        {riskData.identityConfidence.uncertainties?.map((u: string, i: number) => (
-                          <Text key={i} style={styles.riskBulletAmber}>△ {u}</Text>
-                        ))}
+                        <TouchableOpacity onPress={() => toggleSection('identity')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>🪪 IDENTITY CONFIDENCE</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('identity') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('identity') && (
+                          <>
+                            <Text style={[styles.riskBulletGreen, {
+                              color: riskData.identityConfidence.level === 'HIGH' ? '#30d158' :
+                                     riskData.identityConfidence.level === 'MEDIUM' ? '#ffcc00' :
+                                     riskData.identityConfidence.level === 'LOW' ? '#ff9500' : '#ff3b30'
+                            }]}>◆ {riskData.identityConfidence.level} — {riskData.identityConfidence.basis}</Text>
+                            {riskData.identityConfidence.uncertainties?.map((u: string, i: number) => (
+                              <Text key={i} style={styles.riskBulletAmber}>△ {u}</Text>
+                            ))}
+                          </>
+                        )}
                       </View>
                     )}
                     {/* Known Information */}
                     {riskData.knownInformation?.length > 0 && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>✅ KNOWN INFORMATION</Text>
-                        {riskData.knownInformation.map((k: any, i: number) => (
+                        <TouchableOpacity onPress={() => toggleSection('known')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>✅ KNOWN INFORMATION ({riskData.knownInformation.length})</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('known') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('known') && riskData.knownInformation.map((k: any, i: number) => (
                           <Text key={i} style={styles.riskBulletGreen}>◆ [{k.confidence}] {k.finding} — {k.source}</Text>
                         ))}
                       </View>
@@ -408,8 +449,11 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {/* Potential Risk Indicators */}
                     {riskData.potentialRiskIndicators?.length > 0 && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>🚨 POTENTIAL RISK INDICATORS</Text>
-                        {riskData.potentialRiskIndicators.map((r: any, i: number) => (
+                        <TouchableOpacity onPress={() => toggleSection('risk')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>🚨 POTENTIAL RISK INDICATORS ({riskData.potentialRiskIndicators.length})</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('risk') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('risk') && riskData.potentialRiskIndicators.map((r: any, i: number) => (
                           <Text key={i} style={r.severity === 'HIGH' ? styles.riskBulletRed : r.severity === 'MEDIUM' ? styles.riskBulletAmber : styles.riskBulletBlue}>
                             ● [{r.severity}] {r.indicator} — {r.status}
                           </Text>
@@ -419,8 +463,11 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {/* Contradictions */}
                     {riskData.contradictionsAndInconsistencies?.length > 0 && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>⚠️ CONTRADICTIONS & INCONSISTENCIES</Text>
-                        {riskData.contradictionsAndInconsistencies.map((c: any, i: number) => (
+                        <TouchableOpacity onPress={() => toggleSection('contra')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>⚠️ CONTRADICTIONS ({riskData.contradictionsAndInconsistencies.length})</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('contra') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('contra') && riskData.contradictionsAndInconsistencies.map((c: any, i: number) => (
                           <Text key={i} style={styles.riskBulletAmber}>▲ [{c.significance}] {c.description}</Text>
                         ))}
                       </View>
@@ -428,8 +475,11 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {/* Information Gaps */}
                     {riskData.informationGaps?.length > 0 && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>🔍 INFORMATION GAPS</Text>
-                        {riskData.informationGaps.map((g: any, i: number) => (
+                        <TouchableOpacity onPress={() => toggleSection('gaps')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>🔍 INFORMATION GAPS ({riskData.informationGaps.length})</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('gaps') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('gaps') && riskData.informationGaps.map((g: any, i: number) => (
                           <Text key={i} style={styles.riskBulletBlue}>→ [{g.importance}] {g.gap} — {g.suggestedCheck}</Text>
                         ))}
                       </View>
@@ -437,8 +487,11 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {/* Recommended Checks */}
                     {riskData.recommendedChecksBeforeContact?.length > 0 && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>📋 RECOMMENDED CHECKS BEFORE CONTACT</Text>
-                        {riskData.recommendedChecksBeforeContact.map((c: any, i: number) => (
+                        <TouchableOpacity onPress={() => toggleSection('checks')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>📋 RECOMMENDED CHECKS ({riskData.recommendedChecksBeforeContact.length})</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('checks') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('checks') && riskData.recommendedChecksBeforeContact.map((c: any, i: number) => (
                           <Text key={i} style={styles.riskBulletBlue}>→ [{c.priority}] {c.module} — {c.reason}</Text>
                         ))}
                       </View>
@@ -446,8 +499,11 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {/* Operational Considerations */}
                     {riskData.operationalConsiderations?.length > 0 && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>🎯 OPERATIONAL CONSIDERATIONS</Text>
-                        {riskData.operationalConsiderations.map((o: string, i: number) => (
+                        <TouchableOpacity onPress={() => toggleSection('ops')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>🎯 OPERATIONAL CONSIDERATIONS</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('ops') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('ops') && riskData.operationalConsiderations.map((o: string, i: number) => (
                           <Text key={i} style={styles.riskBulletGreen}>◆ {o}</Text>
                         ))}
                       </View>
@@ -455,12 +511,19 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {/* Confidence & Limitations */}
                     {riskData.confidenceAndLimitations && (
                       <View style={styles.riskSection}>
-                        <Text style={styles.riskSectionTitle}>📊 CONFIDENCE & LIMITATIONS</Text>
-                        <Text style={styles.riskBulletGreen}>◆ Overall: {riskData.confidenceAndLimitations.overallConfidence} — {riskData.confidenceAndLimitations.basis}</Text>
-                        {riskData.confidenceAndLimitations.limitations?.map((l: string, i: number) => (
-                          <Text key={i} style={styles.riskBulletAmber}>△ {l}</Text>
-                        ))}
-                        <Text style={[styles.riskSummary, { marginTop: 8, fontStyle: 'italic' }]}>{riskData.confidenceAndLimitations.disclaimer}</Text>
+                        <TouchableOpacity onPress={() => toggleSection('conf')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>📊 CONFIDENCE & LIMITATIONS</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('conf') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('conf') && (
+                          <>
+                            <Text style={styles.riskBulletGreen}>◆ Overall: {riskData.confidenceAndLimitations.overallConfidence} — {riskData.confidenceAndLimitations.basis}</Text>
+                            {riskData.confidenceAndLimitations.limitations?.map((l: string, i: number) => (
+                              <Text key={i} style={styles.riskBulletAmber}>△ {l}</Text>
+                            ))}
+                            <Text style={[styles.riskSummary, { marginTop: 8, fontStyle: 'italic' }]}>{riskData.confidenceAndLimitations.disclaimer}</Text>
+                          </>
+                        )}
                       </View>
                     )}
                     <TouchableOpacity style={styles.aiBtn} onPress={handleAISummary} disabled={loadingAI}>
@@ -516,7 +579,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                 </Text>
                 <View style={styles.proPreviewList}>
                   {[
-                    { icon: '🔒', text: 'AI Risk Score (0–100) — LOW / MEDIUM / HIGH / CRITICAL' },
+                    { icon: '🔒', text: 'Pre-Contact Intelligence Brief — identity confidence, risk indicators, operational status' },
                     { icon: '🔒', text: 'Deep Background Analysis — comprehensive subject profile' },
                     { icon: '🔒', text: 'Contradiction Detection — cross-source inconsistencies' },
                     { icon: '🔒', text: 'FBI, Interpol & all 50 US state wanted checks' },
@@ -542,7 +605,10 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
 
             {/* Module results */}
             <Text style={styles.sectionTitle}>
-              {result.modules.reduce((acc, m) => acc + m.links.length, 0)} sources across {result.modules.length} modules
+              SUPPORTING INTELLIGENCE SOURCES
+            </Text>
+            <Text style={{ color: '#4a5568', fontSize: 11, marginBottom: 8, marginTop: -4, paddingHorizontal: 4 }}>
+              Intelligence workflow supported by {result.modules.reduce((acc, m) => acc + m.links.length, 0)} public sources across {result.modules.length} intelligence modules
             </Text>
 
             {result.modules.map((module, idx) => {
@@ -687,12 +753,12 @@ const styles = StyleSheet.create({
   riskScoreNum:   { fontSize: 48, fontWeight: '900', lineHeight: 52 },
   riskLevel:      { fontSize: 12, fontWeight: '800', letterSpacing: 0.5, flexShrink: 1 },
   riskSummary:    { color: C.textMid, fontSize: 12, lineHeight: 16, marginTop: 4, flexShrink: 1, flexWrap: 'wrap' },
-  riskSection:    { marginTop: 10 },
-  riskSectionTitle: { color: C.textMid, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 },
-  riskBulletGreen: { color: '#30d158', fontSize: 12, lineHeight: 18, marginBottom: 2 },
-  riskBulletRed:  { color: '#ff3b30', fontSize: 12, lineHeight: 18, marginBottom: 2 },
-  riskBulletAmber: { color: '#ffcc00', fontSize: 12, lineHeight: 18, marginBottom: 2 },
-  riskBulletBlue: { color: C.accent, fontSize: 12, lineHeight: 18, marginBottom: 2 },
+  riskSection:    { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#1a2035' },
+  riskSectionTitle: { color: '#6b7a99', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 6 },
+  riskBulletGreen: { color: '#34c759', fontSize: 12, lineHeight: 19, marginBottom: 4 },
+  riskBulletRed:  { color: '#ff453a', fontSize: 12, lineHeight: 19, marginBottom: 4 },
+  riskBulletAmber: { color: '#ff9f0a', fontSize: 12, lineHeight: 19, marginBottom: 4 },
+  riskBulletBlue: { color: '#4a9eff', fontSize: 12, lineHeight: 19, marginBottom: 4 },
   pdfBtn:         { backgroundColor: '#1a0a2e', borderRadius: 8, padding: SPACE.sm, alignItems: 'center', marginBottom: SPACE.sm, borderWidth: 1, borderColor: '#9B59B6', flexDirection: 'row', justifyContent: 'center', gap: 8 },
   pdfBtnText:     { color: '#9B59B6', fontSize: FONT.sm, fontWeight: '600' },
   aiBtn:          { backgroundColor: '#6C3483', borderRadius: 8, padding: SPACE.sm,

@@ -1028,7 +1028,7 @@ export default function App() {
           <View style={s.homeHeader}>
             <View>
               <Text style={s.logo}>SENTINEL</Text>
-              <Text style={s.logoSub}>FIELD INTELLIGENCE PLATFORM · NA v2.10{IS_IPAD ? ' · iPad' : ''}</Text>
+              <Text style={s.logoSub}>FIELD INTELLIGENCE PLATFORM · NA v2.13{IS_IPAD ? ' · iPad' : ''}</Text>
               <Text style={s.aiPowered}>✦ Searches FBI · Interpol · 50 States · Canada</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -1259,7 +1259,7 @@ const s = StyleSheet.create({
   oneInputBadge: { position: 'absolute', top: 10, right: 10, backgroundColor: C.accent, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   oneInputBadgeTxt: { color: C.bg, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   oneInputTitle: { fontSize: IS_IPAD ? 20 : 17, color: C.accent },
-  oneInputDesc: { color: C.textMid, fontSize: IS_IPAD ? 13 : 12 },
+  oneInputDesc: { color: C.text, fontSize: IS_IPAD ? 13 : 12, fontWeight: '600' },
   moduleCard: { backgroundColor: C.card, borderRadius: IS_IPAD ? 16 : 14, padding: IS_IPAD ? 20 : 16, borderWidth: 1, borderColor: C.border, borderTopWidth: 2, borderTopColor: C.accent },
   securityCard: { borderColor: C.accentDim, backgroundColor: '#0a1520' },
   moduleIcon: { fontSize: IS_IPAD ? 32 : 26, marginBottom: IS_IPAD ? 10 : 8 },
