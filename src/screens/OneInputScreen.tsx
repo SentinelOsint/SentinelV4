@@ -503,7 +503,6 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     </ScrollView>
                   )}
                   <View style={styles.proBadge}>
-                    <Text style={styles.proBadgeText}>PRO</Text>
                   </View>
                 </View>
                 {riskData ? (
