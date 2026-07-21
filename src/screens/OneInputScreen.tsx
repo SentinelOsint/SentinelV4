@@ -612,6 +612,55 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                         })}
                       </View>
                     )}
+                    {/* Confirmed and Supported Information */}
+                    {riskData.confirmedAndSupportedInformation?.length > 0 && (
+                      <View style={styles.riskSection}>
+                        <TouchableOpacity onPress={() => toggleSection('confirmed')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>✅ CONFIRMED & SUPPORTED ({riskData.confirmedAndSupportedInformation.length})</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('confirmed') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('confirmed') && riskData.confirmedAndSupportedInformation.map((item: any, i: number) => (
+                          <View key={i} style={{ backgroundColor: '#051a0d', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#34c759' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>{item.confidence}</Text>
+                              <Text style={{ color: '#4a5568', fontSize: 9 }}>{item.source}</Text>
+                            </View>
+                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 4 }}>{item.statement}</Text>
+                            {item.whyItMatters && (
+                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, fontStyle: 'italic' }}>→ {item.whyItMatters}</Text>
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Possible Associations */}
+                    {riskData.possibleAssociations?.length > 0 && (
+                      <View style={styles.riskSection}>
+                        <TouchableOpacity onPress={() => toggleSection('associations')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>🔗 POSSIBLE ASSOCIATIONS ({riskData.possibleAssociations.length})</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('associations') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('associations') && riskData.possibleAssociations.map((item: any, i: number) => (
+                          <View key={i} style={{ backgroundColor: '#1a1000', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#d97706' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <Text style={{ color: '#d97706', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>POSSIBLE ASSOCIATION — {item.confidence}</Text>
+                            </View>
+                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{item.statement}</Text>
+                            {item.whyIdentified && (
+                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>Why identified: {item.whyIdentified}</Text>
+                            )}
+                            {item.alternativeExplanation && (
+                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>◇ Alternative: {item.alternativeExplanation}</Text>
+                            )}
+                            {item.recommendedVerification && (
+                              <Text style={{ color: '#4a9eff', fontSize: 10, lineHeight: 15 }}>→ {item.recommendedVerification}</Text>
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
                     {/* Potential Risk Indicators */}
                     {riskData.potentialRiskIndicators?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('risk', e.nativeEvent.layout.y)}>

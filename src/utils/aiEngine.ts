@@ -465,10 +465,28 @@ Respond with this exact JSON structure:
     "uncertainties": ["<uncertainty 1>", "<uncertainty 2>"]
   },
   "confirmedAndSupportedInformation": [
-    { "statement": "<source-confirmed or user-confirmed finding>", "source": "<source name>", "sourceType": "<AUTHORITATIVE|PUBLIC_RECORD|COMMERCIAL_DATABASE>", "confidence": "<SOURCE_CONFIRMED|SUPPORTED|PROBABLE>", "verificationStatus": "<CONFIRMED|REVIEWED|UNVERIFIED>" }
+    {
+      "id": "<unique-id e.g. cf_001>",
+      "contentType": "confirmedFact",
+      "statement": "<source-confirmed or user-confirmed finding>",
+      "source": "<source name>",
+      "sourceType": "<AUTHORITATIVE|PUBLIC_RECORD|COMMERCIAL_DATABASE>",
+      "confidence": "<SOURCE_CONFIRMED|SUPPORTED|PROBABLE>",
+      "verificationStatus": "<CONFIRMED|REVIEWED|UNVERIFIED>",
+      "whyItMatters": "<relevance to the assessment>"
+    }
   ],
   "possibleAssociations": [
-    { "statement": "<possible but unconfirmed association>", "whyIdentified": "<reason this was flagged>", "confidence": "<PROBABLE|POSSIBLE|UNCERTAIN>", "missingIdentifiers": "<what would confirm or reject this>", "recommendedVerification": "<suggested action>" }
+    {
+      "id": "<unique-id e.g. pa_001>",
+      "contentType": "possibleAssociation",
+      "statement": "<possible but unconfirmed association>",
+      "whyIdentified": "<reason this was flagged>",
+      "confidence": "<PROBABLE|POSSIBLE|UNCERTAIN>",
+      "missingIdentifiers": "<what would confirm or reject this>",
+      "recommendedVerification": "<suggested action>",
+      "alternativeExplanation": "<another plausible reading>"
+    }
   ],
   "knownInformation": [
     { "finding": "<confirmed finding>", "source": "<source name>", "confidence": "<CONFIRMED|PROBABLE|UNVERIFIED>" }
