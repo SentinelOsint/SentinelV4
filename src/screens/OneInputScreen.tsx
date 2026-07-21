@@ -59,6 +59,16 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [displayConf, setDisplayConf]     = useState<number>(0);
   const scoreAnim = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<any>(null);
+  const sectionRefs = useRef<Record<string, number>>({});
+  const registerSection = (key: string, y: number) => {
+    sectionRefs.current[key] = y;
+  };
+  const scrollToSection = (key: string) => {
+    const y = sectionRefs.current[key];
+    if (y !== undefined) {
+      scrollRef.current?.scrollTo({ y: y - 20, animated: true });
+    }
+  };
   const [isSearching, setIsSearching] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['identity', 'risk']));
@@ -424,6 +434,32 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
               <View style={styles.aiCard}>
                 <View style={styles.aiCardHeader}>
                   <Text style={styles.aiCardTitle}>📋 Pre-Contact Intelligence Brief</Text>
+                  {riskData && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8, marginHorizontal: -4 }}>
+                      {[
+                        { key: 'overview', label: 'Overview' },
+                        { key: 'identity', label: 'Identity' },
+                        { key: 'risk', label: 'Risk' },
+                        { key: 'contra', label: 'Contradictions' },
+                        { key: 'gaps', label: 'Gaps' },
+                        { key: 'checks', label: 'Checks' },
+                        { key: 'ai_interp', label: 'AI Analysis' },
+                      ].map((s) => (
+                        <TouchableOpacity
+                          key={s.key}
+                          style={{ backgroundColor: '#0a0f1a', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, marginHorizontal: 4, borderWidth: 1, borderColor: expandedSections.has(s.key) ? '#4a9eff' : '#1e2a3a' }}
+                          onPress={() => {
+                            if (!expandedSections.has(s.key)) {
+                              setExpandedSections(prev => new Set([...prev, s.key]));
+                            }
+                            scrollToSection(s.key);
+                          }}
+                        >
+                          <Text style={{ color: expandedSections.has(s.key) ? '#4a9eff' : '#6b7a99', fontSize: 11, fontWeight: '600' }}>{s.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  )}
                   <View style={styles.proBadge}>
                     <Text style={styles.proBadgeText}>PRO</Text>
                   </View>
@@ -500,7 +536,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     })()}
                     {/* Identity Confidence */}
                     {riskData.identityConfidence && (
-                      <View style={styles.riskSection}>
+                      <View style={styles.riskSection} onLayout={(e) => registerSection('identity', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('identity')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🪪 IDENTITY CONFIDENCE</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('identity') ? '▲' : '▼'}</Text>
@@ -560,7 +596,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
                     {/* Potential Risk Indicators */}
                     {riskData.potentialRiskIndicators?.length > 0 && (
-                      <View style={styles.riskSection}>
+                      <View style={styles.riskSection} onLayout={(e) => registerSection('risk', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('risk')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🚨 POTENTIAL RISK INDICATORS ({riskData.potentialRiskIndicators.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('risk') ? '▲' : '▼'}</Text>
@@ -574,7 +610,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
                     {/* Contradictions */}
                     {riskData.contradictionsAndInconsistencies?.length > 0 && (
-                      <View style={styles.riskSection}>
+                      <View style={styles.riskSection} onLayout={(e) => registerSection('contra', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('contra')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>⚠️ CONTRADICTIONS ({riskData.contradictionsAndInconsistencies.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('contra') ? '▲' : '▼'}</Text>
@@ -586,7 +622,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
                     {/* Information Gaps */}
                     {riskData.informationGaps?.length > 0 && (
-                      <View style={styles.riskSection}>
+                      <View style={styles.riskSection} onLayout={(e) => registerSection('gaps', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('gaps')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🔍 INFORMATION GAPS ({riskData.informationGaps.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('gaps') ? '▲' : '▼'}</Text>
@@ -626,7 +662,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
                     {/* Recommended Checks */}
                     {riskData.recommendedChecksBeforeContact?.length > 0 && (
-                      <View style={styles.riskSection}>
+                      <View style={styles.riskSection} onLayout={(e) => registerSection('checks', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('checks')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>📋 RECOMMENDED CHECKS ({riskData.recommendedChecksBeforeContact.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('checks') ? '▲' : '▼'}</Text>
@@ -650,7 +686,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
                     {/* AI-Assisted Interpretation */}
                     {riskData.aiAssistedInterpretation?.length > 0 && (
-                      <View style={styles.riskSection}>
+                      <View style={styles.riskSection} onLayout={(e) => registerSection('ai_interp', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('ai_interp')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={{ color: '#9b6dff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 2 }}>🤖 AI-ASSISTED INTERPRETATION ({riskData.aiAssistedInterpretation.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('ai_interp') ? '▲' : '▼'}</Text>
