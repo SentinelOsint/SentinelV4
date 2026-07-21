@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { C, SPACE, FONT } from '../utils/theme';
 import { buildOneInputResult, OneInputResult, InputType } from '../utils/oneInputSearch';
-import { analyzeResults, generatePreContactBrief } from '../utils/aiEngine';
+import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult } from '../utils/aiEngine';
 import { exportSearchPDF, exportInvestigationReport } from '../utils/pdfExport';
 import { Storage } from '../utils/storage';
 
@@ -52,6 +52,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [exporting, setExporting]   = useState(false);
   const [riskData, setRiskData]       = useState<any>(null);
   const [briefHistory, setBriefHistory] = useState<Array<{version: number, timestamp: string, data: any}>>([]);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [showBriefHistory, setShowBriefHistory] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<string>('');
   const [confidence, setConfidence]     = useState<number>(0);
@@ -286,6 +287,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
       const jsonMatch = briefJson.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON found in response');
       const parsed = JSON.parse(jsonMatch[0]);
+      const validation = validateBrief(parsed);
+      setValidationResult(validation);
       setRiskData(parsed);
       setAiSummary(parsed.confidenceAndLimitations?.disclaimer || '');
       setBriefHistory(prev => [...prev, {
@@ -466,6 +469,21 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                 </View>
                 {riskData ? (
                   <View>
+                    {/* Validation Warnings */}
+                    {validationResult && (validationResult.warnings.length > 0 || validationResult.errors.length > 0) && (
+                      <View style={{ backgroundColor: '#0a0a0f', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: validationResult.errors.length > 0 ? '#dc262640' : '#d9770640' }}>
+                        <Text style={{ color: validationResult.errors.length > 0 ? '#ff453a' : '#ff9f0a', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 6 }}>
+                          {validationResult.errors.length > 0 ? '⚠️ BRIEF VALIDATION ERRORS' : '⚠️ BRIEF VALIDATION WARNINGS'}
+                        </Text>
+                        {validationResult.errors.map((e, i) => (
+                          <Text key={i} style={{ color: '#ff453a', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>● {e}</Text>
+                        ))}
+                        {validationResult.warnings.map((w, i) => (
+                          <Text key={i} style={{ color: '#ff9f0a', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>△ {w}</Text>
+                        ))}
+                      </View>
+                    )}
+
                     {/* Pre-Contact Overview */}
                     {riskData.preContactOverview && (() => {
                       const ov = riskData.preContactOverview;

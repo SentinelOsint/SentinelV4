@@ -521,3 +521,65 @@ Operational Risk Status logic:
   await AuditLog.log('SEARCH_QUERY', `AI Pre-Contact Brief: ${query}`);
   return await callClaude(system, user);
 }
+
+// ─── Objectivity Validation ─────────────────────────────────────────────────
+
+export interface ValidationResult {
+  isValid: boolean;
+  warnings: string[];
+  errors: string[];
+}
+
+export function validateBrief(brief: any): ValidationResult {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  // 1. Check identity confidence is not conflated with risk
+  if (brief.preContactOverview?.operationalRiskStatus === 'LOW_INDICATED_RISK' &&
+      brief.preContactOverview?.identityConfidence !== 'HIGH') {
+    warnings.push('Low risk status with low identity confidence — risk cannot be determined without identity verification.');
+  }
+
+  // 2. Check AI interpretation is separate from confirmed information
+  if (brief.confirmedAndSupportedInformation?.some((item: any) =>
+    item.confidence === 'AI_INTERPRETATION' || item.sourceType === 'AI'
+  )) {
+    errors.push('AI interpretation found in confirmed information section — must be moved to AI-Assisted Interpretation.');
+  }
+
+  // 3. Check that serious risk indicators have verification status
+  const unverifiedHighRisk = brief.potentialRiskIndicators?.filter((r: any) =>
+    r.severity === 'HIGH' && !r.status
+  );
+  if (unverifiedHighRisk?.length > 0) {
+    warnings.push(`${unverifiedHighRisk.length} HIGH severity risk indicator(s) missing verification status.`);
+  }
+
+  // 4. Check that information gaps are present when identity confidence is low
+  if (brief.preContactOverview?.identityConfidence === 'LOW' &&
+      (!brief.informationGaps || brief.informationGaps.length === 0)) {
+    warnings.push('Low identity confidence but no information gaps identified — gaps should be documented.');
+  }
+
+  // 5. Check that operational risk status is not empty
+  if (!brief.preContactOverview?.operationalRiskStatus) {
+    errors.push('Operational risk status is missing — cannot display brief without risk assessment.');
+  }
+
+  // 6. Check that primary finding is specific
+  if (brief.preContactOverview?.primaryFinding &&
+      brief.preContactOverview.primaryFinding.length < 20) {
+    warnings.push('Primary finding appears too brief — may not provide sufficient operational context.');
+  }
+
+  // 7. Check disclaimer is present
+  if (!brief.confidenceAndLimitations?.disclaimer) {
+    warnings.push('Confidence and limitations disclaimer is missing.');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    warnings,
+    errors,
+  };
+}
