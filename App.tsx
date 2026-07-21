@@ -1028,7 +1028,7 @@ export default function App() {
           <View style={s.homeHeader}>
             <View>
               <Text style={s.logo}>SENTINEL</Text>
-              <Text style={s.logoSub}>FIELD INTELLIGENCE PLATFORM · NA v2.13{IS_IPAD ? ' · iPad' : ''}</Text>
+              <Text style={s.logoSub}>FIELD INTELLIGENCE PLATFORM · NA v3.0{IS_IPAD ? ' · iPad' : ''}</Text>
               <Text style={s.aiPowered}>✦ Searches FBI · Interpol · 50 States · Canada</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
