@@ -944,6 +944,14 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
               const isAutoModule = module.module.includes('INTELLIGENCE') || module.module.includes('WANTED') || module.module.includes('BREACH') || module.module.includes('MULTI');
               const isAlert = module.module.includes('WANTED');
               const isBreachAlert = module.module.includes('BREACH') && module.links.some(l => l.label.includes('🚨'));
+              const hasAlert = module.links.some(l => l.label.includes('🚨') || l.label.includes('[HIGH]'));
+              const sourceState = isAutoModule
+                ? (hasAlert ? 'RESULT_REVIEWED' : 'QUERY_EXECUTED')
+                : 'SOURCE_AVAILABLE';
+              const sourceStateColor = sourceState === 'RESULT_REVIEWED' ? '#34c759' :
+                                       sourceState === 'QUERY_EXECUTED' ? '#4a9eff' : '#4a5568';
+              const sourceStateLabel = sourceState === 'RESULT_REVIEWED' ? 'REVIEWED' :
+                                       sourceState === 'QUERY_EXECUTED' ? 'QUERY EXECUTED' : 'AVAILABLE';
               return (
                 <View key={idx} style={[styles.moduleCard, isAutoModule && styles.moduleCardAuto, isAlert && styles.moduleCardAlert, isBreachAlert && styles.moduleCardAlert]}>
                   <TouchableOpacity
@@ -955,9 +963,12 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       setExpandedModules(next);
                     }}
                   >
-                    <Text style={[styles.moduleTitle, isAutoModule && styles.moduleTitleAuto]}>
-                      {module.icon}  {module.module}
-                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.moduleTitle, isAutoModule && styles.moduleTitleAuto]}>
+                        {module.icon}  {module.module}
+                      </Text>
+                      <Text style={{ color: sourceStateColor, fontSize: 8, fontWeight: '700', letterSpacing: 1, marginTop: 2 }}>{sourceStateLabel}</Text>
+                    </View>
                     <Text style={styles.moduleChevron}>{isExpanded ? '▼' : '▶'}</Text>
                   </TouchableOpacity>
                   {isExpanded && (
