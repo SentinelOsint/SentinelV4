@@ -60,6 +60,10 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [isSearching, setIsSearching] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['identity', 'risk']));
+  const [validatedFindings, setValidatedFindings] = useState<Record<string, 'confirmed' | 'rejected' | 'needs_review'>>({});
+  const validateFinding = (id: string, status: 'confirmed' | 'rejected' | 'needs_review') => {
+    setValidatedFindings(prev => ({ ...prev, [id]: status }));
+  };
   const toggleSection = (key: string) => {
     setExpandedSections(prev => {
       const next = new Set(prev);
@@ -394,8 +398,9 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
             <View style={[styles.typeBadge, { backgroundColor: typeColor + '20', borderColor: typeColor }]}>
               <Text style={styles.typeBadgeIcon}>{typeIcon}</Text>
               <View style={{ flex: 1 }}>
+                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 2 }}>DETECTED TARGET</Text>
                 <Text style={[styles.typeBadgeLabel, { color: typeColor }]}>
-                  Detected: {result.detectedAs}
+                  {result.detectedAs}
                 </Text>
                 <Text style={styles.typeBadgeQuery}>"{result.query}"</Text>
               </View>
@@ -514,9 +519,36 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                           <Text style={styles.riskSectionTitle}>✅ KNOWN INFORMATION ({riskData.knownInformation.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('known') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
-                        {expandedSections.has('known') && riskData.knownInformation.map((k: any, i: number) => (
-                          <Text key={i} style={styles.riskBulletGreen}>◆ [{k.confidence}] {k.finding} — {k.source}</Text>
-                        ))}
+                        {expandedSections.has('known') && riskData.knownInformation.map((k: any, i: number) => {
+                          const findingId = `known_${i}`;
+                          const validation = validatedFindings[findingId];
+                          return (
+                            <View key={i} style={{ backgroundColor: validation === 'confirmed' ? '#0a1a0a' : validation === 'rejected' ? '#1a0a0a' : '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: validation === 'confirmed' ? '#34c759' : validation === 'rejected' ? '#ff453a' : '#34c75940' }}>
+                              <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>{k.confidence} · {k.source}</Text>
+                              <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 8 }}>{k.finding}</Text>
+                              <View style={{ flexDirection: 'row', gap: 6 }}>
+                                <TouchableOpacity
+                                  style={{ flex: 1, backgroundColor: validation === 'confirmed' ? '#34c75930' : '#1a2a1a', borderRadius: 6, padding: 6, alignItems: 'center', borderWidth: 1, borderColor: validation === 'confirmed' ? '#34c759' : '#34c75940' }}
+                                  onPress={() => validateFinding(findingId, validation === 'confirmed' ? 'needs_review' : 'confirmed')}
+                                >
+                                  <Text style={{ color: '#34c759', fontSize: 10, fontWeight: '600' }}>✓ Confirm</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={{ flex: 1, backgroundColor: validation === 'needs_review' ? '#2a2a1a' : '#1a1a0a', borderRadius: 6, padding: 6, alignItems: 'center', borderWidth: 1, borderColor: '#ff9f0a40' }}
+                                  onPress={() => validateFinding(findingId, 'needs_review')}
+                                >
+                                  <Text style={{ color: '#ff9f0a', fontSize: 10, fontWeight: '600' }}>? Review</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={{ flex: 1, backgroundColor: validation === 'rejected' ? '#2a0a0a' : '#1a0a0a', borderRadius: 6, padding: 6, alignItems: 'center', borderWidth: 1, borderColor: '#ff453a40' }}
+                                  onPress={() => validateFinding(findingId, validation === 'rejected' ? 'needs_review' : 'rejected')}
+                                >
+                                  <Text style={{ color: '#ff453a', fontSize: 10, fontWeight: '600' }}>✕ Reject</Text>
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                          );
+                        })}
                       </View>
                     )}
                     {/* Potential Risk Indicators */}
@@ -553,7 +585,35 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('gaps') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('gaps') && riskData.informationGaps.map((g: any, i: number) => (
-                          <Text key={i} style={styles.riskBulletBlue}>→ [{g.importance}] {g.gap} — {g.suggestedCheck}</Text>
+                          <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: g.importance === 'HIGH' ? '#ff453a' : g.importance === 'MEDIUM' ? '#ff9f0a' : '#4a9eff' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>INFORMATION GAP — {g.importance}</Text>
+                            </View>
+                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{g.gap}</Text>
+                            {g.suggestedCheck && (
+                              <Text style={{ color: '#6b7a99', fontSize: 11, lineHeight: 16, marginBottom: 8, fontStyle: 'italic' }}>→ {g.suggestedCheck}</Text>
+                            )}
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                              <TouchableOpacity
+                                style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#4a9eff40' }}
+                                onPress={() => Alert.alert('Add Identifier', 'Add a new identifier (DOB, address, phone) to refine this search.')}
+                              >
+                                <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '600' }}>+ Add Identifier</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#4a9eff40' }}
+                                onPress={() => Alert.alert('Field Note', 'Mark this gap as a follow-up task in Field Notes.')}
+                              >
+                                <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '600' }}>📋 Create Task</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#4a556840' }}
+                                onPress={() => Alert.alert('Mark Unavailable', 'This information gap will be marked as unavailable in the brief.')}
+                              >
+                                <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '600' }}>Mark Unavailable</Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
                         ))}
                       </View>
                     )}

@@ -1044,6 +1044,53 @@ export default function App() {
               <Text style={s.activeBannerTxt}>🔴 Active case – searches are being logged  ›</Text>
             </TouchableOpacity>
           )}
+          {/* Intelligence Workflow Section */}
+          <View style={{ paddingHorizontal: GRID_PADDING, paddingBottom: 8 }}>
+            <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 4 }}>START AN INTELLIGENCE WORKFLOW</Text>
+            <View style={{ gap: 8 }}>
+              {/* Primary: New Pre-Contact Assessment */}
+              <TouchableOpacity
+                style={{ backgroundColor: '#0f1a2e', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#2563eb40', flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                onPress={() => navigate('one_input')}
+              >
+                <Text style={{ fontSize: 24 }}>🎯</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#e8eaf0', fontSize: 14, fontWeight: '700', marginBottom: 2 }}>New Pre-Contact Assessment</Text>
+                  <Text style={{ color: '#4a5568', fontSize: 11 }}>One query → intelligence sweep → Pre-Contact Brief</Text>
+                </View>
+                <Text style={{ color: '#2563eb', fontSize: 18 }}>›</Text>
+              </TouchableOpacity>
+              {/* Secondary row */}
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#1e2a3a', alignItems: 'flex-start' }}
+                  onPress={() => navigate('cases')}
+                >
+                  <Text style={{ fontSize: 18, marginBottom: 4 }}>📁</Text>
+                  <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>Active Cases</Text>
+                  <Text style={{ color: '#4a5568', fontSize: 10 }}>{notes.length > 0 ? `${notes.length} notes` : 'Manage investigations'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#1e2a3a', alignItems: 'flex-start' }}
+                  onPress={() => navigate('case_intake')}
+                >
+                  <Text style={{ fontSize: 18, marginBottom: 4 }}>📋</Text>
+                  <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>New Case Intake</Text>
+                  <Text style={{ color: '#4a5568', fontSize: 10 }}>AI pre-assessment + voice</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#1e2a3a', alignItems: 'flex-start' }}
+                  onPress={() => navigate('watchlist')}
+                >
+                  <Text style={{ fontSize: 18, marginBottom: 4 }}>👁️</Text>
+                  <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>Watch List</Text>
+                  <Text style={{ color: '#4a5568', fontSize: 10 }}>Monitor targets</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 16 }}>INTELLIGENCE AREAS</Text>
+          </View>
+
           <ScrollView
             contentContainerStyle={[s.grid, { paddingHorizontal: GRID_PADDING, gap: GRID_GAP }]}
             showsVerticalScrollIndicator={false}
