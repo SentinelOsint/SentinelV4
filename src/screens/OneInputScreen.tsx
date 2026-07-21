@@ -54,6 +54,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [briefHistory, setBriefHistory] = useState<Array<{version: number, timestamp: string, data: any}>>([]);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [showBriefHistory, setShowBriefHistory] = useState(false);
+  const [compareVersion, setCompareVersion] = useState<number | null>(null);
   const [loadingPhase, setLoadingPhase] = useState<string>('');
   const [confidence, setConfidence]     = useState<number>(0);
   const [displayScore, setDisplayScore]   = useState<number>(0);
@@ -882,8 +883,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                         {briefHistory.map((v, i) => (
                           <TouchableOpacity
                             key={i}
-                            style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: i < briefHistory.length - 1 ? 1 : 0, borderBottomColor: '#1a2035' }}
-                            onPress={() => { setRiskData(v.data); setShowBriefHistory(false); }}
+                            style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 8, borderBottomWidth: i < briefHistory.length - 1 ? 1 : 0, borderBottomColor: '#1a2035' }}
+                            onPress={() => { setRiskData(v.data); setShowBriefHistory(false); setCompareVersion(null); }}
                           >
                             <View style={{ flex: 1 }}>
                               <Text style={{ color: i === briefHistory.length - 1 ? '#4a9eff' : '#e8eaf0', fontSize: 12, fontWeight: '600' }}>
@@ -898,8 +899,40 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                               <Text style={{ color: '#6b7a99', fontSize: 10 }}>{v.data.preContactOverview?.identityConfidence || 'N/A'}</Text>
                               <Text style={{ color: '#6b7a99', fontSize: 9 }}>{v.data.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' ') || ''}</Text>
                             </View>
+                            {i < briefHistory.length - 1 && (
+                              <TouchableOpacity
+                                style={{ backgroundColor: '#1a2035', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginLeft: 8, marginTop: 2 }}
+                                onPress={() => setCompareVersion(compareVersion === v.version ? null : v.version)}
+                              >
+                                <Text style={{ color: compareVersion === v.version ? '#4a9eff' : '#4a5568', fontSize: 9, fontWeight: '600' }}>
+                                  {compareVersion === v.version ? 'Cancel' : 'Compare'}
+                                </Text>
+                              </TouchableOpacity>
+                            )}
                           </TouchableOpacity>
                         ))}
+                        {compareVersion !== null && (() => {
+                          const compareData = briefHistory.find(v => v.version === compareVersion)?.data;
+                          const currentData = briefHistory[briefHistory.length - 1]?.data;
+                          if (!compareData || !currentData) return null;
+                          return (
+                            <View style={{ marginTop: 12, backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10 }}>
+                              <Text style={{ color: '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 }}>VERSION COMPARISON</Text>
+                              {[
+                                { label: 'Identity Confidence', v1: compareData.preContactOverview?.identityConfidence, v2: currentData.preContactOverview?.identityConfidence },
+                                { label: 'Operational Status', v1: compareData.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' '), v2: currentData.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' ') },
+                                { label: 'Risk Indicators', v1: `${compareData.potentialRiskIndicators?.length || 0}`, v2: `${currentData.potentialRiskIndicators?.length || 0}` },
+                                { label: 'Information Gaps', v1: `${compareData.informationGaps?.length || 0}`, v2: `${currentData.informationGaps?.length || 0}` },
+                              ].map((row, ri) => (
+                                <View key={ri} style={{ flexDirection: 'row', marginBottom: 6 }}>
+                                  <Text style={{ color: '#6b7a99', fontSize: 10, width: 120 }}>{row.label}</Text>
+                                  <Text style={{ color: row.v1 === row.v2 ? '#4a5568' : '#ff9f0a', fontSize: 10, flex: 1 }}>v{compareVersion}: {row.v1}</Text>
+                                  <Text style={{ color: row.v1 === row.v2 ? '#4a5568' : '#34c759', fontSize: 10, flex: 1 }}>current: {row.v2}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          );
+                        })()}
                       </View>
                     )}
 
