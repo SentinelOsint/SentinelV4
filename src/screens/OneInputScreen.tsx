@@ -470,9 +470,14 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
             {isPro && (
               <View style={styles.aiCard}>
                 <View style={styles.aiCardHeader}>
-                  <Text style={styles.aiCardTitle}>📋 Pre-Contact Intelligence Brief</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <Text style={styles.aiCardTitle}>📋 Pre-Contact Intelligence Brief</Text>
+                    <View style={{ backgroundColor: '#7c3aed', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                      <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 1 }}>PRO</Text>
+                    </View>
+                  </View>
                   {riskData && (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8, marginHorizontal: -4 }}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4, marginHorizontal: -4 }}>
                       {[
                         { key: 'overview', label: 'Overview' },
                         { key: 'identity', label: 'Identity' },
