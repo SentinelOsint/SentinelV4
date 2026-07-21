@@ -999,7 +999,6 @@ export default function App() {
   // ════════════════════════════════════════════════════════════════════════
   if (screen === 'home') {
     const modules = [
-      { id: 'one_input', icon: '🎯', title: 'One-Input Search', desc: 'One query → intelligence sweep → Pre-Contact Brief' },
       { id: 'phone',    icon: '📞', title: 'Phone Lookup',   desc: 'Owner, spam, carrier' },
       { id: 'email',    icon: '✉️',  title: 'Email Lookup',   desc: 'Breaches, owner, domain' },
       { id: 'social',   icon: '📱', title: 'Social Media',   desc: 'Username on 25+ platforms' },
