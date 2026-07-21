@@ -176,6 +176,52 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
     }
   };
 
+  const handleSaveBriefToCase = async () => {
+    if (!result || !riskData) return;
+    try {
+      const briefSummary = riskData.preContactOverview
+        ? `Identity: ${riskData.preContactOverview.identityConfidence} | Status: ${riskData.preContactOverview.operationalRiskStatus?.replace(/_/g, ' ')} | ${riskData.preContactOverview.primaryFinding}`
+        : 'Pre-Contact Intelligence Brief';
+
+      const priority = riskData.preContactOverview?.operationalRiskStatus === 'ELEVATED_CAUTION' ||
+                       riskData.preContactOverview?.operationalRiskStatus === 'MATERIAL_INDICATOR_CONFIRMED' ? 'high' :
+                       riskData.preContactOverview?.operationalRiskStatus === 'REQUIRES_VERIFICATION' ||
+                       riskData.preContactOverview?.operationalRiskStatus === 'REQUIRES_IDENTITY_VERIFICATION' ? 'medium' : 'low';
+
+      const newCase = {
+        id: Date.now().toString(),
+        title: `Pre-Contact Brief: ${result.query}`,
+        subject: result.query,
+        status: 'active' as const,
+        priority: priority as 'high' | 'medium' | 'low',
+        createdAt: new Date().toLocaleString('en-US'),
+        updatedAt: new Date().toLocaleString('en-US'),
+        description: briefSummary,
+        tags: ['pre-contact-brief', 'one-input-search'],
+        notes: [{
+          id: Date.now().toString(),
+          text: `PRE-CONTACT INTELLIGENCE BRIEF\n\nQuery: ${result.query}\nGenerated: ${new Date().toLocaleString('en-US')}\n\nIdentity Confidence: ${riskData.preContactOverview?.identityConfidence || 'N/A'}\nOperational Status: ${riskData.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' ') || 'N/A'}\n\nPrimary Finding:\n${riskData.preContactOverview?.primaryFinding || 'N/A'}\n\nImmediate Verification Required:\n${riskData.preContactOverview?.immediateVerificationRequirement || 'N/A'}`,
+          tag: 'Intelligence Brief',
+          createdAt: new Date().toLocaleString('en-US'),
+          timestamp: new Date().toLocaleString('en-US'),
+        }],
+        searches: [{
+          id: Date.now().toString() + '_search',
+          module: 'One-Input Search',
+          query: result.query,
+          timestamp: new Date().toLocaleString('en-US'),
+          resultCount: result.modules.reduce((acc: number, m: any) => acc + m.links.length, 0),
+        }],
+        location: '',
+      };
+      const cases = await Storage.getCases();
+      await Storage.saveCases([newCase, ...cases]);
+      Alert.alert('✅ Brief Saved', `Pre-Contact Brief for "${result.query}" saved to Cases.`, [{ text: 'OK' }]);
+    } catch (e) {
+      Alert.alert('Error', 'Could not save brief to case.');
+    }
+  };
+
   const handleExportPDF = async () => {
     if (!result) return;
     setExporting(true);
@@ -508,6 +554,31 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                         ))}
                       </View>
                     )}
+                    {/* AI-Assisted Interpretation */}
+                    {riskData.aiAssistedInterpretation?.length > 0 && (
+                      <View style={styles.riskSection}>
+                        <TouchableOpacity onPress={() => toggleSection('ai_interp')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={{ color: '#9b6dff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 2 }}>🤖 AI-ASSISTED INTERPRETATION ({riskData.aiAssistedInterpretation.length})</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('ai_interp') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        <Text style={{ color: '#6b5b8a', fontSize: 10, marginBottom: 6, fontStyle: 'italic' }}>
+                          Analytical interpretation generated from available findings. Not source-confirmed. Requires professional review.
+                        </Text>
+                        {expandedSections.has('ai_interp') && riskData.aiAssistedInterpretation.map((item: any, i: number) => (
+                          <View key={i} style={{ backgroundColor: '#1a0a2e', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#9b6dff' }}>
+                            <Text style={{ color: '#c4b5f7', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{item.statement}</Text>
+                            {item.uncertainty && (
+                              <Text style={{ color: '#6b5b8a', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>△ Uncertainty: {item.uncertainty}</Text>
+                            )}
+                            {item.alternativeInterpretation && (
+                              <Text style={{ color: '#6b5b8a', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>◇ Alternative: {item.alternativeInterpretation}</Text>
+                            )}
+                            <Text style={{ color: '#9b6dff', fontSize: 9, fontWeight: '600', marginTop: 4 }}>REQUIRES PROFESSIONAL REVIEW</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
                     {/* Confidence & Limitations */}
                     {riskData.confidenceAndLimitations && (
                       <View style={styles.riskSection}>
@@ -526,9 +597,36 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                         )}
                       </View>
                     )}
-                    <TouchableOpacity style={styles.aiBtn} onPress={handleAISummary} disabled={loadingAI}>
-                      <Text style={styles.aiBtnText}>↺ Regenerate Brief</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                      <TouchableOpacity style={[styles.aiBtn, { flex: 1 }]} onPress={handleAISummary} disabled={loadingAI}>
+                        <Text style={styles.aiBtnText}>↺ Regenerate</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.aiBtn, { flex: 1, backgroundColor: '#1a3a2a' }]} onPress={handleSaveBriefToCase} disabled={!riskData}>
+                        <Text style={[styles.aiBtnText, { color: '#34c759' }]}>📁 Save to Case</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Recommended Intelligence Path */}
+                    {riskData.recommendedIntelligencePath?.length > 0 && (
+                      <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
+                        <TouchableOpacity onPress={() => toggleSection('path')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>RECOMMENDED INTELLIGENCE PATH</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('path') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        <Text style={{ color: '#4a5568', fontSize: 10, marginBottom: 8 }}>Sources and modules selected for this intelligence assessment</Text>
+                        {expandedSections.has('path') && riskData.recommendedIntelligencePath.map((p: any, i: number) => (
+                          <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 3, borderLeftColor: p.priority === 'HIGH' ? '#ff453a' : p.priority === 'MEDIUM' ? '#ff9f0a' : '#4a9eff' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '700' }}>{p.module}</Text>
+                              <Text style={{ color: p.status === 'RAN_AUTOMATICALLY' ? '#34c759' : p.status === 'RECOMMENDED_MANUAL' ? '#ff9f0a' : '#4a5568', fontSize: 9, fontWeight: '600' }}>
+                                {p.status?.replace(/_/g, ' ')}
+                              </Text>
+                            </View>
+                            <Text style={{ color: '#6b7a99', fontSize: 11, lineHeight: 16 }}>{p.reason}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 ) : aiSummary ? (
                   <Text style={styles.aiSummaryText}>{aiSummary}</Text>

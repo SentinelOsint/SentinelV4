@@ -456,6 +456,12 @@ Respond with this exact JSON structure:
     "basis": "<what evidence supports this confidence level>",
     "uncertainties": ["<uncertainty 1>", "<uncertainty 2>"]
   },
+  "confirmedAndSupportedInformation": [
+    { "statement": "<source-confirmed or user-confirmed finding>", "source": "<source name>", "sourceType": "<AUTHORITATIVE|PUBLIC_RECORD|COMMERCIAL_DATABASE>", "confidence": "<SOURCE_CONFIRMED|SUPPORTED|PROBABLE>", "verificationStatus": "<CONFIRMED|REVIEWED|UNVERIFIED>" }
+  ],
+  "possibleAssociations": [
+    { "statement": "<possible but unconfirmed association>", "whyIdentified": "<reason this was flagged>", "confidence": "<PROBABLE|POSSIBLE|UNCERTAIN>", "missingIdentifiers": "<what would confirm or reject this>", "recommendedVerification": "<suggested action>" }
+  ],
   "knownInformation": [
     { "finding": "<confirmed finding>", "source": "<source name>", "confidence": "<CONFIRMED|PROBABLE|UNVERIFIED>" }
   ],
@@ -475,6 +481,17 @@ Respond with this exact JSON structure:
     "<consideration 1>",
     "<consideration 2>"
   ],
+  "recommendedIntelligencePath": [
+    {
+      "module": "<Sentinel module name>",
+      "priority": "<HIGH|MEDIUM|LOW>",
+      "reason": "<why this module is recommended — use cautious language: appears to be, may be relevant, requires verification>",
+      "status": "<RAN_AUTOMATICALLY|RECOMMENDED_MANUAL|OPTIONAL>"
+    }
+  ],
+  "aiAssistedInterpretation": [
+    { "statement": "<AI-derived analytical interpretation — NOT source-confirmed>", "findingsUsed": ["<finding reference>"], "confidence": "<HIGH|MEDIUM|LOW>", "uncertainty": "<what makes this uncertain>", "alternativeInterpretation": "<another plausible reading>", "requiresProfessionalReview": true }
+  ],
   "confidenceAndLimitations": {
     "overallConfidence": "<HIGH|MEDIUM|LOW>",
     "basis": "<what this brief is based on>",
@@ -482,6 +499,8 @@ Respond with this exact JSON structure:
     "disclaimer": "This brief is based on available open-source intelligence at the time of query. All findings require professional verification before operational use."
   }
 }
+
+Status values: RAN_AUTOMATICALLY = ran as part of this search, RECOMMENDED_MANUAL = user should run this manually, OPTIONAL = may provide additional context.
 
 Operational Risk Status logic:
 - LOW_INDICATED_RISK: identity confidently matched, no meaningful risk indicators found

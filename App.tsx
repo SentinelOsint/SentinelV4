@@ -1084,7 +1084,7 @@ export default function App() {
                 >
                   {isOneInput && (
                     <View style={s.oneInputBadge}>
-                      <Text style={s.oneInputBadgeTxt}>⚡ FASTEST SEARCH</Text>
+                      <Text style={s.oneInputBadgeTxt}>PRIMARY WORKFLOW</Text>
                     </View>
                   )}
                   <Text style={[s.moduleIcon, isOneInput && { fontSize: IS_IPAD ? 40 : 32 }]}>{m.icon}</Text>
