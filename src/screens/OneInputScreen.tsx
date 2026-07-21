@@ -74,8 +74,22 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['identity', 'risk']));
   const [validatedFindings, setValidatedFindings] = useState<Record<string, 'confirmed' | 'rejected' | 'needs_review'>>({});
-  const validateFinding = (id: string, status: 'confirmed' | 'rejected' | 'needs_review') => {
-    setValidatedFindings(prev => ({ ...prev, [id]: status }));
+  const validateFinding = async (id: string, status: 'confirmed' | 'rejected' | 'needs_review') => {
+    const next = { ...validatedFindings, [id]: status };
+    setValidatedFindings(next);
+    try {
+      const key = `sentinel_validated_${result?.query?.replace(/\s+/g, '_').toLowerCase() || 'unknown'}`;
+      await Storage.saveSetting(key, JSON.stringify(next));
+    } catch {}
+  };
+
+  const loadValidatedFindings = async (query: string) => {
+    try {
+      const key = `sentinel_validated_${query.replace(/\s+/g, '_').toLowerCase()}`;
+      const settings = await Storage.getSettings();
+      const saved = settings[key] as string | undefined;
+      if (saved) setValidatedFindings(JSON.parse(saved));
+    } catch {}
   };
   const toggleSection = (key: string) => {
     setExpandedSections(prev => {
