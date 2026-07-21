@@ -492,10 +492,29 @@ Respond with this exact JSON structure:
     { "finding": "<confirmed finding>", "source": "<source name>", "confidence": "<CONFIRMED|PROBABLE|UNVERIFIED>" }
   ],
   "potentialRiskIndicators": [
-    { "indicator": "<risk description>", "category": "<CRIMINAL|SANCTIONS|FINANCIAL|IDENTITY|REPUTATIONAL|LOCATION|VEHICLE|BREACH>", "severity": "<HIGH|MEDIUM|LOW>", "status": "<CONFIRMED|POSSIBLE|REQUIRES_VERIFICATION>" }
+    {
+      "id": "<unique-id e.g. ri_001>",
+      "contentType": "potentialRiskIndicator",
+      "indicator": "<risk description>",
+      "category": "<CRIMINAL|SANCTIONS|FINANCIAL|IDENTITY|REPUTATIONAL|LOCATION|VEHICLE|BREACH>",
+      "severity": "<HIGH|MEDIUM|LOW>",
+      "status": "<CONFIRMED|POSSIBLE|REQUIRES_VERIFICATION>",
+      "sourceReferences": ["<source name 1>", "<source name 2>"],
+      "evidentiaryBasis": "<what evidence supports this indicator>",
+      "identityRelevance": "<CONFIRMED_FOR_SUBJECT|REQUIRES_IDENTITY_VERIFICATION|NOT_APPLICABLE>",
+      "alternativeExplanation": "<another plausible reading if applicable>"
+    }
   ],
   "contradictionsAndInconsistencies": [
-    { "description": "<what conflicts>", "sources": ["<source A>", "<source B>"], "significance": "<HIGH|MEDIUM|LOW>" }
+    {
+      "id": "<unique-id e.g. co_001>",
+      "contentType": "contradiction",
+      "description": "<what conflicts>",
+      "sources": ["<source A>", "<source B>"],
+      "significance": "<HIGH|MEDIUM|LOW>",
+      "affectedFindings": ["<finding id 1>"],
+      "recommendedResolution": "<how to resolve this contradiction>"
+    }
   ],
   "informationGaps": [
     { "gap": "<what is missing>", "importance": "<HIGH|MEDIUM|LOW>", "suggestedCheck": "<how to address this>" }

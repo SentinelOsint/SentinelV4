@@ -669,9 +669,26 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('risk') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('risk') && riskData.potentialRiskIndicators.map((r: any, i: number) => (
-                          <Text key={i} style={r.severity === 'HIGH' ? styles.riskBulletRed : r.severity === 'MEDIUM' ? styles.riskBulletAmber : styles.riskBulletBlue}>
-                            ● [{r.severity}] {r.indicator} — {r.status}
-                          </Text>
+                          <View key={i} style={{ backgroundColor: r.severity === 'HIGH' ? '#1a0505' : r.severity === 'MEDIUM' ? '#1a1000' : '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: r.severity === 'HIGH' ? '#ff453a' : r.severity === 'MEDIUM' ? '#ff9f0a' : '#4a9eff' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <Text style={{ color: r.severity === 'HIGH' ? '#ff453a' : r.severity === 'MEDIUM' ? '#ff9f0a' : '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>
+                                {r.severity} SEVERITY — {r.status}
+                              </Text>
+                              {r.identityRelevance && (
+                                <Text style={{ color: '#4a5568', fontSize: 8, fontWeight: '600' }}>{r.identityRelevance?.replace(/_/g, ' ')}</Text>
+                              )}
+                            </View>
+                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{r.indicator}</Text>
+                            {r.evidentiaryBasis && (
+                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>Basis: {r.evidentiaryBasis}</Text>
+                            )}
+                            {r.alternativeExplanation && (
+                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>◇ Alternative: {r.alternativeExplanation}</Text>
+                            )}
+                            {r.sourceReferences?.length > 0 && (
+                              <Text style={{ color: '#4a5568', fontSize: 9, marginTop: 4 }}>Sources: {r.sourceReferences.join(' · ')}</Text>
+                            )}
+                          </View>
                         ))}
                       </View>
                     )}
