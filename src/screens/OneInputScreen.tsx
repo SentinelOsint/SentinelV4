@@ -51,6 +51,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [searched, setSearched]     = useState(false);
   const [exporting, setExporting]   = useState(false);
   const [riskData, setRiskData]       = useState<any>(null);
+  const [briefHistory, setBriefHistory] = useState<Array<{version: number, timestamp: string, data: any}>>([]);
+  const [showBriefHistory, setShowBriefHistory] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<string>('');
   const [confidence, setConfidence]     = useState<number>(0);
   const [displayScore, setDisplayScore]   = useState<number>(0);
@@ -276,6 +278,11 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
       const parsed = JSON.parse(jsonMatch[0]);
       setRiskData(parsed);
       setAiSummary(parsed.confidenceAndLimitations?.disclaimer || '');
+      setBriefHistory(prev => [...prev, {
+        version: prev.length + 1,
+        timestamp: new Date().toLocaleString('en-US'),
+        data: parsed,
+      }]);
     } catch (e: any) {
       Alert.alert('AI Error', `Could not generate Pre-Contact Brief: ${e?.message || 'Unknown error'}`);
     } finally {
@@ -692,6 +699,39 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                         <Text style={[styles.aiBtnText, { color: '#34c759' }]}>📁 Save to Case</Text>
                       </TouchableOpacity>
                     </View>
+                    {briefHistory.length > 1 && (
+                      <TouchableOpacity
+                        style={{ marginTop: 8, padding: 8, alignItems: 'center' }}
+                        onPress={() => setShowBriefHistory(!showBriefHistory)}
+                      >
+                        <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '600' }}>
+                          {showBriefHistory ? '▲ Hide' : '▼ Show'} version history ({briefHistory.length} versions)
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    {showBriefHistory && briefHistory.length > 1 && (
+                      <View style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 12, marginTop: 4 }}>
+                        <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 }}>BRIEF VERSION HISTORY</Text>
+                        {briefHistory.map((v, i) => (
+                          <TouchableOpacity
+                            key={i}
+                            style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: i < briefHistory.length - 1 ? 1 : 0, borderBottomColor: '#1a2035' }}
+                            onPress={() => { setRiskData(v.data); setShowBriefHistory(false); }}
+                          >
+                            <View>
+                              <Text style={{ color: i === briefHistory.length - 1 ? '#4a9eff' : '#e8eaf0', fontSize: 12, fontWeight: '600' }}>
+                                Version {v.version} {i === briefHistory.length - 1 ? '(current)' : ''}
+                              </Text>
+                              <Text style={{ color: '#4a5568', fontSize: 10 }}>{v.timestamp}</Text>
+                            </View>
+                            <View style={{ alignItems: 'flex-end' }}>
+                              <Text style={{ color: '#6b7a99', fontSize: 10 }}>{v.data.preContactOverview?.identityConfidence || 'N/A'}</Text>
+                              <Text style={{ color: '#6b7a99', fontSize: 9 }}>{v.data.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' ') || ''}</Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
 
                     {/* Recommended Intelligence Path */}
                     {riskData.recommendedIntelligencePath?.length > 0 && (
