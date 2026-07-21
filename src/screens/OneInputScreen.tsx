@@ -455,6 +455,33 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                             <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>IMMEDIATE VERIFICATION REQUIRED</Text>
                             <Text style={{ color: '#ff9500', fontSize: 12, lineHeight: 18 }}>{ov.immediateVerificationRequirement}</Text>
                           </View>
+                          {/* Research Readiness */}
+                          {ov.researchReadiness && (
+                            <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#1e3a5f', paddingTop: 10 }}>
+                              <Text style={{ color: '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 }}>RESEARCH READINESS</Text>
+                              {[
+                                { label: 'Identity Verification', key: 'identityVerification' },
+                                { label: 'Risk Screening', key: 'riskScreening' },
+                                { label: 'Public Records', key: 'publicRecords' },
+                                { label: 'Contradiction Review', key: 'contradictionReview' },
+                              ].map((item) => {
+                                const val = ov.researchReadiness[item.key];
+                                const color = val === 'COMPLETE' ? '#34c759' : val === 'PARTIALLY_COMPLETE' ? '#ff9f0a' : val === 'NOT_APPLICABLE' ? '#4a5568' : '#ff453a';
+                                return (
+                                  <View key={item.key} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <Text style={{ color: '#6b7a99', fontSize: 10 }}>{item.label}</Text>
+                                    <Text style={{ color, fontSize: 10, fontWeight: '600' }}>{val?.replace(/_/g, ' ') || 'NOT ASSESSED'}</Text>
+                                  </View>
+                                );
+                              })}
+                              <View style={{ marginTop: 6, backgroundColor: '#0a0f1a', borderRadius: 6, padding: 8 }}>
+                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 2 }}>PRE-CONTACT READINESS</Text>
+                                <Text style={{ color: ov.researchReadiness.preContactReadiness === 'READY' ? '#34c759' : '#ff9f0a', fontSize: 11, fontWeight: '700' }}>
+                                  {ov.researchReadiness.preContactReadiness?.replace(/_/g, ' ') || 'NOT DETERMINED'}
+                                </Text>
+                              </View>
+                            </View>
+                          )}
                           <Text style={{ color: '#4a5568', fontSize: 10, marginTop: 10, fontStyle: 'italic' }}>This status reflects available evidence and does not confirm that contact is safe.</Text>
                         </View>
                       );

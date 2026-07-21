@@ -449,7 +449,15 @@ Respond with this exact JSON structure:
     "operationalRiskStatus": "<LOW_INDICATED_RISK|REQUIRES_VERIFICATION|REQUIRES_IDENTITY_VERIFICATION|ELEVATED_CAUTION|NOT_DETERMINED|INSUFFICIENT_IDENTIFIERS>",
     "primaryFinding": "<one or two sentences describing the most important finding — be specific, not generic>",
     "immediateVerificationRequirement": "<the single most important thing to verify before contact>",
-    "evidenceStrength": "<HIGH|MEDIUM|LOW>"
+    "evidenceStrength": "<HIGH|MEDIUM|LOW>",
+    "researchReadiness": {
+      "identityVerification": "<COMPLETE|PARTIALLY_COMPLETE|INCOMPLETE|NOT_APPLICABLE>",
+      "riskScreening": "<COMPLETE|PARTIALLY_COMPLETE|INCOMPLETE|NOT_APPLICABLE>",
+      "publicRecords": "<COMPLETE|PARTIALLY_COMPLETE|INCOMPLETE|NOT_APPLICABLE>",
+      "companyVerification": "<COMPLETE|PARTIALLY_COMPLETE|INCOMPLETE|NOT_APPLICABLE>",
+      "contradictionReview": "<COMPLETE|PARTIALLY_COMPLETE|INCOMPLETE|NOT_APPLICABLE>",
+      "preContactReadiness": "<READY|ADDITIONAL_IDENTIFIERS_REQUIRED|VERIFICATION_REQUIRED|INSUFFICIENT_DATA>"
+    }
   },
   "identityConfidence": {
     "level": "<HIGH|MEDIUM|LOW|INSUFFICIENT>",
