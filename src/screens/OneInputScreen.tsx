@@ -608,45 +608,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
                     {/* Known Information */}
-                    {riskData.knownInformation?.length > 0 && (
-                      <View style={styles.riskSection}>
-                        <TouchableOpacity onPress={() => toggleSection('known')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.riskSectionTitle}>✅ KNOWN INFORMATION ({riskData.knownInformation.length})</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('known') ? '▲' : '▼'}</Text>
-                        </TouchableOpacity>
-                        {expandedSections.has('known') && riskData.knownInformation.map((k: any, i: number) => {
-                          const findingId = `known_${i}`;
-                          const validation = validatedFindings[findingId];
-                          return (
-                            <View key={i} style={{ backgroundColor: validation === 'confirmed' ? '#0a1a0a' : validation === 'rejected' ? '#1a0a0a' : '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: validation === 'confirmed' ? '#34c759' : validation === 'rejected' ? '#ff453a' : '#34c75940' }}>
-                              <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>{k.confidence} · {k.source}</Text>
-                              <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 8 }}>{k.finding}</Text>
-                              <View style={{ flexDirection: 'row', gap: 6 }}>
-                                <TouchableOpacity
-                                  style={{ flex: 1, backgroundColor: validation === 'confirmed' ? '#34c75930' : '#1a2a1a', borderRadius: 6, padding: 6, alignItems: 'center', borderWidth: 1, borderColor: validation === 'confirmed' ? '#34c759' : '#34c75940' }}
-                                  onPress={() => validateFinding(findingId, validation === 'confirmed' ? 'needs_review' : 'confirmed')}
-                                >
-                                  <Text style={{ color: '#34c759', fontSize: 10, fontWeight: '600' }}>✓ Confirm</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                  style={{ flex: 1, backgroundColor: validation === 'needs_review' ? '#2a2a1a' : '#1a1a0a', borderRadius: 6, padding: 6, alignItems: 'center', borderWidth: 1, borderColor: '#ff9f0a40' }}
-                                  onPress={() => validateFinding(findingId, 'needs_review')}
-                                >
-                                  <Text style={{ color: '#ff9f0a', fontSize: 10, fontWeight: '600' }}>? Review</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                  style={{ flex: 1, backgroundColor: validation === 'rejected' ? '#2a0a0a' : '#1a0a0a', borderRadius: 6, padding: 6, alignItems: 'center', borderWidth: 1, borderColor: '#ff453a40' }}
-                                  onPress={() => validateFinding(findingId, validation === 'rejected' ? 'needs_review' : 'rejected')}
-                                >
-                                  <Text style={{ color: '#ff453a', fontSize: 10, fontWeight: '600' }}>✕ Reject</Text>
-                                </TouchableOpacity>
-                              </View>
-                            </View>
-                          );
-                        })}
-                      </View>
-                    )}
-                    {/* Confirmed and Supported Information */}
+{/* Confirmed and Supported Information */}
                     {riskData.confirmedAndSupportedInformation?.length > 0 && (
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('confirmed')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -702,28 +664,46 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                           <Text style={styles.riskSectionTitle}>🚨 POTENTIAL RISK INDICATORS ({riskData.potentialRiskIndicators.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('risk') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
-                        {expandedSections.has('risk') && riskData.potentialRiskIndicators.map((r: any, i: number) => (
-                          <View key={i} style={{ backgroundColor: r.severity === 'HIGH' ? '#1a0505' : r.severity === 'MEDIUM' ? '#1a1000' : '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: r.severity === 'HIGH' ? '#ff453a' : r.severity === 'MEDIUM' ? '#ff9f0a' : '#4a9eff' }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                              <Text style={{ color: r.severity === 'HIGH' ? '#ff453a' : r.severity === 'MEDIUM' ? '#ff9f0a' : '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>
-                                {r.severity} SEVERITY — {r.status}
-                              </Text>
-                              {r.identityRelevance && (
-                                <Text style={{ color: '#4a5568', fontSize: 8, fontWeight: '600' }}>{r.identityRelevance?.replace(/_/g, ' ')}</Text>
+                        {expandedSections.has('risk') && riskData.potentialRiskIndicators.map((r: any, i: number) => {
+                          const sevColor = r.severity === 'HIGH' ? '#ff453a' : r.severity === 'MEDIUM' ? '#ff9f0a' : '#4a9eff';
+                          const sevBg = r.severity === 'HIGH' ? '#1a0505' : r.severity === 'MEDIUM' ? '#1a1000' : '#0a0f1a';
+                          const isUnverifiedIdentity = r.identityRelevance === 'REQUIRES_IDENTITY_VERIFICATION' || r.status === 'REQUIRES_VERIFICATION';
+                          return (
+                            <View key={i} style={{ backgroundColor: sevBg, borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: sevColor }}>
+                              {/* Finding statement */}
+                              <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 8 }}>{r.indicator}</Text>
+                              {/* Separated status rows */}
+                              <View style={{ gap: 4, marginBottom: 8 }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>SOURCE RECORD</Text>
+                                  <Text style={{ color: r.status === 'CONFIRMED' ? '#34c759' : '#ff9f0a', fontSize: 9, fontWeight: '700' }}>
+                                    {r.status === 'CONFIRMED' ? 'CONFIRMED' : 'REQUIRES VERIFICATION'}
+                                  </Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>TARGET ASSOCIATION</Text>
+                                  <Text style={{ color: isUnverifiedIdentity ? '#ff9f0a' : '#34c759', fontSize: 9, fontWeight: '700' }}>
+                                    {isUnverifiedIdentity ? 'UNVERIFIED' : 'CONFIRMED'}
+                                  </Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>SEVERITY IF MATCHED</Text>
+                                  <Text style={{ color: sevColor, fontSize: 9, fontWeight: '700' }}>{r.severity}</Text>
+                                </View>
+                              </View>
+                              {/* Expandable details */}
+                              {r.evidentiaryBasis && (
+                                <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>Basis: {r.evidentiaryBasis}</Text>
+                              )}
+                              {r.alternativeExplanation && (
+                                <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>◇ Alternative: {r.alternativeExplanation}</Text>
+                              )}
+                              {r.sourceReferences?.length > 0 && (
+                                <Text style={{ color: '#4a5568', fontSize: 9, marginTop: 4 }}>Sources: {r.sourceReferences.join(' · ')}</Text>
                               )}
                             </View>
-                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{r.indicator}</Text>
-                            {r.evidentiaryBasis && (
-                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>Basis: {r.evidentiaryBasis}</Text>
-                            )}
-                            {r.alternativeExplanation && (
-                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>◇ Alternative: {r.alternativeExplanation}</Text>
-                            )}
-                            {r.sourceReferences?.length > 0 && (
-                              <Text style={{ color: '#4a5568', fontSize: 9, marginTop: 4 }}>Sources: {r.sourceReferences.join(' · ')}</Text>
-                            )}
-                          </View>
-                        ))}
+                          );
+                        })}
                       </View>
                     )}
                     {/* Contradictions */}

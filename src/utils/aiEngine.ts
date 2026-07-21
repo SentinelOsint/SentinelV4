@@ -429,6 +429,10 @@ Critical rules:
 - Use language like: "possible risk indicator", "requires verification", "inconsistent with available records", "identity association is uncertain", "further checks recommended"
 - Be concise. Field professionals read this before contact — brevity and clarity are essential
 - Always include confidence level and source basis for each section
+- CRITICAL: Do NOT place unexecuted or unavailable searches in potentialRiskIndicators. If a source was not searched, place it in informationGaps with suggestedCheck. Example: OFAC not searched → informationGap, NOT a risk indicator.
+- Do NOT create risk indicators from absence of data. "No OFAC search was run" is an information gap, not a sanctions risk.
+- Speculative psychological profiling or behavioral prediction must go in aiAssistedInterpretation, not potentialRiskIndicators.
+- contradictionsAndInconsistencies must contain actual conflicting data between sources. Name collision between a fugitive and other individuals is identity ambiguity, not a contradiction — place it in possibleAssociations or informationGaps.
 Respond ONLY with valid JSON. No markdown, no preamble, no explanation outside JSON.`;
 
   const user = `Generate a Pre-Contact Intelligence Brief for the following subject/query.
