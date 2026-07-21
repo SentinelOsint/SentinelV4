@@ -305,11 +305,30 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
       setValidationResult(validation);
       setRiskData(parsed);
       setAiSummary(parsed.confidenceAndLimitations?.disclaimer || '');
-      setBriefHistory(prev => [...prev, {
-        version: prev.length + 1,
-        timestamp: new Date().toLocaleString('en-US'),
-        data: parsed,
-      }]);
+      setBriefHistory(prev => {
+        const prevBrief = prev.length > 0 ? prev[prev.length - 1].data : null;
+        const changes: string[] = [];
+        if (prevBrief) {
+          const prevStatus = prevBrief.preContactOverview?.operationalRiskStatus;
+          const newStatus = parsed.preContactOverview?.operationalRiskStatus;
+          if (prevStatus !== newStatus) changes.push(`Operational status: ${prevStatus?.replace(/_/g, ' ')} → ${newStatus?.replace(/_/g, ' ')}`);
+          const prevConf = prevBrief.preContactOverview?.identityConfidence;
+          const newConf = parsed.preContactOverview?.identityConfidence;
+          if (prevConf !== newConf) changes.push(`Identity confidence: ${prevConf} → ${newConf}`);
+          const prevRisk = prevBrief.potentialRiskIndicators?.length || 0;
+          const newRisk = parsed.potentialRiskIndicators?.length || 0;
+          if (prevRisk !== newRisk) changes.push(`Risk indicators: ${prevRisk} → ${newRisk}`);
+          const prevGaps = prevBrief.informationGaps?.length || 0;
+          const newGaps = parsed.informationGaps?.length || 0;
+          if (prevGaps !== newGaps) changes.push(`Information gaps: ${prevGaps} → ${newGaps}`);
+        }
+        return [...prev, {
+          version: prev.length + 1,
+          timestamp: new Date().toLocaleString('en-US'),
+          data: parsed,
+          changes: changes.length > 0 ? changes : prevBrief ? ['No significant changes detected'] : ['Initial brief generated'],
+        }];
+      });
     } catch (e: any) {
       Alert.alert('AI Error', `Could not generate Pre-Contact Brief: ${e?.message || 'Unknown error'}`);
     } finally {
@@ -866,11 +885,14 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                             style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: i < briefHistory.length - 1 ? 1 : 0, borderBottomColor: '#1a2035' }}
                             onPress={() => { setRiskData(v.data); setShowBriefHistory(false); }}
                           >
-                            <View>
+                            <View style={{ flex: 1 }}>
                               <Text style={{ color: i === briefHistory.length - 1 ? '#4a9eff' : '#e8eaf0', fontSize: 12, fontWeight: '600' }}>
                                 Version {v.version} {i === briefHistory.length - 1 ? '(current)' : ''}
                               </Text>
-                              <Text style={{ color: '#4a5568', fontSize: 10 }}>{v.timestamp}</Text>
+                              <Text style={{ color: '#4a5568', fontSize: 10, marginBottom: 4 }}>{v.timestamp}</Text>
+                              {(v as any).changes?.map((ch: string, ci: number) => (
+                                <Text key={ci} style={{ color: '#6b7a99', fontSize: 9, lineHeight: 13 }}>→ {ch}</Text>
+                              ))}
                             </View>
                             <View style={{ alignItems: 'flex-end' }}>
                               <Text style={{ color: '#6b7a99', fontSize: 10 }}>{v.data.preContactOverview?.identityConfidence || 'N/A'}</Text>
