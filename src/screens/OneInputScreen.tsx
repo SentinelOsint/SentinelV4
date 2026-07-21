@@ -714,7 +714,21 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('contra') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('contra') && riskData.contradictionsAndInconsistencies.map((c: any, i: number) => (
-                          <Text key={i} style={styles.riskBulletAmber}>▲ [{c.significance}] {c.description}</Text>
+                          <View key={i} style={{ backgroundColor: '#1a1000', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#d97706' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <Text style={{ color: '#d97706', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>CONTRADICTION — {c.significance}</Text>
+                            </View>
+                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{c.description}</Text>
+                            {c.sources?.length > 0 && (
+                              <Text style={{ color: '#6b7a99', fontSize: 10, marginBottom: 4 }}>Sources: {c.sources.join(' vs ')}</Text>
+                            )}
+                            {c.recommendedResolution && (
+                              <Text style={{ color: '#4a9eff', fontSize: 10, lineHeight: 15 }}>→ Resolution: {c.recommendedResolution}</Text>
+                            )}
+                            {c.affectedFindings?.length > 0 && (
+                              <Text style={{ color: '#4a5568', fontSize: 9, marginTop: 4 }}>Affects: {c.affectedFindings.join(', ')}</Text>
+                            )}
+                          </View>
                         ))}
                       </View>
                     )}
