@@ -34,6 +34,7 @@ import WatchListScreen from './src/screens/WatchListScreen';
 import CaseIntakeScreen from './src/screens/CaseIntakeScreen';
 
 import { Storage, Trial, SubscriptionTier } from './src/utils/storage';
+import { Ionicons } from '@expo/vector-icons';
 import { exportSearchPDF } from './src/utils/pdfExport';
 import { SessionManager }  from './src/utils/sessionManager';
 import { AuditLog }        from './src/utils/auditLog';
@@ -1115,12 +1116,12 @@ export default function App() {
             <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 16 }}>TOOLS AND RECORDS</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
               {[
-                { id: 'notes',      icon: '📋', title: 'Field Notes',  desc: `${notes.length} saved` },
-                { id: 'timeline',   icon: '🕐', title: 'Timeline',     desc: 'Activity log' },
-                { id: 'geo_map',    icon: '🗺️', title: 'Map View',    desc: 'Field map' },
-                { id: 'history',    icon: '🕐', title: 'History',      desc: `${history.length} queries` },
-                { id: 'settings',   icon: '🔐', title: 'Security',     desc: 'Encryption & audit' },
-                { id: 'case_intake',icon: '📋', title: 'Case Intake',  desc: 'AI pre-assessment' },
+                { id: 'notes',      ionicon: 'document-text-outline', title: 'Field Notes',  desc: `${notes.length} saved` },
+                { id: 'timeline',   ionicon: 'time-outline',           title: 'Timeline',     desc: 'Activity log' },
+                { id: 'geo_map',    ionicon: 'map-outline',            title: 'Map View',     desc: 'Field map' },
+                { id: 'history',    ionicon: 'search-outline',         title: 'History',      desc: `${history.length} queries` },
+                { id: 'settings',   ionicon: 'lock-closed-outline',    title: 'Security',     desc: 'Encryption & audit' },
+                { id: 'case_intake',ionicon: 'clipboard-outline',      title: 'Case Intake',  desc: 'AI pre-assessment' },
 
               ].map(t => (
                 <TouchableOpacity
@@ -1128,7 +1129,7 @@ export default function App() {
                   style={{ width: '47%', backgroundColor: '#0a0f1a', borderRadius: CARD.radiusSm, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor }}
                   onPress={() => navigate(t.id as any)}
                 >
-                  <Text style={{ fontSize: 16, marginBottom: 4 }}>{t.icon}</Text>
+                  <Ionicons name={t.ionicon as any} size={18} color={C.textMid} style={{ marginBottom: 6 }} />
                   <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>{t.title}</Text>
                   <Text style={{ color: '#4a5568', fontSize: 10 }}>{t.desc}</Text>
                 </TouchableOpacity>
