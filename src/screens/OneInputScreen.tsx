@@ -11,7 +11,7 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Modal,
   StyleSheet, Linking, ActivityIndicator, Alert,
 } from 'react-native';
-import { C, SPACE, FONT } from '../utils/theme';
+import { C, SPACE, FONT, IS_IPAD, CARD } from '../utils/theme';
 import { buildOneInputResult, OneInputResult, InputType } from '../utils/oneInputSearch';
 import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult } from '../utils/aiEngine';
 import { exportSearchPDF, exportInvestigationReport } from '../utils/pdfExport';
@@ -578,14 +578,14 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       return (
                         <View style={{ backgroundColor: '#0a0f1a', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#1e3a5f' }}>
                           <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 12 }}>PRE-CONTACT OVERVIEW</Text>
-                          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-                            <View style={{ flex: 1, backgroundColor: confColor + '15', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: confColor + '40' }}>
-                              <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>IDENTITY CONFIDENCE</Text>
-                              <Text style={{ color: confColor, fontSize: 14, fontWeight: '800' }}>{ov.identityConfidence}</Text>
+                          <View style={{ flexDirection: 'row', gap: IS_IPAD ? 12 : 8, marginBottom: IS_IPAD ? 16 : 12 }}>
+                            <View style={{ flex: 1, backgroundColor: confColor + '15', borderRadius: IS_IPAD ? 10 : 8, padding: IS_IPAD ? 14 : 10, borderWidth: 1, borderColor: confColor + '40' }}>
+                              <Text style={{ color: '#8e8e93', fontSize: IS_IPAD ? 10 : 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>IDENTITY CONFIDENCE</Text>
+                              <Text style={{ color: confColor, fontSize: IS_IPAD ? 18 : 14, fontWeight: '800' }}>{ov.identityConfidence}</Text>
                             </View>
-                            <View style={{ flex: 1, backgroundColor: statusColor + '15', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: statusColor + '40' }}>
-                              <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>OPERATIONAL STATUS</Text>
-                              <Text style={{ color: statusColor, fontSize: 11, fontWeight: '800' }}>{ov.operationalRiskStatus?.replace(/_/g, ' ')}</Text>
+                            <View style={{ flex: 1, backgroundColor: statusColor + '15', borderRadius: IS_IPAD ? 10 : 8, padding: IS_IPAD ? 14 : 10, borderWidth: 1, borderColor: statusColor + '40' }}>
+                              <Text style={{ color: '#8e8e93', fontSize: IS_IPAD ? 10 : 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>OPERATIONAL STATUS</Text>
+                              <Text style={{ color: statusColor, fontSize: IS_IPAD ? 13 : 11, fontWeight: '800' }}>{ov.operationalRiskStatus?.replace(/_/g, ' ')}</Text>
                             </View>
                           </View>
                           <View style={{ marginBottom: 10 }}>
@@ -605,7 +605,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                           {/* Research Readiness */}
                           {ov.researchReadiness && (
                             <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#1e3a5f', paddingTop: 10 }}>
-                              <Text style={{ color: '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 }}>RESEARCH READINESS</Text>
+                              <Text style={{ color: '#4a9eff', fontSize: IS_IPAD ? 11 : 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 }}>RESEARCH READINESS</Text>
                               {[
                                 { label: 'Identity Verification', key: 'identityVerification' },
                                 { label: 'Risk Screening', key: 'riskScreening' },
