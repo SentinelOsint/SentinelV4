@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Animated } from 'react-native';
+import { Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Modal,
   StyleSheet, Linking, ActivityIndicator, Alert,
@@ -57,6 +57,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [compareVersion, setCompareVersion] = useState<number | null>(null);
   const [expandedRiskCards, setExpandedRiskCards] = useState<Set<number>>(new Set());
   const toggleRiskCard = (i: number) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedRiskCards(prev => {
       const next = new Set(prev);
       if (next.has(i)) next.delete(i); else next.add(i);
@@ -102,6 +103,10 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
     } catch {}
   };
   const toggleSection = (key: string) => {
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedSections(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
