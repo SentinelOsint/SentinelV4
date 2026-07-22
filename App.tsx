@@ -1115,7 +1115,6 @@ export default function App() {
             <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 16 }}>TOOLS AND RECORDS</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
               {[
-                { id: 'cases',      icon: '📁', title: 'Cases',       desc: 'Manage investigations' },
                 { id: 'notes',      icon: '📋', title: 'Field Notes',  desc: `${notes.length} saved` },
                 { id: 'timeline',   icon: '🕐', title: 'Timeline',     desc: 'Activity log' },
                 { id: 'geo_map',    icon: '🗺️', title: 'Map View',    desc: 'Field map' },
