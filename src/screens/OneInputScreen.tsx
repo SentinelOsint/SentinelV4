@@ -486,7 +486,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
             </View>
           )}
           <Text style={styles.multiInputHint}>💡 Tip: Enter multiple identifiers on separate lines for cross-referenced results</Text>
-          <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
+          <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} accessibilityLabel="Search" accessibilityRole="button" accessibilityHint="Run intelligence sweep on entered identifier">
             <Text style={styles.searchBtnText}>🔍  Search</Text>
           </TouchableOpacity>
         </View>
@@ -533,6 +533,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     <TouchableOpacity
                       style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0a0f1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#1e2a3a', alignSelf: 'flex-start' }}
                       onPress={() => setShowSectionsModal(true)}
+                      accessibilityLabel="Open brief sections navigation"
+                      accessibilityRole="button"
                     >
                       <Text style={{ color: '#4a9eff', fontSize: 11, fontWeight: '600' }}>≡ Sections</Text>
                     </TouchableOpacity>
@@ -900,7 +902,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       <TouchableOpacity style={[styles.aiBtn, { flex: 1 }]} onPress={handleAISummary} disabled={loadingAI}>
                         <Text style={styles.aiBtnText}>↺ Regenerate</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.aiBtn, { flex: 1, backgroundColor: '#1a3a2a' }]} onPress={handleSaveBriefToCase} disabled={!riskData}>
+                      <TouchableOpacity style={[styles.aiBtn, { flex: 1, backgroundColor: '#1a3a2a' }]} onPress={handleSaveBriefToCase} disabled={!riskData} accessibilityLabel="Save brief to case" accessibilityRole="button">
                         <Text style={[styles.aiBtnText, { color: '#34c759' }]}>📁 Save to Case</Text>
                       </TouchableOpacity>
                     </View>
