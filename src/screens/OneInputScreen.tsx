@@ -644,7 +644,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {riskData.confirmedAndSupportedInformation?.length > 0 && (
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('confirmed')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.riskSectionTitle}>✅ CONFIRMED & SUPPORTED ({riskData.confirmedAndSupportedInformation.length})</Text>
+                          <Text style={styles.riskSectionTitle}>✅ Confirmed & Supported ({riskData.confirmedAndSupportedInformation.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('confirmed') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('confirmed') && riskData.confirmedAndSupportedInformation.map((item: any, i: number) => (
@@ -666,7 +666,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {riskData.possibleAssociations?.length > 0 && (
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('associations')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.riskSectionTitle}>🔗 POSSIBLE ASSOCIATIONS ({riskData.possibleAssociations.length})</Text>
+                          <Text style={styles.riskSectionTitle}>🔗 Possible Associations ({riskData.possibleAssociations.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('associations') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('associations') && riskData.possibleAssociations.map((item: any, i: number) => (
@@ -693,7 +693,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {riskData.potentialRiskIndicators?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('risk', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('risk')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.riskSectionTitle}>🚨 POTENTIAL RISK INDICATORS ({riskData.potentialRiskIndicators.length})</Text>
+                          <Text style={styles.riskSectionTitle}>🚨 Potential Risk Indicators ({riskData.potentialRiskIndicators.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('risk') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('risk') && riskData.potentialRiskIndicators.map((r: any, i: number) => {
@@ -742,7 +742,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {riskData.contradictionsAndInconsistencies?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('contra', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('contra')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.riskSectionTitle}>⚠️ CONTRADICTIONS ({riskData.contradictionsAndInconsistencies.length})</Text>
+                          <Text style={styles.riskSectionTitle}>⚠️ Contradictions ({riskData.contradictionsAndInconsistencies.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('contra') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('contra') && riskData.contradictionsAndInconsistencies.map((c: any, i: number) => (
@@ -768,7 +768,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {riskData.informationGaps?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('gaps', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('gaps')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.riskSectionTitle}>🔍 INFORMATION GAPS ({riskData.informationGaps.length})</Text>
+                          <Text style={styles.riskSectionTitle}>🔍 Information Gaps ({riskData.informationGaps.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('gaps') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('gaps') && riskData.informationGaps.map((g: any, i: number) => (
@@ -808,7 +808,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {riskData.recommendedChecksBeforeContact?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('checks', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('checks')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.riskSectionTitle}>📋 RECOMMENDED CHECKS ({riskData.recommendedChecksBeforeContact.length})</Text>
+                          <Text style={styles.riskSectionTitle}>📋 Recommended Verification ({riskData.recommendedChecksBeforeContact.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('checks') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('checks') && riskData.recommendedChecksBeforeContact.map((c: any, i: number) => (
@@ -820,7 +820,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {riskData.operationalConsiderations?.length > 0 && (
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('ops')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.riskSectionTitle}>🎯 OPERATIONAL CONSIDERATIONS</Text>
+                          <Text style={styles.riskSectionTitle}>🎯 Operational Considerations</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('ops') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('ops') && riskData.operationalConsiderations.map((o: string, i: number) => (
@@ -839,7 +839,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                           Analytical interpretation generated from available findings. Not source-confirmed. Requires professional review.
                         </Text>
                         {expandedSections.has('ai_interp') && riskData.aiAssistedInterpretation.map((item: any, i: number) => (
-                          <View key={i} style={{ backgroundColor: '#1a0a2e', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#9b6dff' }}>
+                          <View key={i} style={{ backgroundColor: '#0d0a1a', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 2, borderLeftColor: '#7c3aed' }}>
                             <Text style={{ color: '#c4b5f7', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{item.statement}</Text>
                             {item.uncertainty && (
                               <Text style={{ color: '#6b5b8a', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>△ Uncertainty: {item.uncertainty}</Text>
@@ -857,7 +857,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     {riskData.confidenceAndLimitations && (
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('conf')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.riskSectionTitle}>📊 CONFIDENCE & LIMITATIONS</Text>
+                          <Text style={styles.riskSectionTitle}>📊 Confidence & Limitations</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('conf') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('conf') && (
@@ -1184,14 +1184,14 @@ const styles = StyleSheet.create({
   typeBadgeLabel: { fontSize: FONT.sm, fontWeight: '700' },
   typeBadgeQuery: { color: C.textDim, fontSize: FONT.xs, marginTop: 2 },
 
-  aiCard:         { margin: SPACE.md, marginTop: 0, backgroundColor: '#1a0a2e', borderRadius: 12,
+  aiCard:         { margin: SPACE.md, marginTop: 0, backgroundColor: '#0f1520', borderRadius: 12, borderLeftWidth: 2, borderLeftColor: '#7c3aed40',
                     padding: SPACE.md, borderWidth: 1, borderColor: '#6C3483' },
   aiCardHeader:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                     marginBottom: SPACE.sm },
-  aiCardTitle:    { color: '#D7BDE2', fontSize: FONT.sm, fontWeight: '700' },
+  aiCardTitle:    { color: '#e8eaf0', fontSize: FONT.sm, fontWeight: '700' },
   proBadge:       { backgroundColor: '#6C3483', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
   proBadgeText:   { color: '#fff', fontSize: 10, fontWeight: '700' },
-  aiCardHint:     { color: '#A569BD', fontSize: FONT.xs, marginBottom: SPACE.sm },
+  aiCardHint:     { color: '#8899b0', fontSize: FONT.xs, marginBottom: SPACE.sm },
   moduleLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8 },
   moduleLoadingTxt: { color: C.textDim, fontSize: 11 },
   multiInputHint: { color: C.textDim, fontSize: 11, textAlign: 'center', marginBottom: 8, lineHeight: 16 },
@@ -1205,7 +1205,7 @@ const styles = StyleSheet.create({
   riskLevel:      { fontSize: 12, fontWeight: '800', letterSpacing: 0.5, flexShrink: 1 },
   riskSummary:    { color: C.textMid, fontSize: 12, lineHeight: 16, marginTop: 4, flexShrink: 1, flexWrap: 'wrap' },
   riskSection:    { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#1a2035' },
-  riskSectionTitle: { color: '#6b7a99', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 6 },
+  riskSectionTitle: { color: '#6b7a99', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
   riskBulletGreen: { color: '#34c759', fontSize: 12, lineHeight: 19, marginBottom: 4 },
   riskBulletRed:  { color: '#ff453a', fontSize: 12, lineHeight: 19, marginBottom: 4 },
   riskBulletAmber: { color: '#ff9f0a', fontSize: 12, lineHeight: 19, marginBottom: 4 },
