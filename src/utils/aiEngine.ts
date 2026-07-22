@@ -432,7 +432,15 @@ Critical rules:
 - CRITICAL: Do NOT place unexecuted or unavailable searches in potentialRiskIndicators. If a source was not searched, place it in informationGaps with suggestedCheck. Example: OFAC not searched → informationGap, NOT a risk indicator.
 - Do NOT create risk indicators from absence of data. "No OFAC search was run" is an information gap, not a sanctions risk.
 - Speculative psychological profiling or behavioral prediction must go in aiAssistedInterpretation, not potentialRiskIndicators.
-- contradictionsAndInconsistencies must contain actual conflicting data between sources. Name collision between a fugitive and other individuals is identity ambiguity, not a contradiction — place it in possibleAssociations or informationGaps.
+- NEVER use language like: "may react unpredictably", "likely hostile", "may become violent", "tactical awareness", "may confront", "psychologically unstable".
+- When behavior or threat posture is unknown, state ONLY: "Current behavior and threat posture are unknown. No inference should be made about the queried subject until identity is verified."
+- The authoritative record applies only to the specifically identified person — never transfer behavioral characteristics to the queried subject without confirmed identity match.
+- contradictionsAndInconsistencies must contain ONLY actual conflicting data between two or more sources. Examples of real contradictions: different dates of birth, incompatible addresses, mismatched photographs, impossible timelines, conflicting company roles.
+- A common name matching a wanted record is IDENTITY AMBIGUITY or NAME COLLISION — place it in possibleAssociations, NOT contradictionsAndInconsistencies.
+- IDENTITY AMBIGUITY: the available data may refer to multiple individuals — place in possibleAssociations.
+- NAME COLLISION: the same name is associated with unrelated records — place in possibleAssociations or informationGaps.
+- CONTRADICTION: two or more findings contain genuinely incompatible information — place in contradictionsAndInconsistencies.
+- Do not manufacture contradictions from normal uncertainty.
 Respond ONLY with valid JSON. No markdown, no preamble, no explanation outside JSON.`;
 
   const user = `Generate a Pre-Contact Intelligence Brief for the following subject/query.

@@ -381,7 +381,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
         <TouchableOpacity onPress={onBack} style={styles.backBtn}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>One-Input Search</Text>
+        <Text style={styles.headerTitle}>Pre-Contact Assessment</Text>
         <View style={styles.tierBadge}>
           <Text style={styles.tierText}>{isPro ? 'PRO' : 'SOLO'}</Text>
         </View>

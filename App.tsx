@@ -1012,13 +1012,6 @@ export default function App() {
       { id: 'geo_map',  icon: '🗺️', title: 'Map View',       desc: 'Pin locations, field map' },
       { id: 'image',    icon: '🖼️', title: 'Image Analysis', desc: 'EXIF, reverse search, AI' },
       { id: 'breach',   icon: '🔓', title: 'Data Breaches',  desc: 'Pwned, dark web, pastes' },
-      { id: 'cases',    icon: '📁', title: 'Cases',          desc: 'Manage investigations' },
-      { id: 'timeline', icon: '🕐', title: 'Investigation Timeline', desc: 'Auto-generated activity log' },
-      { id: 'watchlist', icon: '👁️', title: 'Watch List', desc: 'Monitor targets for changes' },
-      { id: 'notes',    icon: '📋', title: 'Field Notes',    desc: `${notes.length} saved` },
-      { id: 'history',  icon: '🕐', title: 'History',        desc: `${history.length} queries` },
-      { id: 'settings', icon: '🔐', title: 'Security',       desc: 'Encryption & audit log' },
-      { id: 'case_intake', icon: '📋', title: 'Case Intake', desc: 'AI pre-assessment & pricing' },
     ];
     return (
       <SafeAreaView style={s.safe}>
@@ -1119,7 +1112,30 @@ export default function App() {
                 </View>
               </View>
             )}
-            <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 16 }}>INTELLIGENCE AREAS</Text>
+            <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 16 }}>TOOLS AND RECORDS</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+              {[
+                { id: 'cases',      icon: '📁', title: 'Cases',       desc: 'Manage investigations' },
+                { id: 'notes',      icon: '📋', title: 'Field Notes',  desc: `${notes.length} saved` },
+                { id: 'timeline',   icon: '🕐', title: 'Timeline',     desc: 'Activity log' },
+                { id: 'geo_map',    icon: '🗺️', title: 'Map View',    desc: 'Field map' },
+                { id: 'history',    icon: '🕐', title: 'History',      desc: `${history.length} queries` },
+                { id: 'settings',   icon: '🔐', title: 'Security',     desc: 'Encryption & audit' },
+                { id: 'case_intake',icon: '📋', title: 'Case Intake',  desc: 'AI pre-assessment' },
+                { id: 'watchlist',  icon: '👁️', title: 'Watch List',  desc: 'Monitor targets' },
+              ].map(t => (
+                <TouchableOpacity
+                  key={t.id}
+                  style={{ width: '47%', backgroundColor: '#0a0f1a', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#1e2a3a' }}
+                  onPress={() => navigate(t.id as any)}
+                >
+                  <Text style={{ fontSize: 16, marginBottom: 4 }}>{t.icon}</Text>
+                  <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>{t.title}</Text>
+                  <Text style={{ color: '#4a5568', fontSize: 10 }}>{t.desc}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10 }}>INTELLIGENCE AREAS</Text>
           </View>
 
           <ScrollView
