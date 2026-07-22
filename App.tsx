@@ -1122,7 +1122,7 @@ export default function App() {
                 { id: 'history',    icon: '🕐', title: 'History',      desc: `${history.length} queries` },
                 { id: 'settings',   icon: '🔐', title: 'Security',     desc: 'Encryption & audit' },
                 { id: 'case_intake',icon: '📋', title: 'Case Intake',  desc: 'AI pre-assessment' },
-                { id: 'watchlist',  icon: '👁️', title: 'Watch List',  desc: 'Monitor targets' },
+
               ].map(t => (
                 <TouchableOpacity
                   key={t.id}
