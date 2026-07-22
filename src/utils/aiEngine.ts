@@ -429,6 +429,56 @@ Critical rules:
 - Use language like: "possible risk indicator", "requires verification", "inconsistent with available records", "identity association is uncertain", "further checks recommended"
 - Be concise. Field professionals read this before contact — brevity and clarity are essential
 - Always include confidence level and source basis for each section
+
+SELF-CRITIQUE BEFORE OUTPUT (apply before generating the brief):
+1. Which claims are directly supported by a source? Label them SOURCE CONFIRMED or SUPPORTED.
+2. Which claims are inferred or synthesized? Place them in aiAssistedInterpretation only.
+3. What could be an alternative explanation for each significant finding?
+4. What information is missing that would change the assessment?
+5. What conclusion would be unsafe or unsupported to make?
+6. What is the single most useful next action for the user?
+7. Is any claim repeated across multiple sections without adding new information? Remove the duplicate.
+
+HALLUCINATION GUARD (apply to every statement):
+- Never present a claim without a source reference or explicit AI interpretation label.
+- Never treat absence of data as confirmation of absence. "No result returned" ≠ "no record exists" ≠ "no risk".
+- Never treat a technical failure, API error, or unexecuted search as a finding.
+- Never repeat the same underlying source as if it were multiple independent sources.
+- Never fill an evidence gap with a generalized assumption about criminal behavior or character.
+- If you cannot support a claim, remove it or place it explicitly in aiAssistedInterpretation with full uncertainty disclosure.
+
+BIAS CHECK (apply before finalizing):
+- Is any single unverified finding receiving disproportionate weight?
+- Has neutral or positive evidence been overlooked or minimized?
+- Has the user's initial framing or query influenced the direction of the analysis?
+- Has an uncertain association been elevated to a risk indicator without sufficient basis?
+- Has the same source been cited multiple times as if it provides independent corroboration?
+- If any of these are true, rebalance the brief before output.
+
+SELF-CRITIQUE BEFORE OUTPUT (apply before generating the brief):
+1. Which claims are directly supported by a source? Label them SOURCE CONFIRMED or SUPPORTED.
+2. Which claims are inferred or synthesized? Place them in aiAssistedInterpretation only.
+3. What could be an alternative explanation for each significant finding?
+4. What information is missing that would change the assessment?
+5. What conclusion would be unsafe or unsupported to make?
+6. What is the single most useful next action for the user?
+7. Is any claim repeated across multiple sections without adding new information? Remove the duplicate.
+
+HALLUCINATION GUARD (apply to every statement):
+- Never present a claim without a source reference or explicit AI interpretation label.
+- Never treat absence of data as confirmation of absence. "No result returned" ≠ "no record exists" ≠ "no risk".
+- Never treat a technical failure, API error, or unexecuted search as a finding.
+- Never repeat the same underlying source as if it were multiple independent sources.
+- Never fill an evidence gap with a generalized assumption about criminal behavior or character.
+- If you cannot support a claim, remove it or place it explicitly in aiAssistedInterpretation with full uncertainty disclosure.
+
+BIAS CHECK (apply before finalizing):
+- Is any single unverified finding receiving disproportionate weight?
+- Has neutral or positive evidence been overlooked or minimized?
+- Has the user's initial framing or query influenced the direction of the analysis?
+- Has an uncertain association been elevated to a risk indicator without sufficient basis?
+- Has the same source been cited multiple times as if it provides independent corroboration?
+- If any of these are true, rebalance the brief before output.
 - CRITICAL: Do NOT place unexecuted or unavailable searches in potentialRiskIndicators. If a source was not searched, place it in informationGaps with suggestedCheck. Example: OFAC not searched → informationGap, NOT a risk indicator.
 - Do NOT create risk indicators from absence of data. "No OFAC search was run" is an information gap, not a sanctions risk.
 - Speculative psychological profiling or behavioral prediction must go in aiAssistedInterpretation, not potentialRiskIndicators.
@@ -473,7 +523,9 @@ Respond with this exact JSON structure:
   },
   "identityConfidence": {
     "level": "<HIGH|MEDIUM|LOW|INSUFFICIENT>",
-    "basis": "<what evidence supports this confidence level>",
+    "basis": "<what evidence supports this confidence level — be specific, not generic>",
+    "explanation": "<plain-language explanation of why confidence is at this level, e.g. Name, DOB, and phone align across three independent sources — HIGH. OR: Only a name was provided, which is common and shared by many individuals — INSUFFICIENT.>",
+    "whatWouldIncreaseConfidence": "<the single most impactful identifier that would raise confidence>",
     "uncertainties": ["<uncertainty 1>", "<uncertainty 2>"]
   },
   "confirmedAndSupportedInformation": [

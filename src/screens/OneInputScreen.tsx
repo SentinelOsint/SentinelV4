@@ -647,6 +647,15 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                                      riskData.identityConfidence.level === 'MEDIUM' ? '#ffcc00' :
                                      riskData.identityConfidence.level === 'LOW' ? '#ff9500' : '#ff3b30'
                             }]}>◆ {riskData.identityConfidence.level} — {riskData.identityConfidence.basis}</Text>
+                            {riskData.identityConfidence.explanation && (
+                              <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6, marginTop: 4 }}>{riskData.identityConfidence.explanation}</Text>
+                            )}
+                            {riskData.identityConfidence.whatWouldIncreaseConfidence && (
+                              <View style={{ backgroundColor: '#0a1a0a', borderRadius: 6, padding: 8, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: '#34c759' }}>
+                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 2 }}>TO INCREASE CONFIDENCE</Text>
+                                <Text style={{ color: '#34c759', fontSize: 11, lineHeight: 16 }}>{riskData.identityConfidence.whatWouldIncreaseConfidence}</Text>
+                              </View>
+                            )}
                             {riskData.identityConfidence.uncertainties?.map((u: string, i: number) => (
                               <Text key={i} style={styles.riskBulletAmber}>△ {u}</Text>
                             ))}
