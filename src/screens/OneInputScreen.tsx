@@ -577,9 +577,15 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                             <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>PRIMARY FINDING</Text>
                             <Text style={{ color: '#e8eaf0', fontSize: 13, lineHeight: 19 }}>{ov.primaryFinding}</Text>
                           </View>
-                          <View style={{ backgroundColor: '#ff950015', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#ff950040' }}>
-                            <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>IMMEDIATE VERIFICATION REQUIRED</Text>
-                            <Text style={{ color: '#ff9500', fontSize: 12, lineHeight: 18 }}>{ov.immediateVerificationRequirement}</Text>
+                          <View style={{ backgroundColor: '#ff950015', borderRadius: 8, padding: 12, borderWidth: 1, borderColor: '#ff950040' }}>
+                            <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 6 }}>NEXT BEST ACTION</Text>
+                            <Text style={{ color: '#ff9500', fontSize: 13, fontWeight: '600', lineHeight: 19, marginBottom: 8 }}>{ov.immediateVerificationRequirement}</Text>
+                            <TouchableOpacity
+                              style={{ backgroundColor: '#ff950025', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6, alignSelf: 'flex-start', borderWidth: 1, borderColor: '#ff950050' }}
+                              onPress={() => Alert.alert('Next Best Action', ov.immediateVerificationRequirement + '\n\nAdd this as a verification task in Information Gaps.')}
+                            >
+                              <Text style={{ color: '#ff9500', fontSize: 10, fontWeight: '700' }}>Take Action →</Text>
+                            </TouchableOpacity>
                           </View>
                           {/* Research Readiness */}
                           {ov.researchReadiness && (
