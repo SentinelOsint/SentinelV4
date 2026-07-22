@@ -547,12 +547,28 @@ Respond with this exact JSON structure:
     "<consideration 1>",
     "<consideration 2>"
   ],
+  "researchPlan": {
+    "sequenceSummary": "<one sentence explaining the overall research strategy for this identifier>",
+    "identifierStrength": "<STRONG|MODERATE|WEAK|INSUFFICIENT>",
+    "identifierStrengthReason": "<why the identifier is strong or weak for intelligence purposes>",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "title": "<short step title e.g. Verify Phone Ownership>",
+        "modules": ["<Sentinel module name>"],
+        "reason": "<why this step comes first — use cautious language>",
+        "expectedOutcome": "<what this step should establish or rule out>",
+        "status": "<COMPLETED|RECOMMENDED|OPTIONAL>"
+      }
+    ]
+  },
   "recommendedIntelligencePath": [
     {
       "module": "<Sentinel module name>",
       "priority": "<HIGH|MEDIUM|LOW>",
       "reason": "<why this module is recommended — use cautious language: appears to be, may be relevant, requires verification>",
-      "status": "<RAN_AUTOMATICALLY|RECOMMENDED_MANUAL|OPTIONAL>"
+      "status": "<RAN_AUTOMATICALLY|RECOMMENDED_MANUAL|OPTIONAL>",
+      "expectedContribution": "<what this module adds to the overall assessment>"
     }
   ],
   "aiAssistedInterpretation": [

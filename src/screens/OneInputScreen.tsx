@@ -984,6 +984,39 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
 
+                    {/* Research Plan */}
+                    {riskData.researchPlan && (
+                      <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
+                        <TouchableOpacity onPress={() => toggleSection('research_plan')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🗺️ RESEARCH PLAN</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('research_plan') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        <Text style={{ color: '#6b7a99', fontSize: 11, marginBottom: 8, lineHeight: 16 }}>{riskData.researchPlan.sequenceSummary}</Text>
+                        {expandedSections.has('research_plan') && (
+                          <>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+                              <Text style={{ color: '#6b7a99', fontSize: 9 }}>Identifier Strength</Text>
+                              <Text style={{ color: riskData.researchPlan.identifierStrength === 'STRONG' ? '#34c759' : riskData.researchPlan.identifierStrength === 'MODERATE' ? '#ff9f0a' : '#ff453a', fontSize: 9, fontWeight: '700' }}>
+                                {riskData.researchPlan.identifierStrength}
+                              </Text>
+                            </View>
+                            {riskData.researchPlan.steps?.map((step: any, i: number) => (
+                              <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: step.status === 'COMPLETED' ? '#34c759' : step.status === 'RECOMMENDED' ? '#4a9eff' : '#4a5568' }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                  <Text style={{ color: '#e8eaf0', fontSize: 11, fontWeight: '700' }}>{step.stepNumber}. {step.title}</Text>
+                                  <Text style={{ color: step.status === 'COMPLETED' ? '#34c759' : step.status === 'RECOMMENDED' ? '#4a9eff' : '#4a5568', fontSize: 8, fontWeight: '600' }}>{step.status}</Text>
+                                </View>
+                                <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>{step.reason}</Text>
+                                {step.expectedOutcome && (
+                                  <Text style={{ color: '#4a9eff', fontSize: 10, lineHeight: 15 }}>→ {step.expectedOutcome}</Text>
+                                )}
+                              </View>
+                            ))}
+                          </>
+                        )}
+                      </View>
+                    )}
+
                     {/* Recommended Intelligence Path */}
                     {riskData.recommendedIntelligencePath?.length > 0 && (
                       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
