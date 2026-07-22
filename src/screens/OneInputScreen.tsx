@@ -8,7 +8,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Animated } from 'react-native';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView,
+  View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Modal,
   StyleSheet, Linking, ActivityIndicator, Alert,
 } from 'react-native';
 import { C, SPACE, FONT } from '../utils/theme';
@@ -55,6 +55,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [showBriefHistory, setShowBriefHistory] = useState(false);
   const [compareVersion, setCompareVersion] = useState<number | null>(null);
+  const [showSectionsModal, setShowSectionsModal] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<string>('');
   const [confidence, setConfidence]     = useState<number>(0);
   const [displayScore, setDisplayScore]   = useState<number>(0);
@@ -387,6 +388,45 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
         </View>
       </View>
 
+      <Modal visible={showSectionsModal} transparent animationType="slide" onRequestClose={() => setShowSectionsModal(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: '#00000080' }} onPress={() => setShowSectionsModal(false)}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0f1923', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 }}>
+            <Text style={{ color: '#4a9eff', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 16 }}>BRIEF SECTIONS</Text>
+            {[
+              { key: 'overview', label: 'Overview', desc: 'Identity confidence, operational status, primary finding' },
+              { key: 'identity', label: 'Identity Confidence', desc: 'Evidence basis and uncertainties' },
+              { key: 'confirmed', label: 'Confirmed & Supported', desc: 'Source-confirmed findings' },
+              { key: 'associations', label: 'Possible Associations', desc: 'Unverified possible connections' },
+              { key: 'risk', label: 'Risk Indicators', desc: 'Potential risk with evidence basis' },
+              { key: 'contra', label: 'Contradictions', desc: 'Conflicting source data' },
+              { key: 'gaps', label: 'Information Gaps', desc: 'Missing identifiers and verification needs' },
+              { key: 'checks', label: 'Recommended Verification', desc: 'Next verification steps' },
+              { key: 'ops', label: 'Operational Considerations', desc: 'Advisory notes for preparation' },
+              { key: 'ai_interp', label: 'AI Interpretation', desc: 'Analytical inference — not source-confirmed' },
+              { key: 'conf', label: 'Confidence & Limitations', desc: 'Assessment reliability and caveats' },
+            ].map((s) => (
+              <TouchableOpacity
+                key={s.key}
+                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1a2535' }}
+                onPress={() => {
+                  setShowSectionsModal(false);
+                  if (!expandedSections.has(s.key)) {
+                    setExpandedSections(prev => new Set([...prev, s.key]));
+                  }
+                  setTimeout(() => scrollToSection(s.key), 300);
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#e8eaf0', fontSize: 13, fontWeight: '600', marginBottom: 2 }}>{s.label}</Text>
+                  <Text style={{ color: '#4a5568', fontSize: 11 }}>{s.desc}</Text>
+                </View>
+                <Text style={{ color: '#4a9eff', fontSize: 16 }}>›</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <ScrollView ref={scrollRef} style={styles.scroll} keyboardShouldPersistTaps="handled">
 
         {/* Search box */}
@@ -477,30 +517,12 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     </View>
                   </View>
                   {riskData && (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4, marginHorizontal: -4 }}>
-                      {[
-                        { key: 'overview', label: 'Overview' },
-                        { key: 'identity', label: 'Identity' },
-                        { key: 'risk', label: 'Risk' },
-                        { key: 'contra', label: 'Contradictions' },
-                        { key: 'gaps', label: 'Gaps' },
-                        { key: 'checks', label: 'Checks' },
-                        { key: 'ai_interp', label: 'AI Analysis' },
-                      ].map((s) => (
-                        <TouchableOpacity
-                          key={s.key}
-                          style={{ backgroundColor: '#0a0f1a', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, marginHorizontal: 4, borderWidth: 1, borderColor: expandedSections.has(s.key) ? '#4a9eff' : '#1e2a3a' }}
-                          onPress={() => {
-                            if (!expandedSections.has(s.key)) {
-                              setExpandedSections(prev => new Set([...prev, s.key]));
-                            }
-                            scrollToSection(s.key);
-                          }}
-                        >
-                          <Text style={{ color: expandedSections.has(s.key) ? '#4a9eff' : '#6b7a99', fontSize: 11, fontWeight: '600' }}>{s.label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
+                    <TouchableOpacity
+                      style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0a0f1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#1e2a3a', alignSelf: 'flex-start' }}
+                      onPress={() => setShowSectionsModal(true)}
+                    >
+                      <Text style={{ color: '#4a9eff', fontSize: 11, fontWeight: '600' }}>≡ Sections</Text>
+                    </TouchableOpacity>
                   )}
                   <View style={styles.proBadge}>
                   </View>
