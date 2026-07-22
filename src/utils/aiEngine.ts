@@ -529,7 +529,16 @@ Respond with this exact JSON structure:
     }
   ],
   "informationGaps": [
-    { "gap": "<what is missing>", "importance": "<HIGH|MEDIUM|LOW>", "suggestedCheck": "<how to address this>" }
+    {
+      "id": "<unique-id e.g. ig_001>",
+      "gap": "<what is missing>",
+      "priority": "<CRITICAL|IMPORTANT|USEFUL>",
+      "priorityReason": "<why this priority — what does resolving it enable or prevent>",
+      "impact": "<IDENTITY_VERIFICATION|RISK_ASSESSMENT|OPERATIONAL_PLANNING|ADDITIONAL_CONTEXT>",
+      "importance": "<HIGH|MEDIUM|LOW>",
+      "suggestedCheck": "<specific recommended action>",
+      "status": "<NOT_ASSESSED|PENDING|RESOLVED|UNAVAILABLE>"
+    }
   ],
   "recommendedChecksBeforeContact": [
     { "module": "<Sentinel module name>", "reason": "<why this check is recommended>", "priority": "<HIGH|MEDIUM|LOW>" }

@@ -798,37 +798,46 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                           <Text style={styles.riskSectionTitle}>🔍 Information Gaps ({riskData.informationGaps.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('gaps') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
-                        {expandedSections.has('gaps') && riskData.informationGaps.map((g: any, i: number) => (
-                          <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: g.importance === 'HIGH' ? '#ff453a' : g.importance === 'MEDIUM' ? '#ff9f0a' : '#4a9eff' }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                              <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>INFORMATION GAP — {g.importance}</Text>
+                        {expandedSections.has('gaps') && riskData.informationGaps.map((g: any, i: number) => {
+                          const priority = g.priority || (g.importance === 'HIGH' ? 'CRITICAL' : g.importance === 'MEDIUM' ? 'IMPORTANT' : 'USEFUL');
+                          const prioColor = priority === 'CRITICAL' ? '#ff453a' : priority === 'IMPORTANT' ? '#ff9f0a' : '#4a9eff';
+                          const prioBg = priority === 'CRITICAL' ? '#1a0505' : priority === 'IMPORTANT' ? '#1a1000' : '#0a0f1a';
+                          return (
+                            <View key={i} style={{ backgroundColor: prioBg, borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: prioColor }}>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                <Text style={{ color: prioColor, fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>{priority}</Text>
+                                {g.impact && <Text style={{ color: '#4a5568', fontSize: 8 }}>{g.impact?.replace(/_/g, ' ')}</Text>}
+                              </View>
+                              <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 4 }}>{g.gap}</Text>
+                              {g.priorityReason && (
+                                <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 6, fontStyle: 'italic' }}>{g.priorityReason}</Text>
+                              )}
+                              {g.suggestedCheck && (
+                                <Text style={{ color: '#4a9eff', fontSize: 11, lineHeight: 16, marginBottom: 8 }}>→ {g.suggestedCheck}</Text>
+                              )}
+                              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                                <TouchableOpacity
+                                  style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#4a9eff40' }}
+                                  onPress={() => Alert.alert('Add Identifier', 'Add a new identifier (DOB, address, phone) to refine this search.')}
+                                >
+                                  <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '600' }}>+ Add Identifier</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#4a9eff40' }}
+                                  onPress={() => Alert.alert('Create Task', 'Mark this gap as a follow-up verification task.')}
+                                >
+                                  <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '600' }}>📋 Create Task</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#4a556840' }}
+                                  onPress={() => Alert.alert('Mark Unavailable', 'This gap will be marked as unavailable.')}
+                                >
+                                  <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '600' }}>Mark Unavailable</Text>
+                                </TouchableOpacity>
+                              </View>
                             </View>
-                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{g.gap}</Text>
-                            {g.suggestedCheck && (
-                              <Text style={{ color: '#6b7a99', fontSize: 11, lineHeight: 16, marginBottom: 8, fontStyle: 'italic' }}>→ {g.suggestedCheck}</Text>
-                            )}
-                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                              <TouchableOpacity
-                                style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#4a9eff40' }}
-                                onPress={() => Alert.alert('Add Identifier', 'Add a new identifier (DOB, address, phone) to refine this search.')}
-                              >
-                                <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '600' }}>+ Add Identifier</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#4a9eff40' }}
-                                onPress={() => Alert.alert('Field Note', 'Mark this gap as a follow-up task in Field Notes.')}
-                              >
-                                <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '600' }}>📋 Create Task</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#4a556840' }}
-                                onPress={() => Alert.alert('Mark Unavailable', 'This information gap will be marked as unavailable in the brief.')}
-                              >
-                                <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '600' }}>Mark Unavailable</Text>
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        ))}
+                          );
+                        })}
                       </View>
                     )}
                     {/* Recommended Checks */}
