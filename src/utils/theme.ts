@@ -26,6 +26,32 @@ export const SPACE = {
   xxl: 40,
 };
 
+// ── Card Design Tokens ────────────────────────────────────────────────────────
+// Use these for consistent card appearance across all screens
+export const CARD = {
+  radius:       12,   // standard card corner radius
+  radiusSm:     8,    // small card / badge
+  radiusLg:     14,   // large card (iPad primary)
+  padding:      14,   // standard card padding
+  paddingSm:    10,   // compact card padding
+  paddingLg:    18,   // large card padding (iPad)
+  borderWidth:  1,    // standard border
+  borderColor:  '#1a2535', // same as C.border
+};
+
+// ── Typography Tokens ─────────────────────────────────────────────────────────
+export const TYPE = {
+  screenTitle:  { fontWeight: '700' as const, letterSpacing: 0 },
+  sectionLabel: { fontWeight: '700' as const, letterSpacing: 1.5, textTransform: 'uppercase' as const },
+  sectionHead:  { fontWeight: '600' as const, letterSpacing: 0 },
+  cardTitle:    { fontWeight: '700' as const, letterSpacing: 0 },
+  body:         { fontWeight: '400' as const, lineHeight: 20 },
+  bodySecond:   { fontWeight: '400' as const, lineHeight: 18 },
+  metadata:     { fontWeight: '400' as const, letterSpacing: 0 },
+  statusLabel:  { fontWeight: '700' as const, letterSpacing: 1 },
+  techId:       { fontFamily: 'Courier' as const },
+};
+
 // ── Font sizes ───────────────────────────────────────────────────────────────
 export const FONT = {
   xs:   IS_IPAD ? 11 : 10,

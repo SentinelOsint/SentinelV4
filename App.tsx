@@ -41,7 +41,7 @@ import * as SplashScreen   from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
 import {
-  C, NOTE_TAGS, IS_IPAD, CARD_WIDTH, GRID_GAP, GRID_PADDING,
+  C, NOTE_TAGS, IS_IPAD, CARD_WIDTH, GRID_GAP, GRID_PADDING, CARD,
 } from './src/utils/theme';
 import * as StoreReview from 'expo-store-review';
 import {
@@ -1074,7 +1074,7 @@ export default function App() {
               /* iPhone: stacked layout */
               <View style={{ gap: 8 }}>
                 <TouchableOpacity
-                  style={{ backgroundColor: '#0f1a2e', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#2563eb40', flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                  style={{ backgroundColor: '#0f1a2e', borderRadius: CARD.radius, padding: CARD.padding, borderWidth: CARD.borderWidth, borderColor: '#2563eb40', flexDirection: 'row', alignItems: 'center', gap: 12 }}
                   onPress={() => navigate('one_input')}
                 >
                   <Text style={{ fontSize: 24 }}>🎯</Text>
@@ -1086,7 +1086,7 @@ export default function App() {
                 </TouchableOpacity>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   <TouchableOpacity
-                    style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#1e2a3a', alignItems: 'flex-start' }}
+                    style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: CARD.radius, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor, alignItems: 'flex-start' }}
                     onPress={() => navigate('cases')}
                   >
                     <Text style={{ fontSize: 18, marginBottom: 4 }}>📁</Text>
@@ -1094,7 +1094,7 @@ export default function App() {
                     <Text style={{ color: '#4a5568', fontSize: 10 }}>Manage investigations</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#1e2a3a', alignItems: 'flex-start' }}
+                    style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: CARD.radius, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor, alignItems: 'flex-start' }}
                     onPress={() => navigate('case_intake')}
                   >
                     <Text style={{ fontSize: 18, marginBottom: 4 }}>📋</Text>
@@ -1102,7 +1102,7 @@ export default function App() {
                     <Text style={{ color: '#4a5568', fontSize: 10 }}>AI pre-assessment + voice</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#1e2a3a', alignItems: 'flex-start' }}
+                    style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: CARD.radius, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor, alignItems: 'flex-start' }}
                     onPress={() => navigate('watchlist')}
                   >
                     <Text style={{ fontSize: 18, marginBottom: 4 }}>👁️</Text>
@@ -1125,7 +1125,7 @@ export default function App() {
               ].map(t => (
                 <TouchableOpacity
                   key={t.id}
-                  style={{ width: '47%', backgroundColor: '#0a0f1a', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#1e2a3a' }}
+                  style={{ width: '47%', backgroundColor: '#0a0f1a', borderRadius: CARD.radiusSm, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor }}
                   onPress={() => navigate(t.id as any)}
                 >
                   <Text style={{ fontSize: 16, marginBottom: 4 }}>{t.icon}</Text>
@@ -1353,7 +1353,7 @@ const s = StyleSheet.create({
   oneInputBadgeTxt: { color: C.bg, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   oneInputTitle: { fontSize: IS_IPAD ? 20 : 17, color: C.accent },
   oneInputDesc: { color: C.text, fontSize: IS_IPAD ? 13 : 12, fontWeight: '600' },
-  moduleCard: { backgroundColor: C.card, borderRadius: IS_IPAD ? 14 : 12, padding: IS_IPAD ? 16 : 13, borderWidth: 1, borderColor: C.border, borderTopWidth: 2, borderTopColor: C.accent },
+  moduleCard: { backgroundColor: C.card, borderRadius: IS_IPAD ? CARD.radiusLg : CARD.radius, padding: IS_IPAD ? CARD.paddingLg : CARD.padding, borderWidth: CARD.borderWidth, borderColor: C.border, borderTopWidth: 2, borderTopColor: C.accent },
   securityCard: { borderColor: C.accentDim, backgroundColor: '#0a1520' },
   moduleIcon: { fontSize: IS_IPAD ? 28 : 22, marginBottom: IS_IPAD ? 8 : 6 },
   moduleTitle:{ color: C.text, fontWeight: '700', fontSize: IS_IPAD ? 16 : 14, marginBottom: 3 },
