@@ -55,6 +55,14 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [showBriefHistory, setShowBriefHistory] = useState(false);
   const [compareVersion, setCompareVersion] = useState<number | null>(null);
+  const [expandedRiskCards, setExpandedRiskCards] = useState<Set<number>>(new Set());
+  const toggleRiskCard = (i: number) => {
+    setExpandedRiskCards(prev => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
+  };
   const [showSectionsModal, setShowSectionsModal] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<string>('');
   const [confidence, setConfidence]     = useState<number>(0);
@@ -700,40 +708,52 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                           const sevColor = r.severity === 'HIGH' ? '#ff453a' : r.severity === 'MEDIUM' ? '#ff9f0a' : '#4a9eff';
                           const sevBg = r.severity === 'HIGH' ? '#1a0505' : r.severity === 'MEDIUM' ? '#1a1000' : '#0a0f1a';
                           const isUnverifiedIdentity = r.identityRelevance === 'REQUIRES_IDENTITY_VERIFICATION' || r.status === 'REQUIRES_VERIFICATION';
+                          const isExpanded = expandedRiskCards.has(i);
                           return (
-                            <View key={i} style={{ backgroundColor: sevBg, borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: sevColor }}>
-                              {/* Finding statement */}
-                              <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 8 }}>{r.indicator}</Text>
-                              {/* Separated status rows */}
-                              <View style={{ gap: 4, marginBottom: 8 }}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>SOURCE RECORD</Text>
-                                  <Text style={{ color: r.status === 'CONFIRMED' ? '#34c759' : '#ff9f0a', fontSize: 9, fontWeight: '700' }}>
-                                    {r.status === 'CONFIRMED' ? 'CONFIRMED' : 'REQUIRES VERIFICATION'}
-                                  </Text>
+                            <TouchableOpacity key={i} onPress={() => toggleRiskCard(i)} activeOpacity={0.8}>
+                              <View style={{ backgroundColor: sevBg, borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: sevColor }}>
+                                {/* Finding statement — always visible */}
+                                <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 8 }}>{r.indicator}</Text>
+                                {/* Compact status — always visible */}
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: isExpanded ? 8 : 0 }}>
+                                  <Text style={{ color: '#6b7a99', fontSize: 9 }}>Target: <Text style={{ color: isUnverifiedIdentity ? '#ff9f0a' : '#34c759', fontWeight: '700' }}>{isUnverifiedIdentity ? 'UNVERIFIED' : 'CONFIRMED'}</Text></Text>
+                                  <Text style={{ color: sevColor, fontSize: 9, fontWeight: '700' }}>{r.severity} IF MATCHED</Text>
                                 </View>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>TARGET ASSOCIATION</Text>
-                                  <Text style={{ color: isUnverifiedIdentity ? '#ff9f0a' : '#34c759', fontSize: 9, fontWeight: '700' }}>
-                                    {isUnverifiedIdentity ? 'UNVERIFIED' : 'CONFIRMED'}
-                                  </Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>SEVERITY IF MATCHED</Text>
-                                  <Text style={{ color: sevColor, fontSize: 9, fontWeight: '700' }}>{r.severity}</Text>
-                                </View>
+                                {/* Expanded details */}
+                                {isExpanded && (
+                                  <>
+                                    <View style={{ gap: 4, marginBottom: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#ffffff10' }}>
+                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                        <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>SOURCE RECORD</Text>
+                                        <Text style={{ color: r.status === 'CONFIRMED' ? '#34c759' : '#ff9f0a', fontSize: 9, fontWeight: '700' }}>
+                                          {r.status === 'CONFIRMED' ? 'CONFIRMED' : 'REQUIRES VERIFICATION'}
+                                        </Text>
+                                      </View>
+                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                        <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>TARGET ASSOCIATION</Text>
+                                        <Text style={{ color: isUnverifiedIdentity ? '#ff9f0a' : '#34c759', fontSize: 9, fontWeight: '700' }}>
+                                          {isUnverifiedIdentity ? 'UNVERIFIED' : 'CONFIRMED'}
+                                        </Text>
+                                      </View>
+                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                        <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>SEVERITY IF MATCHED</Text>
+                                        <Text style={{ color: sevColor, fontSize: 9, fontWeight: '700' }}>{r.severity}</Text>
+                                      </View>
+                                    </View>
+                                    {r.evidentiaryBasis && (
+                                      <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>Basis: {r.evidentiaryBasis}</Text>
+                                    )}
+                                    {r.alternativeExplanation && (
+                                      <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>◇ Alternative: {r.alternativeExplanation}</Text>
+                                    )}
+                                    {r.sourceReferences?.length > 0 && (
+                                      <Text style={{ color: '#4a5568', fontSize: 9, marginTop: 4 }}>Sources: {r.sourceReferences.join(' · ')}</Text>
+                                    )}
+                                  </>
+                                )}
+                                <Text style={{ color: '#4a5568', fontSize: 9, marginTop: 6, textAlign: 'right' }}>{isExpanded ? '▲ Less' : '▼ More details'}</Text>
                               </View>
-                              {/* Expandable details */}
-                              {r.evidentiaryBasis && (
-                                <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>Basis: {r.evidentiaryBasis}</Text>
-                              )}
-                              {r.alternativeExplanation && (
-                                <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>◇ Alternative: {r.alternativeExplanation}</Text>
-                              )}
-                              {r.sourceReferences?.length > 0 && (
-                                <Text style={{ color: '#4a5568', fontSize: 9, marginTop: 4 }}>Sources: {r.sourceReferences.join(' · ')}</Text>
-                              )}
-                            </View>
+                            </TouchableOpacity>
                           );
                         })}
                       </View>
