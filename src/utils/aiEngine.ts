@@ -645,6 +645,14 @@ Respond with this exact JSON structure:
     "<consideration 1>",
     "<consideration 2>"
   ],
+  "queryVariations": {
+    "nameVariations": ["<full legal name>", "<common nickname>", "<maiden name if applicable>", "<name with middle initial>"],
+    "searchOptimizations": [
+      { "field": "<e.g. phone>", "variations": ["<format 1>", "<format 2>"], "reason": "<why these variations matter>" }
+    ],
+    "booleanSuggestions": ["<e.g. "Robert Fisher" AND Arizona>", "<e.g. "R.W. Fisher" OR "Robert W. Fisher">"],
+    "excludeTerms": ["<terms that would generate irrelevant results>"]
+  },
   "researchPlan": {
     "sequenceSummary": "<one sentence explaining the overall research strategy for this identifier>",
     "identifierStrength": "<STRONG|MODERATE|WEAK|INSUFFICIENT>",

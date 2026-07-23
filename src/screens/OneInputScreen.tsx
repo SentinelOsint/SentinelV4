@@ -1031,6 +1031,46 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
 
+                    {/* Query Builder */}
+                    {riskData.queryVariations && (riskData.queryVariations.nameVariations?.length > 0 || riskData.queryVariations.booleanSuggestions?.length > 0) && (
+                      <View style={{ marginBottom: 12 }}>
+                        <TouchableOpacity onPress={() => toggleSection('query_builder')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🔎 QUERY VARIATIONS</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('query_builder') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('query_builder') && (
+                          <>
+                            {riskData.queryVariations.nameVariations?.length > 0 && (
+                              <View style={{ marginBottom: 8 }}>
+                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 4 }}>NAME VARIATIONS TO TRY</Text>
+                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                                  {riskData.queryVariations.nameVariations.map((v: string, i: number) => (
+                                    <TouchableOpacity
+                                      key={i}
+                                      style={{ backgroundColor: '#0a0f1a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#2563eb40' }}
+                                      onPress={() => Alert.alert('Use Variation', `Search for: ${v}
+
+Return to the search field and enter this variation.`)}
+                                    >
+                                      <Text style={{ color: '#4a9eff', fontSize: 11 }}>{v}</Text>
+                                    </TouchableOpacity>
+                                  ))}
+                                </View>
+                              </View>
+                            )}
+                            {riskData.queryVariations.booleanSuggestions?.length > 0 && (
+                              <View>
+                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 4 }}>BOOLEAN SEARCH SUGGESTIONS</Text>
+                                {riskData.queryVariations.booleanSuggestions.map((s: string, i: number) => (
+                                  <Text key={i} style={{ color: '#6b7a99', fontSize: 10, lineHeight: 16, marginBottom: 2 }}>→ {s}</Text>
+                                ))}
+                              </View>
+                            )}
+                          </>
+                        )}
+                      </View>
+                    )}
+
                     {/* Research Plan */}
                     {riskData.researchPlan && (
                       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
