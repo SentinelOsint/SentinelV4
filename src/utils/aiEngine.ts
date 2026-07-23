@@ -619,11 +619,14 @@ Respond with this exact JSON structure:
     {
       "id": "<unique-id e.g. co_001>",
       "contentType": "contradiction",
-      "description": "<what conflicts>",
-      "sources": ["<source A>", "<source B>"],
+      "contradictionType": "<DATA_CONFLICT|TIMELINE_INCONSISTENCY|IDENTITY_MISMATCH|SOURCE_DISAGREEMENT>",
+      "description": "<what specifically conflicts — cite exact data points>",
+      "sourceA": { "name": "<source name>", "claim": "<what source A says>" },
+      "sourceB": { "name": "<source name>", "claim": "<what source B says>" },
       "significance": "<HIGH|MEDIUM|LOW>",
+      "possibleExplanation": "<could this be explained by record age, data entry error, or different time periods?>",
       "affectedFindings": ["<finding id 1>"],
-      "recommendedResolution": "<how to resolve this contradiction>"
+      "recommendedResolution": "<specific step to resolve — e.g. obtain official DOB document>"
     }
   ],
   "informationGaps": [

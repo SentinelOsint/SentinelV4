@@ -821,18 +821,29 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                         </TouchableOpacity>
                         {expandedSections.has('contra') && riskData.contradictionsAndInconsistencies.map((c: any, i: number) => (
                           <View key={i} style={{ backgroundColor: '#1a1000', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#d97706' }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                              <Text style={{ color: '#d97706', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>CONTRADICTION — {c.significance}</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                              <Text style={{ color: '#d97706', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>{c.contradictionType?.replace(/_/g, ' ') || 'CONTRADICTION'} — {c.significance}</Text>
                             </View>
-                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{c.description}</Text>
-                            {c.sources?.length > 0 && (
-                              <Text style={{ color: '#6b7a99', fontSize: 10, marginBottom: 4 }}>Sources: {c.sources.join(' vs ')}</Text>
+                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 8 }}>{c.description}</Text>
+                            {(c.sourceA || c.sourceB) && (
+                              <View style={{ backgroundColor: '#0a0a00', borderRadius: 6, padding: 8, marginBottom: 6 }}>
+                                {c.sourceA && (
+                                  <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>
+                                    <Text style={{ color: '#d97706', fontWeight: '600' }}>{c.sourceA.name}: </Text>{c.sourceA.claim}
+                                  </Text>
+                                )}
+                                {c.sourceB && (
+                                  <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15 }}>
+                                    <Text style={{ color: '#d97706', fontWeight: '600' }}>{c.sourceB.name}: </Text>{c.sourceB.claim}
+                                  </Text>
+                                )}
+                              </View>
+                            )}
+                            {c.possibleExplanation && (
+                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 6, fontStyle: 'italic' }}>◇ Possible explanation: {c.possibleExplanation}</Text>
                             )}
                             {c.recommendedResolution && (
-                              <Text style={{ color: '#4a9eff', fontSize: 10, lineHeight: 15 }}>→ Resolution: {c.recommendedResolution}</Text>
-                            )}
-                            {c.affectedFindings?.length > 0 && (
-                              <Text style={{ color: '#4a5568', fontSize: 9, marginTop: 4 }}>Affects: {c.affectedFindings.join(', ')}</Text>
+                              <Text style={{ color: '#4a9eff', fontSize: 10, lineHeight: 15 }}>→ {c.recommendedResolution}</Text>
                             )}
                           </View>
                         ))}
