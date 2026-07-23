@@ -688,7 +688,9 @@ Respond with this exact JSON structure:
       "priority": "<HIGH|MEDIUM|LOW>",
       "reason": "<why this module is recommended — use cautious language: appears to be, may be relevant, requires verification>",
       "status": "<RAN_AUTOMATICALLY|RECOMMENDED_MANUAL|OPTIONAL>",
-      "expectedContribution": "<what this module adds to the overall assessment>"
+      "expectedContribution": "<what specific question this module can answer or rule out>",
+      "identifierRequired": "<what the user needs to run this module e.g. DOB, phone number, address>",
+      "linkedGap": "<id of the information gap this module addresses, if any>"
     }
   ],
   "aiAssistedInterpretation": [

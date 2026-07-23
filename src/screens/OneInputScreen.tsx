@@ -1149,7 +1149,13 @@ Return to the search field and enter this variation.`)}
                                 {p.status?.replace(/_/g, ' ')}
                               </Text>
                             </View>
-                            <Text style={{ color: '#6b7a99', fontSize: 11, lineHeight: 16 }}>{p.reason}</Text>
+                            <Text style={{ color: '#6b7a99', fontSize: 11, lineHeight: 16, marginBottom: 4 }}>{p.reason}</Text>
+                            {p.expectedContribution && (
+                              <Text style={{ color: '#4a9eff', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>→ {p.expectedContribution}</Text>
+                            )}
+                            {p.identifierRequired && (
+                              <Text style={{ color: '#ff9f0a', fontSize: 9, marginTop: 2 }}>Requires: {p.identifierRequired}</Text>
+                            )}
                           </View>
                         ))}
                       </View>
