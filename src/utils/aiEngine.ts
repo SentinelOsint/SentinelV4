@@ -554,7 +554,15 @@ CASE CONTEXT (already known from previous sessions):
 - Resolved information gaps: ${caseContext.resolvedGaps?.join('; ') || 'none'}
 - User notes: ${caseContext.userNotes || 'none'}
 
-Do NOT re-suggest searches already completed. Do NOT re-flag associations already rejected by the user. Build on confirmed findings rather than re-establishing them.` : '';
+Do NOT re-suggest searches already completed. Do NOT re-flag associations already rejected by the user. Build on confirmed findings rather than re-establishing them.
+
+POST-CONTACT UPDATE INSTRUCTIONS (if post-contact observations are provided):
+- Compare new observations against the pre-contact brief.
+- Identify which findings are now supported, contradicted, or updated.
+- Note any new identifiers or associations discovered during contact.
+- Update identity confidence if new evidence supports or contradicts prior assessment.
+- Flag any discrepancies between pre-contact brief and post-contact observations.
+- Never treat post-contact user observations as source-confirmed without corroboration.` : '';
 
   const user = `Generate a Pre-Contact Intelligence Brief for the following subject/query.
 
