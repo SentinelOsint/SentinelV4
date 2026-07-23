@@ -65,6 +65,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
     });
   };
   const [showSectionsModal, setShowSectionsModal] = useState(false);
+  const [briefView, setBriefView] = useState<'quick' | 'operational' | 'full'>('operational');
   const [loadingPhase, setLoadingPhase] = useState<string>('');
   const [confidence, setConfidence]     = useState<number>(0);
   const [displayScore, setDisplayScore]   = useState<number>(0);
@@ -530,20 +531,57 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     </View>
                   </View>
                   {riskData && (
-                    <TouchableOpacity
-                      style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0a0f1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#1e2a3a', alignSelf: 'flex-start' }}
-                      onPress={() => setShowSectionsModal(true)}
-                      accessibilityLabel="Open brief sections navigation"
-                      accessibilityRole="button"
-                    >
-                      <Text style={{ color: '#4a9eff', fontSize: 11, fontWeight: '600' }}>≡ Sections</Text>
-                    </TouchableOpacity>
+                    <View style={{ marginTop: 8, flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                      <TouchableOpacity
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0a0f1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#1e2a3a' }}
+                        onPress={() => setShowSectionsModal(true)}
+                        accessibilityLabel="Open brief sections navigation"
+                        accessibilityRole="button"
+                      >
+                        <Text style={{ color: '#4a9eff', fontSize: 11, fontWeight: '600' }}>≡ Sections</Text>
+                      </TouchableOpacity>
+                      <View style={{ flexDirection: 'row', backgroundColor: '#0a0f1a', borderRadius: 8, borderWidth: 1, borderColor: '#1e2a3a', overflow: 'hidden' }}>
+                        {(['quick', 'operational', 'full'] as const).map((v) => (
+                          <TouchableOpacity
+                            key={v}
+                            style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: briefView === v ? '#2563eb' : 'transparent' }}
+                            onPress={() => setBriefView(v)}
+                          >
+                            <Text style={{ color: briefView === v ? '#fff' : '#6b7a99', fontSize: 10, fontWeight: '600' }}>
+                              {v === 'quick' ? '10s' : v === 'operational' ? 'Ops' : 'Full'}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
                   )}
                   <View style={styles.proBadge}>
                   </View>
                 </View>
                 {riskData ? (
                   <View>
+                    {/* Quick View — 10 second */}
+                    {briefView === 'quick' && riskData?.preContactOverview && (
+                      <View style={{ backgroundColor: '#0a0f1a', borderRadius: 10, padding: 14, marginBottom: 8 }}>
+                        <Text style={{ color: '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>10-SECOND BRIEF</Text>
+                        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                          <View style={{ flex: 1, backgroundColor: '#0f1520', borderRadius: 8, padding: 8 }}>
+                            <Text style={{ color: '#6b7a99', fontSize: 8, marginBottom: 2 }}>IDENTITY</Text>
+                            <Text style={{ color: riskData.preContactOverview.identityConfidence === 'HIGH' ? '#34c759' : riskData.preContactOverview.identityConfidence === 'INSUFFICIENT' ? '#ff453a' : '#ff9f0a', fontSize: 13, fontWeight: '800' }}>{riskData.preContactOverview.identityConfidence}</Text>
+                          </View>
+                          <View style={{ flex: 2, backgroundColor: '#0f1520', borderRadius: 8, padding: 8 }}>
+                            <Text style={{ color: '#6b7a99', fontSize: 8, marginBottom: 2 }}>STATUS</Text>
+                            <Text style={{ color: '#ff9f0a', fontSize: 11, fontWeight: '700' }}>{riskData.preContactOverview.operationalRiskStatus?.replace(/_/g, ' ')}</Text>
+                          </View>
+                        </View>
+                        <Text style={{ color: '#e8eaf0', fontSize: 13, lineHeight: 19, marginBottom: 10, fontWeight: '500' }}>{riskData.preContactOverview.primaryFinding}</Text>
+                        <View style={{ backgroundColor: '#ff950015', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#ff950040' }}>
+                          <Text style={{ color: '#6b7a99', fontSize: 8, fontWeight: '700', marginBottom: 4 }}>NEXT BEST ACTION</Text>
+                          <Text style={{ color: '#ff9500', fontSize: 12, fontWeight: '600', lineHeight: 17 }}>{riskData.preContactOverview.immediateVerificationRequirement}</Text>
+                        </View>
+                      </View>
+                    )}
+
                     {/* Validation Warnings */}
                     {validationResult && (validationResult.warnings.length > 0 || validationResult.errors.length > 0) && (
                       <View style={{ backgroundColor: '#0a0a0f', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: validationResult.errors.length > 0 ? '#dc262640' : '#d9770640' }}>
