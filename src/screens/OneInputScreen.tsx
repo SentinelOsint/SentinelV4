@@ -65,6 +65,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
     });
   };
   const [showSectionsModal, setShowSectionsModal] = useState(false);
+  const [assessmentPurpose, setAssessmentPurpose] = useState<string>('');
   const [briefView, setBriefView] = useState<'quick' | 'operational' | 'full'>('operational');
   const [loadingPhase, setLoadingPhase] = useState<string>('');
   const [confidence, setConfidence]     = useState<number>(0);
@@ -313,7 +314,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
       const allFindings = result.modules.flatMap(m =>
         m.links.map(l => ({ label: `${m.module} — ${l.label}`, value: l.url, type: 'link' as const }))
       );
-      const briefJson = await generatePreContactBrief(result.query, result.detectedAs, allFindings);
+      const briefJson = await generatePreContactBrief(result.query, result.detectedAs, allFindings, assessmentPurpose || 'Not specified');
       const jsonMatch = briefJson.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON found in response');
       const parsed = JSON.parse(jsonMatch[0]);
@@ -460,6 +461,24 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
             multiline
             numberOfLines={2}
           />
+          {/* Assessment Purpose */}
+          <View style={{ marginBottom: 10 }}>
+            <Text style={{ color: '#6b7a99', fontSize: 10, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 }}>Assessment Purpose (optional)</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {['Before Contact', 'Identity Verification', 'Process Service', 'Due Diligence', 'Executive Protection', 'Company Assessment', 'Other'].map((p) => (
+                  <TouchableOpacity
+                    key={p}
+                    style={{ backgroundColor: assessmentPurpose === p ? '#2563eb' : '#0a0f1a', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: assessmentPurpose === p ? '#2563eb' : '#1e2a3a' }}
+                    onPress={() => setAssessmentPurpose(assessmentPurpose === p ? '' : p)}
+                  >
+                    <Text style={{ color: assessmentPurpose === p ? '#fff' : '#6b7a99', fontSize: 11, fontWeight: '600' }}>{p}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+
           {/* Search Templates */}
           <TouchableOpacity
             style={styles.templateToggle}

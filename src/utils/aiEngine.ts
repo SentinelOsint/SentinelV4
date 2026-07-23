@@ -410,6 +410,7 @@ export async function generatePreContactBrief(
   query: string,
   inputType: string,
   findings: OsintResult[],
+  assessmentPurpose?: string,
   caseContext?: {
     previousSearches?: string[];
     confirmedFindings?: string[];
