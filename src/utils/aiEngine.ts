@@ -409,7 +409,14 @@ Provide:
 export async function generatePreContactBrief(
   query: string,
   inputType: string,
-  findings: OsintResult[]
+  findings: OsintResult[],
+  caseContext?: {
+    previousSearches?: string[];
+    confirmedFindings?: string[];
+    rejectedAssociations?: string[];
+    resolvedGaps?: string[];
+    userNotes?: string;
+  }
 ): Promise<string> {
   const findingsText = findings
     .filter(f => f.value && f.value.trim())
@@ -539,10 +546,21 @@ Use instead: appears to, may be, available evidence suggests, cannot be excluded
 - Do not manufacture contradictions from normal uncertainty.
 Respond ONLY with valid JSON. No markdown, no preamble, no explanation outside JSON.`;
 
+  const caseContextText = caseContext ? `
+CASE CONTEXT (already known from previous sessions):
+- Previous searches completed: ${caseContext.previousSearches?.join(', ') || 'none'}
+- User-confirmed findings: ${caseContext.confirmedFindings?.join('; ') || 'none'}
+- Rejected associations: ${caseContext.rejectedAssociations?.join('; ') || 'none'}
+- Resolved information gaps: ${caseContext.resolvedGaps?.join('; ') || 'none'}
+- User notes: ${caseContext.userNotes || 'none'}
+
+Do NOT re-suggest searches already completed. Do NOT re-flag associations already rejected by the user. Build on confirmed findings rather than re-establishing them.` : '';
+
   const user = `Generate a Pre-Contact Intelligence Brief for the following subject/query.
 
 QUERY: ${query}
 INPUT TYPE: ${inputType}
+${caseContextText}
 
 INTELLIGENCE FINDINGS:
 ${findingsText}
