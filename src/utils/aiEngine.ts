@@ -668,6 +668,20 @@ Respond with this exact JSON structure:
       }
     ]
   },
+  "manualSourceGuidance": [
+    {
+      "sourceName": "<official source name e.g. OFAC SDN List>",
+      "sourceType": "<OFFICIAL_GOVERNMENT|COURT_RECORD|REGULATORY_REGISTRY|COMMERCIAL|OTHER>",
+      "why": "<why this source is relevant to this specific assessment>",
+      "steps": [
+        "<step 1: specific action e.g. Go to sanctionssearch.ofac.treas.gov>",
+        "<step 2: specific action e.g. Enter full legal name and search>",
+        "<step 3: specific action e.g. Note result as Confirmed Match, No Match, or Possible Match>"
+      ],
+      "whatToRecord": "<what the user should note from this source>",
+      "priority": "<HIGH|MEDIUM|LOW>"
+    }
+  ],
   "recommendedIntelligencePath": [
     {
       "module": "<Sentinel module name>",

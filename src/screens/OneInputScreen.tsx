@@ -1104,6 +1104,35 @@ Return to the search field and enter this variation.`)}
                       </View>
                     )}
 
+                    {/* Manual Source Guidance */}
+                    {riskData.manualSourceGuidance?.length > 0 && (
+                      <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
+                        <TouchableOpacity onPress={() => toggleSection('manual_sources')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>📋 MANUAL SOURCE GUIDANCE</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('manual_sources') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        <Text style={{ color: '#6b7a99', fontSize: 10, marginBottom: 8 }}>Sources that require manual execution — step-by-step instructions included.</Text>
+                        {expandedSections.has('manual_sources') && riskData.manualSourceGuidance.map((src: any, i: number) => (
+                          <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 12, marginBottom: 8, borderLeftWidth: 2, borderLeftColor: src.priority === 'HIGH' ? '#ff453a' : src.priority === 'MEDIUM' ? '#ff9f0a' : '#4a9eff' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                              <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '700', flex: 1 }}>{src.sourceName}</Text>
+                              <Text style={{ color: src.priority === 'HIGH' ? '#ff453a' : src.priority === 'MEDIUM' ? '#ff9f0a' : '#4a9eff', fontSize: 9, fontWeight: '700' }}>{src.priority}</Text>
+                            </View>
+                            <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 8 }}>{src.why}</Text>
+                            {src.steps?.map((step: string, si: number) => (
+                              <Text key={si} style={{ color: '#4a9eff', fontSize: 11, lineHeight: 17, marginBottom: 3 }}>{si + 1}. {step}</Text>
+                            ))}
+                            {src.whatToRecord && (
+                              <View style={{ backgroundColor: '#1a2035', borderRadius: 6, padding: 8, marginTop: 8 }}>
+                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 2 }}>WHAT TO RECORD</Text>
+                                <Text style={{ color: '#e8eaf0', fontSize: 11 }}>{src.whatToRecord}</Text>
+                              </View>
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
                     {/* Recommended Intelligence Path */}
                     {riskData.recommendedIntelligencePath?.length > 0 && (
                       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
