@@ -922,6 +922,53 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                         ))}
                       </View>
                     )}
+                    {/* Identity Resolution */}
+                    {riskData.identityResolution && (
+                      <View style={styles.riskSection}>
+                        <TouchableOpacity onPress={() => toggleSection('identity_res')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.riskSectionTitle}>🔍 Identity Resolution</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('identity_res') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('identity_res') && (() => {
+                          const ir = riskData.identityResolution;
+                          const assessColor = ir.assessment?.includes('LIKELY_SAME') ? '#34c759' :
+                                             ir.assessment?.includes('LIKELY_DIFFERENT') ? '#ff453a' :
+                                             ir.assessment?.includes('POSSIBLY_SAME') ? '#ff9f0a' : '#6b7a99';
+                          return (
+                            <View>
+                              <View style={{ backgroundColor: assessColor + '15', borderRadius: 8, padding: 10, marginBottom: 8, borderWidth: 1, borderColor: assessColor + '40' }}>
+                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 4 }}>IDENTITY ASSESSMENT</Text>
+                                <Text style={{ color: assessColor, fontSize: 13, fontWeight: '800', marginBottom: 6 }}>{ir.assessment?.replace(/_/g, ' ')}</Text>
+                                <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18 }}>{ir.conclusion}</Text>
+                              </View>
+                              {ir.supportingFactors?.length > 0 && (
+                                <View style={{ marginBottom: 6 }}>
+                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 4 }}>SUPPORTING FACTORS</Text>
+                                  {ir.supportingFactors.map((f: string, i: number) => (
+                                    <Text key={i} style={{ color: '#34c759', fontSize: 11, lineHeight: 16, marginBottom: 2 }}>◆ {f}</Text>
+                                  ))}
+                                </View>
+                              )}
+                              {ir.conflictingFactors?.length > 0 && (
+                                <View style={{ marginBottom: 6 }}>
+                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 4 }}>CONFLICTING FACTORS</Text>
+                                  {ir.conflictingFactors.map((f: string, i: number) => (
+                                    <Text key={i} style={{ color: '#ff9f0a', fontSize: 11, lineHeight: 16, marginBottom: 2 }}>△ {f}</Text>
+                                  ))}
+                                </View>
+                              )}
+                              {ir.minimumRequiredToConfirm && (
+                                <View style={{ backgroundColor: '#0a1a0a', borderRadius: 6, padding: 8 }}>
+                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 2 }}>TO CONFIRM IDENTITY</Text>
+                                  <Text style={{ color: '#34c759', fontSize: 11, lineHeight: 16 }}>{ir.minimumRequiredToConfirm}</Text>
+                                </View>
+                              )}
+                            </View>
+                          );
+                        })()}
+                      </View>
+                    )}
+
                     {/* AI-Assisted Interpretation */}
                     {riskData.aiAssistedInterpretation?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('ai_interp', e.nativeEvent.layout.y)}>

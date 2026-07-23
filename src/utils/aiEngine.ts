@@ -696,6 +696,13 @@ Respond with this exact JSON structure:
       "linkedGap": "<id of the information gap this module addresses, if any>"
     }
   ],
+  "identityResolution": {
+    "assessment": "<LIKELY_SAME_PERSON|POSSIBLY_SAME_PERSON|INCONCLUSIVE|POSSIBLY_DIFFERENT_PEOPLE|LIKELY_DIFFERENT_PEOPLE>",
+    "supportingFactors": ["<factor supporting same identity e.g. matching city and phone region>"],
+    "conflictingFactors": ["<factor suggesting different identity e.g. incompatible age range>"],
+    "conclusion": "<plain-language conclusion — use cautious language, never confirm identity without biometric or official document verification>",
+    "minimumRequiredToConfirm": "<what single identifier would most reliably confirm or exclude identity>"
+  },
   "aiAssistedInterpretation": [
     { "statement": "<AI-derived analytical interpretation — NOT source-confirmed>", "findingsUsed": ["<finding reference>"], "confidence": "<HIGH|MEDIUM|LOW>", "uncertainty": "<what makes this uncertain>", "alternativeInterpretation": "<another plausible reading>", "requiresProfessionalReview": true }
   ],
