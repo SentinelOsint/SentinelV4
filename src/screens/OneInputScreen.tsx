@@ -734,18 +734,33 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                           <Text style={styles.riskSectionTitle}>✅ Confirmed & Supported ({riskData.confirmedAndSupportedInformation.length})</Text>
                           <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('confirmed') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
-                        {expandedSections.has('confirmed') && riskData.confirmedAndSupportedInformation.map((item: any, i: number) => (
-                          <View key={i} style={{ backgroundColor: '#051a0d', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#34c759' }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                              <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>{item.confidence}</Text>
-                              <Text style={{ color: '#4a5568', fontSize: 9 }}>{item.source}</Text>
+                        {expandedSections.has('confirmed') && riskData.confirmedAndSupportedInformation.map((item: any, i: number) => {
+                          const fid = `confirmed_${i}`;
+                          const val = validatedFindings[fid];
+                          return (
+                            <View key={i} style={{ backgroundColor: val === 'rejected' ? '#1a0505' : '#051a0d', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: val === 'confirmed' ? '#34c759' : val === 'rejected' ? '#ff453a' : '#34c75960' }}>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>{item.confidence}</Text>
+                                <Text style={{ color: '#4a5568', fontSize: 9 }}>{item.source}</Text>
+                              </View>
+                              <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{item.statement}</Text>
+                              {item.whyItMatters && (
+                                <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, fontStyle: 'italic', marginBottom: 6 }}>→ {item.whyItMatters}</Text>
+                              )}
+                              <View style={{ flexDirection: 'row', gap: 6 }}>
+                                <TouchableOpacity style={{ flex: 1, backgroundColor: val === 'confirmed' ? '#34c75930' : '#1a2a1a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#34c75940' }} onPress={() => validateFinding(fid, val === 'confirmed' ? 'needs_review' : 'confirmed')}>
+                                  <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '600' }}>✓ Confirm</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={{ flex: 1, backgroundColor: val === 'rejected' ? '#2a0a0a' : '#1a0a0a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#ff453a40' }} onPress={() => validateFinding(fid, val === 'rejected' ? 'needs_review' : 'rejected')}>
+                                  <Text style={{ color: '#ff453a', fontSize: 9, fontWeight: '600' }}>✕ Reject</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={{ flex: 1, backgroundColor: '#1a1a0a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#ff9f0a40' }} onPress={() => validateFinding(fid, 'needs_review')}>
+                                  <Text style={{ color: '#ff9f0a', fontSize: 9, fontWeight: '600' }}>? Review</Text>
+                                </TouchableOpacity>
+                              </View>
                             </View>
-                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 4 }}>{item.statement}</Text>
-                            {item.whyItMatters && (
-                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, fontStyle: 'italic' }}>→ {item.whyItMatters}</Text>
-                            )}
-                          </View>
-                        ))}
+                          );
+                        })}
                       </View>
                     )}
 
@@ -1045,6 +1060,26 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                         <Text style={[styles.aiBtnText, { color: '#34c759' }]}>📁 Save to Case</Text>
                       </TouchableOpacity>
                     </View>
+                    {Object.keys(validatedFindings).length > 0 && (
+                      <TouchableOpacity
+                        style={{ marginTop: 8, backgroundColor: '#1a1f2e', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#2563eb40', alignItems: 'center' }}
+                        onPress={() => {
+                          Alert.alert(
+                            'Regenerate with Reviewed Findings',
+                            `You have reviewed ${Object.keys(validatedFindings).length} finding(s). Regenerate the brief using your review status?`,
+                            [
+                              { text: 'Cancel', style: 'cancel' },
+                              { text: 'Regenerate', onPress: handleAISummary }
+                            ]
+                          );
+                        }}
+                        disabled={loadingAI}
+                      >
+                        <Text style={{ color: '#4a9eff', fontSize: 11, fontWeight: '700' }}>
+                          ↺ Regenerate Using {Object.keys(validatedFindings).length} Reviewed Finding{Object.keys(validatedFindings).length !== 1 ? 's' : ''}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                     {briefHistory.length > 1 && (
                       <TouchableOpacity
                         style={{ marginTop: 8, padding: 8, alignItems: 'center' }}
