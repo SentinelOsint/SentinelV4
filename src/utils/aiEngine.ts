@@ -463,6 +463,20 @@ BIAS CHECK (apply before finalizing):
 - Has the same source been cited multiple times as if it provides independent corroboration?
 - If any of these are true, rebalance the brief before output.
 
+SOURCE RECONCILIATION (apply when sources conflict):
+When different sources provide different information, explain WHY before labeling it a contradiction:
+- Could the records reflect different time periods? (e.g. old vs current address)
+- Could one source use a different name format or alias?
+- Could the conflict reflect data-entry errors rather than factual differences?
+- Could the records refer to different individuals with similar identifiers?
+- Could one source be a dependent copy of another, not an independent confirmation?
+If a conflict can be explained by timing or formatting, classify it as IDENTITY_AMBIGUITY or POSSIBLE_ASSOCIATION, not CONTRADICTION.
+Only use CONTRADICTION when two sources provide genuinely incompatible information about the same fact at the same time.
+When reconciling, provide a plain-language explanation such as:
+- "The two addresses may represent different time periods rather than a direct conflict."
+- "The conflicting dates of birth likely indicate these records refer to different individuals."
+- "The name variation may reflect a common nickname or data-entry difference, not a separate identity." 
+
 ALTERNATIVE HYPOTHESIS GENERATOR (apply to every significant finding):
 When a finding appears significant, always consider and document at least one alternative explanation:
 - Could this record refer to a different individual with the same name?
@@ -510,6 +524,20 @@ BIAS CHECK (apply before finalizing):
 - Has an uncertain association been elevated to a risk indicator without sufficient basis?
 - Has the same source been cited multiple times as if it provides independent corroboration?
 - If any of these are true, rebalance the brief before output.
+
+SOURCE RECONCILIATION (apply when sources conflict):
+When different sources provide different information, explain WHY before labeling it a contradiction:
+- Could the records reflect different time periods? (e.g. old vs current address)
+- Could one source use a different name format or alias?
+- Could the conflict reflect data-entry errors rather than factual differences?
+- Could the records refer to different individuals with similar identifiers?
+- Could one source be a dependent copy of another, not an independent confirmation?
+If a conflict can be explained by timing or formatting, classify it as IDENTITY_AMBIGUITY or POSSIBLE_ASSOCIATION, not CONTRADICTION.
+Only use CONTRADICTION when two sources provide genuinely incompatible information about the same fact at the same time.
+When reconciling, provide a plain-language explanation such as:
+- "The two addresses may represent different time periods rather than a direct conflict."
+- "The conflicting dates of birth likely indicate these records refer to different individuals."
+- "The name variation may reflect a common nickname or data-entry difference, not a separate identity." 
 
 ALTERNATIVE HYPOTHESIS GENERATOR (apply to every significant finding):
 When a finding appears significant, always consider and document at least one alternative explanation:
