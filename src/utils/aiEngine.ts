@@ -733,6 +733,18 @@ Respond with this exact JSON structure:
   "aiAssistedInterpretation": [
     { "statement": "<AI-derived analytical interpretation — NOT source-confirmed>", "findingsUsed": ["<finding reference>"], "confidence": "<HIGH|MEDIUM|LOW>", "uncertainty": "<what makes this uncertain>", "alternativeInterpretation": "<another plausible reading>", "requiresProfessionalReview": true }
   ],
+  "evidenceClassifier": [
+    {
+      "findingId": "<reference to a finding id e.g. cf_001 or ri_001>",
+      "statement": "<the specific claim being classified>",
+      "classification": "<SOURCE_CONFIRMED|SUPPORTED|POSSIBLE_ASSOCIATION|USER_PROVIDED|POTENTIAL_RISK_INDICATOR|IDENTITY_AMBIGUITY|CONTRADICTION|INFORMATION_GAP|AI_ASSISTED_INTERPRETATION|NOT_ASSESSED>",
+      "sourceReferences": ["<source name 1>", "<source name 2>"],
+      "sourceTypes": ["<AUTHORITATIVE|PUBLIC_RECORD|COMMERCIAL_DATABASE|OPEN_WEB|AI_SYNTHESIS>"],
+      "retrievalStatus": "<RETRIEVED|NOT_EXECUTED|FAILED|REQUIRES_MANUAL>",
+      "associationStatus": "<CONFIRMED_FOR_SUBJECT|POSSIBLE_MATCH|UNVERIFIED|NOT_APPLICABLE>",
+      "verificationRequirement": "<what must be done to confirm or reject this claim>"
+    }
+  ],
   "confidenceAndLimitations": {
     "overallConfidence": "<HIGH|MEDIUM|LOW>",
     "basis": "<what this brief is based on>",

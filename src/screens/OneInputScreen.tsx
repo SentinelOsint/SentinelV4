@@ -1149,6 +1149,42 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
 
+                    {/* Evidence Classifier */}
+                    {riskData.evidenceClassifier?.length > 0 && (
+                      <View style={{ marginBottom: 12 }}>
+                        <TouchableOpacity onPress={() => toggleSection('evidence_classifier')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🏷️ EVIDENCE CLASSIFICATION ({riskData.evidenceClassifier.length})</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('evidence_classifier') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('evidence_classifier') && riskData.evidenceClassifier.map((item: any, i: number) => {
+                          const classColor: Record<string, string> = {
+                            'SOURCE_CONFIRMED': '#34c759',
+                            'SUPPORTED': '#34c75999',
+                            'POSSIBLE_ASSOCIATION': '#ff9f0a',
+                            'POTENTIAL_RISK_INDICATOR': '#ff453a',
+                            'IDENTITY_AMBIGUITY': '#ff9f0a',
+                            'CONTRADICTION': '#ff453a',
+                            'INFORMATION_GAP': '#4a9eff',
+                            'AI_ASSISTED_INTERPRETATION': '#9b6dff',
+                            'NOT_ASSESSED': '#4a5568',
+                          };
+                          const color = classColor[item.classification] || '#6b7a99';
+                          return (
+                            <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: color }}>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                <Text style={{ color, fontSize: 9, fontWeight: '700', letterSpacing: 0.5 }}>{item.classification?.replace(/_/g, ' ')}</Text>
+                                <Text style={{ color: '#4a5568', fontSize: 8 }}>{item.associationStatus?.replace(/_/g, ' ')}</Text>
+                              </View>
+                              <Text style={{ color: '#e8eaf0', fontSize: 11, lineHeight: 17, marginBottom: 4 }}>{item.statement}</Text>
+                              {item.sourceReferences?.length > 0 && (
+                                <Text style={{ color: '#4a5568', fontSize: 9 }}>Sources: {item.sourceReferences.join(' · ')}</Text>
+                              )}
+                            </View>
+                          );
+                        })}
+                      </View>
+                    )}
+
                     {/* Query Builder */}
                     {riskData.queryVariations && (riskData.queryVariations.nameVariations?.length > 0 || riskData.queryVariations.booleanSuggestions?.length > 0) && (
                       <View style={{ marginBottom: 12 }}>
