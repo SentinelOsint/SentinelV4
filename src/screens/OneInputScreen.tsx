@@ -601,12 +601,18 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
 
-                    {/* Validation Warnings */}
-                    {validationResult && (validationResult.warnings.length > 0 || validationResult.errors.length > 0) && (
-                      <View style={{ backgroundColor: '#0a0a0f', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: validationResult.errors.length > 0 ? '#dc262640' : '#d9770640' }}>
-                        <Text style={{ color: validationResult.errors.length > 0 ? '#ff453a' : '#ff9f0a', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 6 }}>
-                          {validationResult.errors.length > 0 ? '⚠️ BRIEF VALIDATION ERRORS' : '⚠️ BRIEF VALIDATION WARNINGS'}
-                        </Text>
+                    {/* Analytical Quality Check */}
+                    {validationResult && (
+                      <View style={{ borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1,
+                        backgroundColor: validationResult.errors.length > 0 ? '#1a0505' : validationResult.warnings.length > 0 ? '#1a1000' : '#051a0d',
+                        borderColor: validationResult.errors.length > 0 ? '#dc262640' : validationResult.warnings.length > 0 ? '#d9770640' : '#34c75940'
+                      }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: validationResult.errors.length > 0 || validationResult.warnings.length > 0 ? 6 : 0 }}>
+                          <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', letterSpacing: 1.5 }}>ANALYTICAL QUALITY CHECK</Text>
+                          <Text style={{ color: validationResult.errors.length > 0 ? '#ff453a' : validationResult.warnings.length > 0 ? '#ff9f0a' : '#34c759', fontSize: 9, fontWeight: '700' }}>
+                            {validationResult.errors.length > 0 ? '⚠️ ISSUES FOUND' : validationResult.warnings.length > 0 ? '△ REVIEW SUGGESTED' : '✓ PASSED'}
+                          </Text>
+                        </View>
                         {validationResult.errors.map((e, i) => (
                           <Text key={i} style={{ color: '#ff453a', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>● {e}</Text>
                         ))}
