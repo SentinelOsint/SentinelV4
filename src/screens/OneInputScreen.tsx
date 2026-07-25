@@ -67,6 +67,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [showSectionsModal, setShowSectionsModal] = useState(false);
   const [assessmentPurpose, setAssessmentPurpose] = useState<string>('');
   const [briefView, setBriefView] = useState<'quick' | 'operational' | 'full'>('operational');
+  const [reviewStatus, setReviewStatus] = useState<'draft' | 'verification_required' | 'ready_for_review' | 'reviewed' | 'locked'>('draft');
+  const [isLocked, setIsLocked] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<string>('');
   const [confidence, setConfidence]     = useState<number>(0);
   const [displayScore, setDisplayScore]   = useState<number>(0);
@@ -601,6 +603,32 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
 
+                    {/* Visible Value Summary */}
+                    {riskData && (() => {
+                      const confirmedCount = riskData.confirmedAndSupportedInformation?.length || 0;
+                      const associationsCount = riskData.possibleAssociations?.length || 0;
+                      const gapsCount = riskData.informationGaps?.length || 0;
+                      const criticalGaps = riskData.informationGaps?.filter((g: any) => g.priority === 'CRITICAL').length || 0;
+                      const riskCount = riskData.potentialRiskIndicators?.length || 0;
+                      const contradictions = riskData.contradictionsAndInconsistencies?.length || 0;
+                      const qualityPassed = validationResult?.isValid !== false;
+                      return (
+                        <View style={{ backgroundColor: '#0a1520', borderRadius: 10, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#1e3a5f' }}>
+                          <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>ASSESSMENT PREPARED</Text>
+                          <View style={{ gap: 5 }}>
+                            {confirmedCount > 0 && <Text style={{ color: '#e8eaf0', fontSize: 11 }}>✓ <Text style={{ color: '#34c759', fontWeight: '700' }}>{confirmedCount}</Text> source-confirmed finding{confirmedCount !== 1 ? 's' : ''} organized</Text>}
+                            {associationsCount > 0 && <Text style={{ color: '#e8eaf0', fontSize: 11 }}>◈ <Text style={{ color: '#ff9f0a', fontWeight: '700' }}>{associationsCount}</Text> possible association{associationsCount !== 1 ? 's' : ''} identified</Text>}
+                            {riskCount > 0 && <Text style={{ color: '#e8eaf0', fontSize: 11 }}>⚠ <Text style={{ color: '#ff453a', fontWeight: '700' }}>{riskCount}</Text> potential risk indicator{riskCount !== 1 ? 's' : ''} flagged</Text>}
+                            {criticalGaps > 0 && <Text style={{ color: '#e8eaf0', fontSize: 11 }}>🔍 <Text style={{ color: '#ff453a', fontWeight: '700' }}>{criticalGaps}</Text> critical gap{criticalGaps !== 1 ? 's' : ''} prioritized</Text>}
+                            {gapsCount > criticalGaps && <Text style={{ color: '#e8eaf0', fontSize: 11 }}>🔍 <Text style={{ color: '#ff9f0a', fontWeight: '700' }}>{gapsCount - criticalGaps}</Text> additional gap{gapsCount - criticalGaps !== 1 ? 's' : ''} identified</Text>}
+                            {contradictions > 0 && <Text style={{ color: '#e8eaf0', fontSize: 11 }}>△ <Text style={{ color: '#ff9f0a', fontWeight: '700' }}>{contradictions}</Text> contradiction{contradictions !== 1 ? 's' : ''} requiring resolution</Text>}
+                            <Text style={{ color: '#e8eaf0', fontSize: 11 }}>{qualityPassed ? '✓' : '△'} Analytical Quality Check <Text style={{ color: qualityPassed ? '#34c759' : '#ff9f0a', fontWeight: '700' }}>{qualityPassed ? 'completed' : 'review suggested'}</Text></Text>
+                            <Text style={{ color: '#e8eaf0', fontSize: 11 }}>📋 Brief ready for <Text style={{ color: '#4a9eff', fontWeight: '700' }}>professional review</Text></Text>
+                          </View>
+                        </View>
+                      );
+                    })()}
+
                     {/* Analytical Quality Check */}
                     {validationResult && (
                       <View style={{ borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1,
@@ -1052,8 +1080,48 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                         )}
                       </View>
                     )}
+                    {/* Review Status */}
+                    <View style={{ marginBottom: 10, backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#1e2a3a' }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>ASSESSMENT STATUS</Text>
+                        {isLocked && <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '700' }}>🔒 LOCKED</Text>}
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap' }}>
+                        {(['draft', 'verification_required', 'ready_for_review', 'reviewed', 'locked'] as const).map((s) => {
+                          const labels: Record<string, string> = { draft: 'Draft', verification_required: 'Verification Req.', ready_for_review: 'Ready for Review', reviewed: 'Reviewed', locked: '🔒 Lock' };
+                          const colors: Record<string, string> = { draft: '#4a5568', verification_required: '#ff9f0a', ready_for_review: '#4a9eff', reviewed: '#34c759', locked: '#7c3aed' };
+                          const isActive = reviewStatus === s || (s === 'locked' && isLocked);
+                          return (
+                            <TouchableOpacity
+                              key={s}
+                              style={{ backgroundColor: isActive ? colors[s] + '30' : '#0a0f1a', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: isActive ? colors[s] : '#1e2a3a' }}
+                              onPress={() => {
+                                if (s === 'locked') {
+                                  if (isLocked) {
+                                    Alert.alert('Unlock Brief', 'Unlocking will allow changes. A new version will be created.', [
+                                      { text: 'Cancel', style: 'cancel' },
+                                      { text: 'Unlock', onPress: () => { setIsLocked(false); setReviewStatus('reviewed'); } }
+                                    ]);
+                                  } else {
+                                    Alert.alert('Lock Brief', 'Locking will prevent changes. The PDF will use this version.', [
+                                      { text: 'Cancel', style: 'cancel' },
+                                      { text: 'Lock', onPress: () => { setIsLocked(true); setReviewStatus('locked'); } }
+                                    ]);
+                                  }
+                                } else {
+                                  if (!isLocked) setReviewStatus(s);
+                                }
+                              }}
+                            >
+                              <Text style={{ color: isActive ? colors[s] : '#4a5568', fontSize: 9, fontWeight: '600' }}>{labels[s]}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-                      <TouchableOpacity style={[styles.aiBtn, { flex: 1 }]} onPress={handleAISummary} disabled={loadingAI}>
+                      <TouchableOpacity style={[styles.aiBtn, { flex: 1 }]} onPress={handleAISummary} disabled={loadingAI || isLocked}>
                         <Text style={styles.aiBtnText}>↺ Regenerate</Text>
                       </TouchableOpacity>
                       <TouchableOpacity style={[styles.aiBtn, { flex: 1, backgroundColor: '#1a3a2a' }]} onPress={handleSaveBriefToCase} disabled={!riskData} accessibilityLabel="Save brief to case" accessibilityRole="button">
