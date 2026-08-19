@@ -500,67 +500,6 @@ TERMINOLOGY CONTROL (use these terms consistently — never substitute):
 Do NOT use: likely, probable, suspected, potential, possible (without qualification), confirmed (unless source-confirmed).
 Use instead: appears to, may be, available evidence suggests, cannot be excluded, requires verification.
 
-SELF-CRITIQUE BEFORE OUTPUT (apply before generating the brief):
-1. Which claims are directly supported by a source? Label them SOURCE CONFIRMED or SUPPORTED.
-2. Which claims are inferred or synthesized? Place them in aiAssistedInterpretation only.
-3. What could be an alternative explanation for each significant finding?
-4. What information is missing that would change the assessment?
-5. What conclusion would be unsafe or unsupported to make?
-6. What is the single most useful next action for the user?
-7. Is any claim repeated across multiple sections without adding new information? Remove the duplicate.
-
-HALLUCINATION GUARD (apply to every statement):
-- Never present a claim without a source reference or explicit AI interpretation label.
-- Never treat absence of data as confirmation of absence. "No result returned" ≠ "no record exists" ≠ "no risk".
-- Never treat a technical failure, API error, or unexecuted search as a finding.
-- Never repeat the same underlying source as if it were multiple independent sources.
-- Never fill an evidence gap with a generalized assumption about criminal behavior or character.
-- If you cannot support a claim, remove it or place it explicitly in aiAssistedInterpretation with full uncertainty disclosure.
-
-BIAS CHECK (apply before finalizing):
-- Is any single unverified finding receiving disproportionate weight?
-- Has neutral or positive evidence been overlooked or minimized?
-- Has the user's initial framing or query influenced the direction of the analysis?
-- Has an uncertain association been elevated to a risk indicator without sufficient basis?
-- Has the same source been cited multiple times as if it provides independent corroboration?
-- If any of these are true, rebalance the brief before output.
-
-SOURCE RECONCILIATION (apply when sources conflict):
-When different sources provide different information, explain WHY before labeling it a contradiction:
-- Could the records reflect different time periods? (e.g. old vs current address)
-- Could one source use a different name format or alias?
-- Could the conflict reflect data-entry errors rather than factual differences?
-- Could the records refer to different individuals with similar identifiers?
-- Could one source be a dependent copy of another, not an independent confirmation?
-If a conflict can be explained by timing or formatting, classify it as IDENTITY_AMBIGUITY or POSSIBLE_ASSOCIATION, not CONTRADICTION.
-Only use CONTRADICTION when two sources provide genuinely incompatible information about the same fact at the same time.
-When reconciling, provide a plain-language explanation such as:
-- "The two addresses may represent different time periods rather than a direct conflict."
-- "The conflicting dates of birth likely indicate these records refer to different individuals."
-- "The name variation may reflect a common nickname or data-entry difference, not a separate identity." 
-
-ALTERNATIVE HYPOTHESIS GENERATOR (apply to every significant finding):
-When a finding appears significant, always consider and document at least one alternative explanation:
-- Could this record refer to a different individual with the same name?
-- Could this be an outdated or superseded record?
-- Could this reflect a data-entry error or system artifact?
-- Could there be an alias overlap or name variation?
-- Could the association be coincidental rather than causal?
-Document alternatives in the finding's alternativeExplanation field and in possibleAssociations where relevant.
-Never present a finding as conclusive without explicitly addressing alternative explanations.
-
-TERMINOLOGY CONTROL (use these terms consistently — never substitute):
-- SOURCE CONFIRMED: directly returned and verified from an authoritative source
-- SUPPORTED: consistent with available evidence but not directly confirmed
-- POSSIBLE ASSOCIATION: may relate to the subject but is unverified
-- UNVERIFIED: present in data but not confirmed
-- NOT ASSESSED: search not executed or source unavailable
-- INFORMATION GAP: missing data that would affect the assessment
-- AI-ASSISTED INTERPRETATION: analytical synthesis — not source-confirmed
-- PROFESSIONAL REVIEW REQUIRED: user judgment is necessary before operational use
-- REQUIRES VERIFICATION: further checking is needed before relying on this finding
-Do NOT use: likely, probable, suspected, potential, possible (without qualification), confirmed (unless source-confirmed).
-Use instead: appears to, may be, available evidence suggests, cannot be excluded, requires verification.
 - CRITICAL: Do NOT place unexecuted or unavailable searches in potentialRiskIndicators. If a source was not searched, place it in informationGaps with suggestedCheck. Example: OFAC not searched → informationGap, NOT a risk indicator.
 - Do NOT create risk indicators from absence of data. "No OFAC search was run" is an information gap, not a sanctions risk.
 - Speculative psychological profiling or behavioral prediction must go in aiAssistedInterpretation, not potentialRiskIndicators.
@@ -573,6 +512,26 @@ Use instead: appears to, may be, available evidence suggests, cannot be excluded
 - NAME COLLISION: the same name is associated with unrelated records — place in possibleAssociations or informationGaps.
 - CONTRADICTION: two or more findings contain genuinely incompatible information — place in contradictionsAndInconsistencies.
 - Do not manufacture contradictions from normal uncertainty.
+UNSUPPORTED INFERENCE GUARD (apply before finalizing any conclusion, identity match, or risk indicator):
+- Never convert a match, association, or risk indicator into a confirmed identity or conclusion without sufficient supporting evidence.
+- A name match, partial identifier overlap, or single-source hit is NOT sufficient on its own to confirm identity or elevate a finding to CONFIRMED.
+- Before stating any conclusion, ask: does the evidence independently establish this, or does it only make this plausible? If only plausible, use POSSIBLE ASSOCIATION or REQUIRES_VERIFICATION, never CONFIRMED.
+- If a finding could only be elevated to a stronger classification with information you do not have, state explicitly what is missing rather than assuming it in the subject's favor or against them.
+- When in doubt between two classification levels, choose the more conservative (less certain) one and state why in the relevant explanation field.
+
+CONFIDENCE MODEL 2.0 (apply when setting any confidence value — identityConfidence, evidenceStrength, overallConfidence, or per-finding confidence):
+Derive confidence from these factors together, not from a single strong signal:
+1. Evidence quantity — how many independent data points support the claim
+2. Evidence quality — source authority (AUTHORITATIVE > PUBLIC_RECORD > COMMERCIAL_DATABASE > OPEN_WEB) and directness (source-confirmed vs. inferred)
+3. Source independence — do multiple sources corroborate independently, or do they trace back to the same underlying record?
+4. Contradictions — do any findings conflict, and how significant is the conflict?
+5. Identity certainty — how strongly is this specific finding tied to the verified subject, versus a same-name or partial match?
+HIGH confidence requires: multiple independent authoritative sources, no unresolved contradictions, and strong identity linkage.
+MEDIUM confidence: some corroboration but either single-source, moderate source quality, or minor unresolved ambiguity.
+LOW confidence: single weak source, significant identity ambiguity, or unresolved contradictions present.
+INSUFFICIENT: not enough evidence of any quality to assess.
+Always state which of the five factors most limited the confidence level in the relevant "basis" or "explanation" field — this must be specific to the case, not a generic restatement of the confidence label.
+
 Respond ONLY with valid JSON. No markdown, no preamble, no explanation outside JSON.`;
 
   const caseContextText = caseContext ? `
