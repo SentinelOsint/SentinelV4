@@ -530,7 +530,31 @@ HIGH confidence requires: multiple independent authoritative sources, no unresol
 MEDIUM confidence: some corroboration but either single-source, moderate source quality, or minor unresolved ambiguity.
 LOW confidence: single weak source, significant identity ambiguity, or unresolved contradictions present.
 INSUFFICIENT: not enough evidence of any quality to assess.
-Always state which of the five factors most limited the confidence level in the relevant "basis" or "explanation" field — this must be specific to the case, not a generic restatement of the confidence label.
+AI GAP PRIORITIZATION 2.0 (apply when assigning priority to each information gap):
+Priority must reflect impact, not just category. For each gap, assess:
+- What would change in identityConfidence, operationalRiskStatus, or a specific risk indicator if this gap were resolved?
+- Is this gap blocking a decision the user needs to make before contact, or is it background context?
+- Could resolving this gap eliminate or confirm a specific contradiction or possible association?
+CRITICAL = resolving it would materially change identity confidence or risk status, or is required before safe contact.
+IMPORTANT = resolving it would strengthen or clarify an existing finding, but does not block a go/no-go decision.
+USEFUL = adds context but does not affect confidence or risk assessment.
+DYNAMIC NEXT BEST ACTION 2.0 (apply when determining immediateVerificationRequirement and the first step in researchPlan.steps):
+Do not default to the most obvious or most commonly recommended action. Instead, evaluate candidate next actions against how much each would reduce uncertainty:
+- Which unresolved question, if answered, would most change identityConfidence or operationalRiskStatus?
+- Which action addresses a CRITICAL information gap rather than an IMPORTANT or USEFUL one?
+- Which action is achievable with information already available (e.g. an identifier already in hand) versus one that depends on data not yet collected?
+Prefer the action that resolves the single highest-impact uncertainty over one that is merely procedurally "next in sequence." BRIEF QUALITY CONTROL 2.0 (final check before producing JSON output — apply after all sections are drafted):
+- Cross-check consistency: does the same finding receive the same classification (SOURCE_CONFIRMED/SUPPORTED/etc.) everywhere it appears — in confirmedAndSupportedInformation, evidenceClassifier, and preContactOverview? Fix any mismatch before output.
+- Does identityConfidence.level match the reasoning in identityConfidence.basis? A HIGH confidence label with a basis describing only a single weak identifier is inconsistent — resolve the mismatch by adjusting the label, not the reasoning.
+- Does operationalRiskStatus match the actual contents of potentialRiskIndicators? LOW_INDICATED_RISK with a HIGH severity indicator present is inconsistent.
+- Is every recommended action in recommendedChecksBeforeContact and researchPlan.steps traceable to a specific gap or uncertainty documented elsewhere in the brief — not a generic boilerplate recommendation?
+- Does confidenceAndLimitations.basis restate the actual evidence used, or is it a generic phrase that could apply to any brief? Replace generic language with case-specific detail.
+RESEARCH PLANNER 2.0 (apply when building researchPlan.steps):
+- Order steps by dependency, not just by module convention: if step B's value depends on what step A reveals (e.g. confirming an address before checking property records at that address), state that dependency explicitly in step B's "reason" field.
+- Avoid listing a step that duplicates information already available in the findings — check confirmedAndSupportedInformation and knownInformation before recommending a search that would only reconfirm what is already known.
+- Each step's expectedOutcome must state what specific uncertainty it resolves, referencing the relevant gap or ambiguity by content, not a generic description like "gathers more information."
+- identifierStrength must reflect what is actually usable for search, not just what was provided — e.g. a common first-and-last name alone is WEAK regardless of how much surrounding context exists, unless a distinguishing identifier (DOB, address, phone) is also present.
+- If the identifier is INSUFFICIENT for reliable research, say so plainly in sequenceSummary rather than producing a full step-by-step plan that implies confidence the data doesn't support.
 
 Respond ONLY with valid JSON. No markdown, no preamble, no explanation outside JSON.`;
 
@@ -751,6 +775,56 @@ Operational Risk Status logic:
 - INSUFFICIENT_IDENTIFIERS: query does not provide enough to assess risk`;
 
   await AuditLog.log('SEARCH_QUERY', `AI Pre-Contact Brief: ${query}`);
+  return await callClaude(system, user);
+}
+
+// ─── Version Change Summary ────────────────────────────────────────────────
+
+export async function generateVersionChangeSummary(
+  previousBrief: any,
+  currentBrief: any
+): Promise<string> {
+  const previousText = JSON.stringify({
+    identityConfidence: previousBrief?.preContactOverview?.identityConfidence,
+    operationalRiskStatus: previousBrief?.preContactOverview?.operationalRiskStatus,
+    riskIndicators: previousBrief?.potentialRiskIndicators,
+    informationGaps: previousBrief?.informationGaps,
+    contradictions: previousBrief?.contradictionsAndInconsistencies,
+    confirmedInfo: previousBrief?.confirmedAndSupportedInformation,
+  }, null, 2);
+  const currentText = JSON.stringify({
+    identityConfidence: currentBrief?.preContactOverview?.identityConfidence,
+    operationalRiskStatus: currentBrief?.preContactOverview?.operationalRiskStatus,
+    riskIndicators: currentBrief?.potentialRiskIndicators,
+    informationGaps: currentBrief?.informationGaps,
+    contradictions: currentBrief?.contradictionsAndInconsistencies,
+    confirmedInfo: currentBrief?.confirmedAndSupportedInformation,
+  }, null, 2);
+
+  const system = `You are a senior field intelligence analyst summarizing what changed between two versions of a Pre-Contact Intelligence Brief for the same subject.
+Follow the same terminology and evidentiary discipline as brief generation itself:
+- Never state a change is more significant than the evidence supports.
+- Distinguish between a change in confirmed facts versus a change in AI interpretation or confidence level.
+- If nothing operationally significant changed, say so plainly rather than manufacturing significance.
+- Use terms consistently: SOURCE CONFIRMED, SUPPORTED, POSSIBLE ASSOCIATION, REQUIRES VERIFICATION.
+Be concise — this is read quickly by a field professional deciding whether to re-review the full brief.`;
+
+  const user = `Compare these two versions of a Pre-Contact Intelligence Brief and summarize what changed and why it matters operationally.
+
+PREVIOUS VERSION (relevant fields):
+${previousText}
+
+CURRENT VERSION (relevant fields):
+${currentText}
+
+Write a short summary (3-6 sentences, plain prose, no headers) covering:
+1. What specifically changed (new findings, resolved gaps, changed confidence, new/resolved contradictions)
+2. Why each change matters — what it means for identity confidence or risk assessment
+3. If nothing meaningful changed beyond superficial differences, state that clearly instead of inventing significance
+
+Do not use markdown formatting. Do not repeat raw field names like "operationalRiskStatus" — describe changes in plain language a field investigator would use.`;
+
+  await AuditLog.log('SEARCH_QUERY', 'AI Version Change Summary');
   return await callClaude(system, user);
 }
 
