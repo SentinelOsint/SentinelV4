@@ -13,7 +13,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sentinel.osint",
-      "buildNumber": "60",
+      "buildNumber": "61",
       "marketingVersion": "3.0.0",
       "subtitle": "Background Check, Skip Trace & AI",
       "requireFullScreen": false,
@@ -82,7 +82,7 @@
       "eas": {
         "projectId": "35ddc2b0-ca53-4a1e-b40c-57d31915c35b"
       },
-      "isReviewerBuild": false
+      "isReviewerBuild": true
     },
     "icon": "./assets/icon.png",
     "owner": "hannuhuttunen"
