@@ -66,6 +66,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   };
   const [showSectionsModal, setShowSectionsModal] = useState(false);
   const [assessmentPurpose, setAssessmentPurpose] = useState<string>('');
+  const [professionalRole, setProfessionalRole] = useState<string>('');
   const [briefView, setBriefView] = useState<'quick' | 'operational' | 'full'>('operational');
   const [reviewStatus, setReviewStatus] = useState<'draft' | 'verification_required' | 'ready_for_review' | 'reviewed' | 'locked'>('draft');
   const [isLocked, setIsLocked] = useState(false);
@@ -316,7 +317,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
       const allFindings = result.modules.flatMap(m =>
         m.links.map(l => ({ label: `${m.module} — ${l.label}`, value: l.url, type: 'link' as const }))
       );
-      const briefJson = await generatePreContactBrief(result.query, result.detectedAs, allFindings, assessmentPurpose || 'Not specified');
+      const briefJson = await generatePreContactBrief(result.query, result.detectedAs, allFindings, assessmentPurpose || 'Not specified', undefined, professionalRole || 'Not specified');
       const jsonMatch = briefJson.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON found in response');
       const parsed = JSON.parse(jsonMatch[0]);
@@ -354,6 +355,15 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
       setLoadingAI(false);
     }
   };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const settings = await Storage.getSettings();
+        if (settings.professionalRole) setProfessionalRole(settings.professionalRole as string);
+      } catch {}
+    })();
+  }, []);
 
   useEffect(() => {
     if (confidence > 0) {
@@ -475,6 +485,28 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     onPress={() => setAssessmentPurpose(assessmentPurpose === p ? '' : p)}
                   >
                     <Text style={{ color: assessmentPurpose === p ? '#fff' : '#6b7a99', fontSize: 11, fontWeight: '600' }}>{p}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+
+          {/* Professional Role */}
+          <View style={{ marginBottom: 10 }}>
+            <Text style={{ color: '#6b7a99', fontSize: 10, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 }}>Professional Role</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {['Private Investigator', 'Executive Protection', 'Process Server', 'Bail/Fugitive Recovery', 'Corporate Security', 'Due Diligence', 'Corporate Investigation', 'Other'].map((r) => (
+                  <TouchableOpacity
+                    key={r}
+                    style={{ backgroundColor: professionalRole === r ? '#7c3aed' : '#0a0f1a', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: professionalRole === r ? '#7c3aed' : '#1e2a3a' }}
+                    onPress={() => {
+                      const next = professionalRole === r ? '' : r;
+                      setProfessionalRole(next);
+                      Storage.saveSetting('professionalRole', next).catch(() => {});
+                    }}
+                  >
+                    <Text style={{ color: professionalRole === r ? '#fff' : '#6b7a99', fontSize: 11, fontWeight: '600' }}>{r}</Text>
                   </TouchableOpacity>
                 ))}
               </View>

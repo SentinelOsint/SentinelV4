@@ -417,7 +417,8 @@ export async function generatePreContactBrief(
     rejectedAssociations?: string[];
     resolvedGaps?: string[];
     userNotes?: string;
-  }
+  },
+  professionalRole?: string
 ): Promise<string> {
   const findingsText = findings
     .filter(f => f.value && f.value.trim())
@@ -556,6 +557,17 @@ RESEARCH PLANNER 2.0 (apply when building researchPlan.steps):
 - identifierStrength must reflect what is actually usable for search, not just what was provided — e.g. a common first-and-last name alone is WEAK regardless of how much surrounding context exists, unless a distinguishing identifier (DOB, address, phone) is also present.
 - If the identifier is INSUFFICIENT for reliable research, say so plainly in sequenceSummary rather than producing a full step-by-step plan that implies confidence the data doesn't support.
 
+ROLE-BASED ASSESSMENT TEMPLATE (apply based on the user's stated professional role — this affects emphasis, prioritization in recommendedIntelligencePath and operationalConsiderations, but never changes evidentiary standards):
+The user's professional role for this assessment: ${professionalRole || 'Not specified'}
+- Private Investigator: balanced general-purpose emphasis across identity, location, associations, and background — no single area should dominate unless findings specifically warrant it.
+- Executive Protection: prioritize operationalConsiderations around physical risk, behavioral/threat indicators (only if evidence-supported — never speculate), known associates, weapons or violence history if present in sources, and travel/location patterns. Prioritize recommendedIntelligencePath modules covering criminal records, wanted/sanctions checks, and known addresses.
+- Process Server: prioritize identity confidence and current, verifiable address/location data above all else — the operational goal is successful, safe, legally sound service. De-prioritize deep background/financial modules unless directly relevant to locating the subject. Flag any indicators of evasiveness or address instability as high-priority gaps.
+- Bail/Fugitive Recovery: prioritize current location indicators, known associates, vehicle records, travel patterns, and any recent activity signals. Treat identity confidence as especially critical given legal stakes — do not soften language around unresolved identity ambiguity.
+- Corporate Security: prioritize employment history, professional associations, public records related to conduct (litigation, regulatory actions), and any indicators relevant to workplace risk. Avoid drawing conclusions about character from limited data.
+- Due Diligence: prioritize corporate affiliations, financial/regulatory records, litigation history, sanctions/watchlist status, and professional licensing. This role most benefits from the manualSourceGuidance and recommendedIntelligencePath sections being thorough on corporate/financial sources.
+- Corporate Investigation: prioritize professional history, internal-conduct-relevant public records, and associations with named entities or individuals relevant to the specific matter under investigation.
+- Not specified / Other: use general-purpose balanced emphasis as with Private Investigator; do not assume a role's priorities without one being stated.
+
 Respond ONLY with valid JSON. No markdown, no preamble, no explanation outside JSON.`;
 
   const caseContextText = caseContext ? `
@@ -580,6 +592,8 @@ POST-CONTACT UPDATE INSTRUCTIONS (if post-contact observations are provided):
 
 QUERY: ${query}
 INPUT TYPE: ${inputType}
+ASSESSMENT PURPOSE: ${assessmentPurpose || 'Not specified'}
+PROFESSIONAL ROLE: ${professionalRole || 'Not specified'}
 ${caseContextText}
 
 INTELLIGENCE FINDINGS:
