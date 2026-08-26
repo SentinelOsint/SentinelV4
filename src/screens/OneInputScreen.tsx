@@ -45,6 +45,7 @@ const TYPE_ICONS: Record<InputType, string> = {
 
 export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [query, setQuery]           = useState('');
+  const [identityAssistantInput, setIdentityAssistantInput] = useState('');
   const [result, setResult]         = useState<OneInputResult | null>(null);
   const [aiSummary, setAiSummary]   = useState<string>('');
   const [loadingAI, setLoadingAI]   = useState(false);
@@ -1070,6 +1071,34 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                                 <View style={{ backgroundColor: '#0a1a0a', borderRadius: 6, padding: 8 }}>
                                   <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 2 }}>TO CONFIRM IDENTITY</Text>
                                   <Text style={{ color: '#34c759', fontSize: 11, lineHeight: 16 }}>{ir.minimumRequiredToConfirm}</Text>
+                                </View>
+                              )}
+                              {ir.minimumRequiredToConfirm && (
+                                <View style={{ marginTop: 8 }}>
+                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 6 }}>ADD IDENTIFIER & RE-CHECK</Text>
+                                  <TextInput
+                                    style={{ backgroundColor: '#0a0f1a', borderRadius: 6, borderWidth: 1, borderColor: '#1e2a3a', color: '#e8eaf0', fontSize: 12, padding: 8, marginBottom: 6 }}
+                                    placeholder="Enter the identifier suggested above"
+                                    placeholderTextColor="#4a5568"
+                                    value={identityAssistantInput}
+                                    onChangeText={setIdentityAssistantInput}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                  />
+                                  <TouchableOpacity
+                                    disabled={!identityAssistantInput.trim() || isSearching}
+                                    style={{ backgroundColor: identityAssistantInput.trim() ? '#7c3aed' : '#1e2a3a', borderRadius: 6, paddingVertical: 8, alignItems: 'center' }}
+                                    onPress={() => {
+                                      const addition = identityAssistantInput.trim();
+                                      if (!addition) return;
+                                      const newQuery = query.includes(addition) ? query : `${query}\n${addition}`;
+                                      setQuery(newQuery);
+                                      setIdentityAssistantInput('');
+                                      setTimeout(() => { handleSearch(); }, 50);
+                                    }}
+                                  >
+                                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Add & Re-Run Search</Text>
+                                  </TouchableOpacity>
                                 </View>
                               )}
                             </View>
