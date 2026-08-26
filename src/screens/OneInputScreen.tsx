@@ -317,7 +317,16 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
       const allFindings = result.modules.flatMap(m =>
         m.links.map(l => ({ label: `${m.module} — ${l.label}`, value: l.url, type: 'link' as const }))
       );
-      const briefJson = await generatePreContactBrief(result.query, result.detectedAs, allFindings, assessmentPurpose || 'Not specified', undefined, professionalRole || 'Not specified');
+      const confirmedFindingsForContext = (riskData?.confirmedAndSupportedInformation || [])
+        .filter((_: any, i: number) => validatedFindings[`confirmed_${i}`] === 'confirmed')
+        .map((item: any) => item.statement);
+      const rejectedAssociationsForContext = (riskData?.confirmedAndSupportedInformation || [])
+        .filter((_: any, i: number) => validatedFindings[`confirmed_${i}`] === 'rejected')
+        .map((item: any) => item.statement);
+      const briefJson = await generatePreContactBrief(result.query, result.detectedAs, allFindings, assessmentPurpose || 'Not specified', {
+        confirmedFindings: confirmedFindingsForContext,
+        rejectedAssociations: rejectedAssociationsForContext,
+      }, professionalRole || 'Not specified');
       const jsonMatch = briefJson.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON found in response');
       const parsed = JSON.parse(jsonMatch[0]);
