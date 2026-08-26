@@ -1077,7 +1077,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                                 <View style={{ marginTop: 8 }}>
                                   <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 6 }}>ADD IDENTIFIER & RE-CHECK</Text>
                                   <TextInput
-                                    style={{ backgroundColor: '#0a0f1a', borderRadius: 6, borderWidth: 1, borderColor: '#1e2a3a', color: '#e8eaf0', fontSize: 12, padding: 8, marginBottom: 6 }}
+                                    style={{ backgroundColor: '#0a0f1a', borderRadius: 6, borderWidth: 1, borderColor: '#1e2a3a', color: '#e8eaf0', fontSize: 13, minHeight: 42, paddingHorizontal: 10, paddingVertical: 10, marginBottom: 6 }}
                                     placeholder="Enter the identifier suggested above"
                                     placeholderTextColor="#4a5568"
                                     value={identityAssistantInput}
