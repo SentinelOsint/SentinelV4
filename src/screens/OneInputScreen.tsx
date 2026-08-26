@@ -5,7 +5,7 @@
  * Pro:  Solo + AI summary of all findings
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Modal,
@@ -68,6 +68,25 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [showSectionsModal, setShowSectionsModal] = useState(false);
   const [assessmentPurpose, setAssessmentPurpose] = useState<string>('');
   const [professionalRole, setProfessionalRole] = useState<string>('');
+  const ROLE_MODULE_PRIORITY: Record<string, string[]> = {
+    'Executive Protection': ['WANTED', 'Court Records', 'Data Breaches'],
+    'Process Server': ['PERSON INTELLIGENCE', 'Public Records', 'Professional Records'],
+    'Bail/Fugitive Recovery': ['WANTED', 'Social Media', 'News & Web'],
+    'Corporate Security': ['Professional Records', 'Court Records', 'News & Web'],
+    'Due Diligence': ['Company Search', 'Financial & Legal', 'Court Records', 'Professional Records'],
+    'Corporate Investigation': ['Professional Records', 'Court Records', 'Company Search', 'News & Web'],
+  };
+  const sortedModules = useMemo(() => {
+    if (!result?.modules) return [];
+    const keywords = ROLE_MODULE_PRIORITY[professionalRole];
+    if (!keywords || keywords.length === 0) return result.modules;
+    const scored = result.modules.map((m: any, i: number) => {
+      const rank = keywords.findIndex((k) => m.module.includes(k));
+      return { m, i, rank: rank === -1 ? 999 : rank };
+    });
+    scored.sort((a, b) => a.rank - b.rank || a.i - b.i);
+    return scored.map((s) => s.m);
+  }, [result, professionalRole]);
   const [briefView, setBriefView] = useState<'quick' | 'operational' | 'full'>('operational');
   const [reviewStatus, setReviewStatus] = useState<'draft' | 'verification_required' | 'ready_for_review' | 'reviewed' | 'locked'>('draft');
   const [isLocked, setIsLocked] = useState(false);
@@ -1534,7 +1553,7 @@ Return to the search field and enter this variation.`)}
               Intelligence workflow supported by {result.modules.reduce((acc, m) => acc + m.links.length, 0)} public sources across {result.modules.length} intelligence modules
             </Text>
 
-            {result.modules.map((module, idx) => {
+            {sortedModules.map((module, idx) => {
               const isExpanded = expandedModules.has(idx);
               const isAutoModule = module.module.includes('INTELLIGENCE') || module.module.includes('WANTED') || module.module.includes('BREACH') || module.module.includes('MULTI');
               const isAlert = module.module.includes('WANTED');
