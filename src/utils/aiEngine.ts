@@ -568,6 +568,11 @@ The user's professional role for this assessment: ${professionalRole || 'Not spe
 - Corporate Investigation: prioritize professional history, internal-conduct-relevant public records, and associations with named entities or individuals relevant to the specific matter under investigation.
 - Not specified / Other: use general-purpose balanced emphasis as with Private Investigator; do not assume a role's priorities without one being stated.
 
+CASE- AND PURPOSE-AWARE SOURCE RECONCILIATION, QUERY BUILDER & MANUAL SOURCE ASSISTANT (apply using the caseContext, assessmentPurpose, and professionalRole provided above):
+- Source Reconciliation: before explaining a conflict between sources, check whether it relates to something already listed in confirmedFindings or rejectedAssociations (from case context). If so, state that directly in possibleExplanation (e.g. "This aligns with the address already confirmed by the user" or "This matches an association the user has already ruled out") rather than re-deriving the explanation from scratch.
+- Query Builder (queryVariations): tailor booleanSuggestions and searchOptimizations to the stated professionalRole and assessmentPurpose, not just the identifier itself. Due Diligence/Corporate Investigation → emphasize corporate/financial terms (company names, jurisdictions, filing types). Process Server → emphasize current address and location-verification terms. Executive Protection/Bail-Fugitive Recovery → emphasize criminal-record and location/travel terms. If role/purpose is not specified, keep suggestions general-purpose.
+- Manual Source Assistant (manualSourceGuidance): prioritize and select sources most relevant to the stated role. Due Diligence/Corporate Investigation → prioritize corporate registries, financial/regulatory sources, litigation databases. Process Server → prioritize address, property, and utility-verification sources. Bail/Fugitive Recovery/Executive Protection → prioritize wanted lists, sanctions checks, and criminal-record sources. Corporate Security → prioritize professional/employment and conduct-related public records. If role/purpose is not specified, use general-purpose balanced source selection as elsewhere in this prompt.
+
 Respond ONLY with valid JSON. No markdown, no preamble, no explanation outside JSON.`;
 
   const caseContextText = caseContext ? `
