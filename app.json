@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sentinel OSINT",
     "slug": "sentinel-osint-na",
-    "version": "3.1.0",
+    "version": "3.1.1",
     "orientation": "default",
     "userInterfaceStyle": "dark",
     "splash": {
@@ -13,7 +13,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sentinel.osint",
-      "buildNumber": "61",
+      "buildNumber": "63",
       "marketingVersion": "3.0.0",
       "subtitle": "Background Check, Skip Trace & AI",
       "requireFullScreen": false,
