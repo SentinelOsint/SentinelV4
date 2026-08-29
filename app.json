@@ -82,7 +82,7 @@
       "eas": {
         "projectId": "35ddc2b0-ca53-4a1e-b40c-57d31915c35b"
       },
-      "isReviewerBuild": true
+      "isReviewerBuild": false
     },
     "icon": "./assets/icon.png",
     "owner": "hannuhuttunen"
