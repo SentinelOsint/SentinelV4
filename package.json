@@ -7,11 +7,11 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "build:android": "eas build --platform android --profile production",
-    "build:ios": "eas build --platform ios --profile production",
-    "build:all": "eas build --platform all --profile production"
+    "build:ios": "node scripts/check-reviewer-build.js && eas build --platform ios --profile production",
+    "build:all": "node scripts/check-reviewer-build.js && eas build --platform all --profile production",
+    "precheck": "node scripts/check-reviewer-build.js"
   },
   "dependencies": {
-    "@expo/vector-icons": "^15.0.2",
     "@maplibre/maplibre-react-native": "^11.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "babel-preset-expo": "~55.0.8",

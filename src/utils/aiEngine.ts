@@ -55,6 +55,7 @@ async function getEffectiveAICap(): Promise<number> {
     const { Trial } = await import('./storage');
     const tier = await Trial.getSubscriptionTier();
     if (tier === 'trial') return TRIAL_AI_CAP; // Trial users get 10 AI queries
+    if (tier === 'expired') return 0; // Trial ended and no active paid subscription — block AI usage entirely
     const startDate = await getSubscriptionStartDate();
     if (!startDate) return NEW_SUBSCRIBER_CAP; // No start date — use conservative limit
     const daysSinceStart = (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24);

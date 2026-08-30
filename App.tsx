@@ -34,10 +34,11 @@ import WatchListScreen from './src/screens/WatchListScreen';
 import CaseIntakeScreen from './src/screens/CaseIntakeScreen';
 
 import { Storage, Trial, SubscriptionTier } from './src/utils/storage';
-import { Ionicons } from '@expo/vector-icons';
+
 import { exportSearchPDF } from './src/utils/pdfExport';
 import { SessionManager }  from './src/utils/sessionManager';
 import { AuditLog }        from './src/utils/auditLog';
+import Constants from 'expo-constants';
 import * as SplashScreen   from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
@@ -54,6 +55,33 @@ import { Screen, OsintResult, FieldNote, HistoryItem } from './src/types';
 
 export default function App() {
   const [unlocked,      setUnlocked]      = useState(false);
+  const [forceUpdateRequired, setForceUpdateRequired] = useState(false);
+
+  useEffect(() => {
+    function isVersionOutdated(current: string, minimum: string): boolean {
+      const c = current.split('.').map((n) => parseInt(n, 10) || 0);
+      const m = minimum.split('.').map((n) => parseInt(n, 10) || 0);
+      for (let i = 0; i < Math.max(c.length, m.length); i++) {
+        const cv = c[i] || 0;
+        const mv = m[i] || 0;
+        if (cv < mv) return true;
+        if (cv > mv) return false;
+      }
+      return false;
+    }
+    (async () => {
+      try {
+        const res = await fetch('https://sentinel-backend-production-05e1.up.railway.app/app/min-version');
+        const data = await res.json();
+        const currentVersion = Constants.expoConfig?.version || '0.0.0';
+        if (data?.minVersion && isVersionOutdated(currentVersion, data.minVersion)) {
+          setForceUpdateRequired(true);
+        }
+      } catch {
+        // If the check fails (e.g. offline), fail open — don't block the user.
+      }
+    })();
+  }, []);
   const [needsReauth,   setNeedsReauth]   = useState(false);
   const [isPro,         setIsPro]         = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>('trial' as SubscriptionTier);
@@ -848,6 +876,21 @@ export default function App() {
   // SPECIAL SCREENS
   // ════════════════════════════════════════════════════════════════════════
 
+  if (forceUpdateRequired) return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0f1a', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+      <Text style={{ color: '#e8eaf0', fontSize: 20, fontWeight: '700', marginBottom: 12, textAlign: 'center' }}>Update Required</Text>
+      <Text style={{ color: '#6b7a99', fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 24 }}>
+        A new version of Sentinel is available with important fixes. Please update to continue.
+      </Text>
+      <TouchableOpacity
+        style={{ backgroundColor: '#2563eb', borderRadius: 10, paddingVertical: 14, paddingHorizontal: 32 }}
+        onPress={() => Linking.openURL('https://apps.apple.com/us/app/sentinel-field-intelligence/id6761101801')}
+      >
+        <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Update Now</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+
   if (!unlocked) return (
   <LockScreen
    onUnlock={() => { isAuthenticating.current = false; SessionManager.setAuthenticating(false); setUnlocked(true); setNeedsReauth(false); }}
@@ -1116,12 +1159,12 @@ export default function App() {
             <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 16 }}>TOOLS AND RECORDS</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
               {[
-                { id: 'notes',      ionicon: 'document-text-outline', title: 'Field Notes',  desc: `${notes.length} saved` },
-                { id: 'timeline',   ionicon: 'time-outline',           title: 'Timeline',     desc: 'Activity log' },
-                { id: 'geo_map',    ionicon: 'map-outline',            title: 'Map View',     desc: 'Field map' },
-                { id: 'history',    ionicon: 'search-outline',         title: 'History',      desc: `${history.length} queries` },
-                { id: 'settings',   ionicon: 'lock-closed-outline',    title: 'Security',     desc: 'Encryption & audit' },
-                { id: 'case_intake',ionicon: 'clipboard-outline',      title: 'Case Intake',  desc: 'AI pre-assessment' },
+                { id: 'notes',      icon: '📋', title: 'Field Notes',  desc: `${notes.length} saved` },
+                { id: 'timeline',   icon: '🕐', title: 'Timeline',     desc: 'Activity log' },
+                { id: 'geo_map',    icon: '🗺️', title: 'Map View',     desc: 'Field map' },
+                { id: 'history',    icon: '🔍', title: 'History',      desc: `${history.length} queries` },
+                { id: 'settings',   icon: '🔐', title: 'Security',     desc: 'Encryption & audit' },
+                { id: 'case_intake',icon: '📋', title: 'Case Intake',  desc: 'AI pre-assessment' },
 
               ].map(t => (
                 <TouchableOpacity
@@ -1129,7 +1172,7 @@ export default function App() {
                   style={{ width: '47%', backgroundColor: '#0a0f1a', borderRadius: CARD.radiusSm, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor }}
                   onPress={() => navigate(t.id as any)}
                 >
-                  <Ionicons name={t.ionicon as any} size={18} color={C.textMid} style={{ marginBottom: 6 }} />
+                  <Text style={{ fontSize: 18, marginBottom: 4 }}>{t.icon}</Text>
                   <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>{t.title}</Text>
                   <Text style={{ color: '#4a5568', fontSize: 10 }}>{t.desc}</Text>
                 </TouchableOpacity>

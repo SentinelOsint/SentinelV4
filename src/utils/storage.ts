@@ -13,6 +13,7 @@
  */
 
 import { SecureStorage } from './secureStorage';
+import * as SecureStore from 'expo-secure-store';
 import { AuditLog }      from './auditLog';
 import { CaseReport, HistoryItem, FieldNote } from '../types';
 import Constants from 'expo-constants';
@@ -106,6 +107,10 @@ export const Storage = {
 
 // ── Trial & Subscription ─────────────────────────────────────────────────────
 const TRIAL_KEY = 'sentinel_trial_v1';
+// Stored directly in iOS Keychain (not routed through AsyncStorage) because Keychain items
+// survive app deletion/reinstall by default on iOS, unlike AsyncStorage — this prevents a user
+// from resetting their 7-day trial simply by deleting and reinstalling the app.
+const TRIAL_KEYCHAIN_KEY = 'sentinel_trial_start_kc_v1';
 const SUB_KEY   = 'sentinel_subscription_v1';
 
 export type SubscriptionTier = 'trial' | 'pro' | 'expired';
@@ -114,8 +119,16 @@ export const Trial = {
   async initialize(): Promise<void> {
     const existing = await SecureStorage.get<string>(TRIAL_KEY);
     if (!existing) {
-      await SecureStorage.set(TRIAL_KEY, new Date().toISOString());
-      await AuditLog.log('SETTINGS_CHANGE', 'Trial started');
+      let keychainDate: string | null = null;
+      try {
+        keychainDate = await SecureStore.getItemAsync(TRIAL_KEYCHAIN_KEY);
+      } catch {}
+      const startDate = keychainDate || new Date().toISOString();
+      await SecureStorage.set(TRIAL_KEY, startDate);
+      try {
+        await SecureStore.setItemAsync(TRIAL_KEYCHAIN_KEY, startDate, { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY });
+      } catch {}
+      await AuditLog.log('SETTINGS_CHANGE', keychainDate ? 'Trial restored from prior install (Keychain)' : 'Trial started');
     }
   },
 
@@ -126,7 +139,7 @@ export const Trial = {
 
   async getDaysRemaining(): Promise<number> {
     const start = await Trial.getStartDate();
-    if (!start) return 14;
+    if (!start) return 0;
     const elapsed = (Date.now() - start.getTime()) / (1000 * 60 * 60 * 24);
     return Math.max(0, Math.ceil(7 - elapsed));
   },
