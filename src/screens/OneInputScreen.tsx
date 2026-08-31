@@ -109,6 +109,13 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
   const [isSearching, setIsSearching] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['identity', 'risk']));
+  const [expandedEvidenceItems, setExpandedEvidenceItems] = useState<Set<number>>(new Set());
+  const toggleEvidenceItem = (i: number) => {
+    const next = new Set(expandedEvidenceItems);
+    if (next.has(i)) next.delete(i);
+    else next.add(i);
+    setExpandedEvidenceItems(next);
+  };
   const [validatedFindings, setValidatedFindings] = useState<Record<string, 'confirmed' | 'rejected' | 'needs_review'>>({});
   const validateFinding = async (id: string, status: 'confirmed' | 'rejected' | 'needs_review') => {
     const next = { ...validatedFindings, [id]: status };
@@ -1326,15 +1333,50 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                             'NOT_ASSESSED': '#4a5568',
                           };
                           const color = classColor[item.classification] || '#6b7a99';
+                          const eid = `evidence_${i}`;
+                          const val = validatedFindings[eid];
+                          const itemExpanded = expandedEvidenceItems.has(i);
                           return (
                             <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: color }}>
-                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <Text style={{ color, fontSize: 9, fontWeight: '700', letterSpacing: 0.5 }}>{item.classification?.replace(/_/g, ' ')}</Text>
-                                <Text style={{ color: '#4a5568', fontSize: 8 }}>{item.associationStatus?.replace(/_/g, ' ')}</Text>
-                              </View>
-                              <Text style={{ color: '#e8eaf0', fontSize: 11, lineHeight: 17, marginBottom: 4 }}>{item.statement}</Text>
-                              {item.sourceReferences?.length > 0 && (
-                                <Text style={{ color: '#4a5568', fontSize: 9 }}>Sources: {item.sourceReferences.join(' · ')}</Text>
+                              <TouchableOpacity onPress={() => toggleEvidenceItem(i)}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                  <Text style={{ color, fontSize: 9, fontWeight: '700', letterSpacing: 0.5 }}>{item.classification?.replace(/_/g, ' ')}</Text>
+                                  <Text style={{ color: '#4a5568', fontSize: 8 }}>{item.associationStatus?.replace(/_/g, ' ')}</Text>
+                                </View>
+                                <Text style={{ color: '#e8eaf0', fontSize: 11, lineHeight: 17, marginBottom: 4 }}>{item.statement}</Text>
+                                {item.sourceReferences?.length > 0 && (
+                                  <Text style={{ color: '#4a5568', fontSize: 9 }}>Sources: {item.sourceReferences.join(' · ')}</Text>
+                                )}
+                                <Text style={{ color: '#4a9eff', fontSize: 8, marginTop: 4 }}>{itemExpanded ? '▲ Hide provenance' : '▼ Show provenance'}</Text>
+                              </TouchableOpacity>
+                              {itemExpanded && (
+                                <View style={{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#1e2a3a' }}>
+                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', marginBottom: 4 }}>PROVENANCE CHAIN</Text>
+                                  {item.findingId && (
+                                    <Text style={{ color: '#6b7a99', fontSize: 9, lineHeight: 14, marginBottom: 3 }}>Finding ID: {item.findingId}</Text>
+                                  )}
+                                  {item.sourceTypes?.length > 0 && (
+                                    <Text style={{ color: '#6b7a99', fontSize: 9, lineHeight: 14, marginBottom: 3 }}>Source Types: {item.sourceTypes.join(', ')}</Text>
+                                  )}
+                                  {item.retrievalStatus && (
+                                    <Text style={{ color: '#6b7a99', fontSize: 9, lineHeight: 14, marginBottom: 3 }}>Retrieval Status: {item.retrievalStatus.replace(/_/g, ' ')}</Text>
+                                  )}
+                                  {item.verificationRequirement && (
+                                    <Text style={{ color: '#ff9f0a', fontSize: 9, lineHeight: 14, marginBottom: 6 }}>Verification Needed: {item.verificationRequirement}</Text>
+                                  )}
+                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', marginBottom: 4, marginTop: 2 }}>PROFESSIONAL DECISION</Text>
+                                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                                    <TouchableOpacity style={{ flex: 1, backgroundColor: val === 'confirmed' ? '#34c75930' : '#1a2a1a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#34c75940' }} onPress={() => validateFinding(eid, val === 'confirmed' ? 'needs_review' : 'confirmed')}>
+                                      <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '600' }}>✓ Confirm</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={{ flex: 1, backgroundColor: val === 'rejected' ? '#2a0a0a' : '#1a0a0a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#ff453a40' }} onPress={() => validateFinding(eid, val === 'rejected' ? 'needs_review' : 'rejected')}>
+                                      <Text style={{ color: '#ff453a', fontSize: 9, fontWeight: '600' }}>✕ Reject</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={{ flex: 1, backgroundColor: '#1a1a0a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#ff9f0a40' }} onPress={() => validateFinding(eid, 'needs_review')}>
+                                      <Text style={{ color: '#ff9f0a', fontSize: 9, fontWeight: '600' }}>? Review</Text>
+                                    </TouchableOpacity>
+                                  </View>
+                                </View>
                               )}
                             </View>
                           );
