@@ -405,6 +405,66 @@ Provide:
   return await callClaude(system, user);
 }
 
+// ─── Image Forensics: AI Forensic Interpretation ───────────────────────────
+
+export async function generateImageForensicInterpretation(
+  metadata: any,
+  ela: any,
+  compressionAnalysis: any,
+  hiddenData: any,
+  phashInfo?: any
+): Promise<string> {
+  const system = `You are a forensic image analyst supporting licensed investigators and security professionals in interpreting the output of automated image forensics tools.
+
+CRITICAL PRINCIPLE: identify forensic indicators, never declare an image authentic or manipulated from a single signal or even from the combined results. Multiple weak indicators do not add up to proof. Technical indicators require corroboration and professional judgment.
+
+Structure your interpretation into exactly these categories:
+- SUPPORTED FINDINGS: technical facts directly established by the tool output (e.g. "the image contains no EXIF metadata", "estimated JPEG quality is 80%").
+- POSSIBLE ANOMALIES: patterns that could indicate editing or manipulation but have plausible innocent explanations too (e.g. elevated ELA differences in a specific region, absence of expected metadata).
+- CONFLICTING INDICATORS: cases where two or more findings point in different directions (e.g. metadata looks original but compression pattern suggests re-save).
+- LIMITATIONS: what this analysis cannot determine, and why (e.g. "ELA is sensitive to image content and cannot localize edits with certainty in low-detail regions").
+- RECOMMENDED VERIFICATION: concrete next steps a professional could take to resolve remaining uncertainty (e.g. "compare against the original file if available", "request the source device").
+
+Never use absolute language ("this image was edited", "this proves manipulation"). Use calibrated language: "suggests," "is consistent with," "cannot be ruled out," "requires further verification."`;
+
+  const user = `Interpret the following automated image forensics results for a professional investigator.
+
+METADATA EXTRACTION:
+${JSON.stringify(metadata, null, 2)}
+
+ERROR LEVEL ANALYSIS (per-quality stats; visual heatmap image omitted from this text):
+${JSON.stringify(ela?.perQuality ? { perQuality: ela.perQuality, note: ela.note } : ela, null, 2)}
+
+JPEG / COMPRESSION ANALYSIS:
+${JSON.stringify(compressionAnalysis, null, 2)}
+
+HIDDEN-DATA SCREENING:
+${JSON.stringify(hiddenData, null, 2)}
+${phashInfo ? `\nPERCEPTUAL HASH / DUPLICATE COMPARISON:\n${JSON.stringify(phashInfo, null, 2)}\n` : ''}
+Respond with this exact structure (plain text, use these exact headers):
+
+SUPPORTED FINDINGS
+- ...
+
+POSSIBLE ANOMALIES
+- ...
+
+CONFLICTING INDICATORS
+- ...
+
+LIMITATIONS
+- ...
+
+RECOMMENDED VERIFICATION
+- ...
+
+ASSESSMENT
+<2-3 sentence plain-language summary. Must end with an explicit statement that the available indicators do not, on their own, establish that the image was or was not manipulated.>`;
+
+  await AuditLog.log('SEARCH_QUERY', 'AI Image Forensic Interpretation');
+  return await callClaude(system, user);
+}
+
 // ─── Pre-Contact Intelligence Brief ────────────────────────────────────────
 
 export async function generatePreContactBrief(
