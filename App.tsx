@@ -27,7 +27,7 @@ import CasesScreen    from './src/screens/CasesScreen';
 import MapScreen      from './src/screens/MapScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import OneInputScreen from './src/screens/OneInputScreen';
-import { analyzeResults } from './src/utils/aiEngine';
+import { analyzeResults, summarizeNotes } from './src/utils/aiEngine';
 import TimelineScreen from './src/screens/TimelineScreen';
 import UpgradeScreen from './src/screens/UpgradeScreen';
 import WatchListScreen from './src/screens/WatchListScreen';
@@ -92,6 +92,8 @@ export default function App() {
   const [input,         setInput]         = useState('');
   const [input2,        setInput2]        = useState('');
   const [notes,         setNotes]         = useState<FieldNote[]>([]);
+  const [notesAiSummary, setNotesAiSummary] = useState<string | null>(null);
+  const [notesAiLoading, setNotesAiLoading] = useState(false);
   const [history,       setHistory]       = useState<HistoryItem[]>([]);
   const [noteText,      setNoteText]      = useState('');
   const [noteTag,       setNoteTag]       = useState('General');
@@ -958,7 +960,7 @@ export default function App() {
   if (screen === 'case_intake') return wrapAnimated(<CaseIntakeScreen isPro={isPro} onBack={goHome} onUpgrade={() => setScreen('upgrade')} />);
   if (screen === 'image_forensics') return wrapAnimated(<ImageForensicsScreen isPro={isPro} onBack={goHome} onUpgrade={() => setScreen('upgrade')} />);
   // ── Note modal component ──────────────────────────────────────────────────
-  const NoteModal = () => (
+  const noteModalElement = (
     <Modal visible={showNoteModal} transparent animationType="slide">
       <View style={s.modalOverlay}>
         <View style={[s.modalCard, IS_IPAD && s.iPadModal]}>
@@ -997,6 +999,33 @@ export default function App() {
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={[s.sub, IS_IPAD && s.iPadSub]} onTouchStart={onUserInteraction}>
+        {notes.length > 0 && (
+          <TouchableOpacity
+            style={{ backgroundColor: '#001a0a', borderWidth: 1, borderColor: '#00ff88', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginBottom: 12 }}
+            disabled={notesAiLoading}
+            onPress={async () => {
+              if (!isPro) { Alert.alert('Pro Feature', 'AI Note Analysis requires a Pro subscription.'); return; }
+              setNotesAiLoading(true);
+              setNotesAiSummary(null);
+              try {
+                const summary = await summarizeNotes(notes);
+                setNotesAiSummary(summary);
+              } catch (e: any) {
+                Alert.alert('AI Error', e?.message || 'Could not analyze notes. Check your connection.');
+              } finally {
+                setNotesAiLoading(false);
+              }
+            }}
+          >
+            {notesAiLoading ? <ActivityIndicator color="#00ff88" /> : <Text style={{ color: '#00ff88', fontSize: 13, fontWeight: '700' }}>🤖 AI Note Analysis</Text>}
+          </TouchableOpacity>
+        )}
+        {notesAiSummary && (
+          <View style={{ backgroundColor: '#0a0f1a', borderRadius: 8, borderWidth: 1, borderColor: '#1a2535', padding: 12, marginBottom: 12 }}>
+            <Text style={{ color: '#00ff88', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>AI NOTE ANALYSIS</Text>
+            <Text style={{ color: '#e8edf5', fontSize: 13, lineHeight: 19 }}>{notesAiSummary}</Text>
+          </View>
+        )}
         {notes.length === 0 && <Text style={s.empty}>No notes yet. Tap + Add or long-press any result.</Text>}
         {notes.map(n => (
           <View key={n.id} style={s.noteCard}>
@@ -1009,7 +1038,7 @@ export default function App() {
           </View>
         ))}
       </ScrollView>
-      <NoteModal />
+      {noteModalElement}
     </SafeAreaView>
   );
 
@@ -1236,7 +1265,7 @@ export default function App() {
             <View style={{ height: 24, width: '100%' }} />
           </ScrollView>
         </Animated.View>
-        <NoteModal />
+        {noteModalElement}
       </SafeAreaView>
     );
   }
@@ -1368,7 +1397,7 @@ export default function App() {
           <View style={{ height: 48 }} />
         </ScrollView>
       </Animated.View>
-      <NoteModal />
+      {noteModalElement}
     </SafeAreaView>
   );
 }
