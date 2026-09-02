@@ -28,6 +28,7 @@ import MapScreen      from './src/screens/MapScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import OneInputScreen from './src/screens/OneInputScreen';
 import { analyzeResults, summarizeNotes } from './src/utils/aiEngine';
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import TimelineScreen from './src/screens/TimelineScreen';
 import UpgradeScreen from './src/screens/UpgradeScreen';
 import WatchListScreen from './src/screens/WatchListScreen';
@@ -94,6 +95,36 @@ export default function App() {
   const [notes,         setNotes]         = useState<FieldNote[]>([]);
   const [notesAiSummary, setNotesAiSummary] = useState<string | null>(null);
   const [notesAiLoading, setNotesAiLoading] = useState(false);
+  const [isListeningNote, setIsListeningNote] = useState(false);
+
+  useSpeechRecognitionEvent('result', (event) => {
+    const text = event.results?.[0]?.transcript || '';
+    if (text && isListeningNote) {
+      setNoteText(prev => prev ? prev + ' ' + text : text);
+    }
+  });
+  useSpeechRecognitionEvent('end', () => { setIsListeningNote(false); });
+  useSpeechRecognitionEvent('error', () => { setIsListeningNote(false); });
+
+  const startNoteDictation = async () => {
+    try {
+      const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission Required', 'Microphone access is needed for dictation.');
+        return;
+      }
+      setIsListeningNote(true);
+      ExpoSpeechRecognitionModule.start({ lang: 'en-US', interimResults: false, continuous: false });
+    } catch {
+      setIsListeningNote(false);
+      Alert.alert('Error', 'Could not start speech recognition.');
+    }
+  };
+
+  const stopNoteDictation = () => {
+    ExpoSpeechRecognitionModule.stop();
+    setIsListeningNote(false);
+  };
   const [history,       setHistory]       = useState<HistoryItem[]>([]);
   const [noteText,      setNoteText]      = useState('');
   const [noteTag,       setNoteTag]       = useState('General');
@@ -973,7 +1004,15 @@ export default function App() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-          <TextInput style={s.noteInput} value={noteText} onChangeText={setNoteText} placeholder="Enter observation…" placeholderTextColor={C.textDim} multiline numberOfLines={5} />
+          <View style={{ position: 'relative' }}>
+            <TextInput style={s.noteInput} value={noteText} onChangeText={setNoteText} placeholder="Enter observation…" placeholderTextColor={C.textDim} multiline numberOfLines={5} />
+            <TouchableOpacity
+              style={{ position: 'absolute', right: 8, bottom: 8, width: 36, height: 36, borderRadius: 18, backgroundColor: isListeningNote ? '#dc2626' : C.accent, justifyContent: 'center', alignItems: 'center' }}
+              onPress={() => (isListeningNote ? stopNoteDictation() : startNoteDictation())}
+            >
+              <Text style={{ fontSize: 16 }}>{isListeningNote ? '⏹' : '🎤'}</Text>
+            </TouchableOpacity>
+          </View>
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <TouchableOpacity style={[s.modalBtn, { backgroundColor: C.card }]} onPress={() => setShowNoteModal(false)}>
               <Text style={{ color: C.textMid }}>Cancel</Text>
