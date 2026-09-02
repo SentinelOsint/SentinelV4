@@ -18,6 +18,7 @@ import { AuditLog }      from './auditLog';
 import { OsintResult, FieldNote, CaseReport } from '../types';
 
 const API_URL   = 'https://sentinel-backend-production-05e1.up.railway.app/ai/analyze';
+const BACKEND_BASE_URL = 'https://sentinel-backend-production-05e1.up.railway.app';
 const MODEL     = 'claude-sonnet-4-20250514';
 const MAX_TOKENS = 4096;
 
@@ -463,6 +464,41 @@ ASSESSMENT
 
   await AuditLog.log('SEARCH_QUERY', 'AI Image Forensic Interpretation');
   return await callClaude(system, user);
+}
+
+// ─── Image Forensics: Backend Endpoint Wrappers ─────────────────────────────
+
+async function postImageEndpoint(path: string, body: Record<string, unknown>): Promise<any> {
+  const response = await fetch(`${BACKEND_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Image forensics request failed: ${response.status}`);
+  }
+  return await response.json();
+}
+
+export async function extractImageMetadata(imageBase64: string): Promise<any> {
+  return postImageEndpoint('/image/metadata', { imageBase64 });
+}
+
+export async function analyzeImageELA(imageBase64: string): Promise<any> {
+  return postImageEndpoint('/image/ela', { imageBase64 });
+}
+
+export async function analyzeImageCompression(imageBase64: string): Promise<any> {
+  return postImageEndpoint('/image/compression-analysis', { imageBase64 });
+}
+
+export async function screenImageHiddenData(imageBase64: string): Promise<any> {
+  return postImageEndpoint('/image/hidden-data', { imageBase64 });
+}
+
+export async function computeImagePerceptualHash(imageBase64: string): Promise<any> {
+  return postImageEndpoint('/image/phash', { imageBase64 });
 }
 
 // ─── Pre-Contact Intelligence Brief ────────────────────────────────────────
