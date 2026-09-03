@@ -7,7 +7,7 @@ import { CaseReport, FieldNote } from '../types';
 import { Storage } from '../utils/storage';
 import { C, STATUS_COLORS, PRIORITY_COLORS, CASE_TAGS, NOTE_TAGS, IS_IPAD, SPACE, FONT } from '../utils/theme';
 import { exportCasePDF } from '../utils/pdfExport';
-import { generateCaseReport, summarizeNotes } from '../utils/aiEngine';
+import { generateCaseReport, summarizeNotes, searchCasesNaturalLanguage } from '../utils/aiEngine';
 
 interface Props {
   onBack: () => void;
@@ -27,6 +27,25 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
   const [noteTag, setNoteTag] = useState('General');
   const [exporting, setExporting] = useState(false);
   const [aiScreen, setAiScreen] = useState<{ mode: 'report'|'summarize'; title: string; fetch: () => Promise<string> } | null>(null);
+  const [nlQuery, setNlQuery] = useState('');
+  const [nlSearching, setNlSearching] = useState(false);
+  const [nlResults, setNlResults] = useState<{ caseId: string; title: string; reason: string }[] | null>(null);
+
+  const runNaturalLanguageSearch = async () => {
+    if (!nlQuery.trim()) return;
+    if (!isPro) { Alert.alert('Pro Feature', 'AI Case Search requires a Pro subscription.'); return; }
+    setNlSearching(true);
+    try {
+      const results = await searchCasesNaturalLanguage(nlQuery, cases);
+      setNlResults(results);
+    } catch (e: any) {
+      Alert.alert('Search Error', e?.message || 'Could not complete AI case search.');
+    } finally {
+      setNlSearching(false);
+    }
+  };
+
+  const clearNlSearch = () => { setNlQuery(''); setNlResults(null); };
 
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -144,6 +163,34 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
           </TouchableOpacity>
         </View>
       )}
+      {cases.length > 0 && (
+        <View style={{ paddingHorizontal: IS_IPAD ? 24 : 16, marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TextInput
+              style={{ flex: 1, backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 13 }}
+              placeholder="Search cases in plain language…"
+              placeholderTextColor={C.textDim}
+              value={nlQuery}
+              onChangeText={setNlQuery}
+              onSubmitEditing={runNaturalLanguageSearch}
+            />
+            <TouchableOpacity
+              style={{ backgroundColor: C.accent, borderRadius: 10, paddingHorizontal: 14, justifyContent: 'center' }}
+              onPress={runNaturalLanguageSearch}
+              disabled={nlSearching}
+            >
+              <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>{nlSearching ? '...' : '🔍'}</Text>
+            </TouchableOpacity>
+          </View>
+          {nlResults !== null && (
+            <TouchableOpacity onPress={clearNlSearch} style={{ marginTop: 6 }}>
+              <Text style={{ color: C.accent, fontSize: 11 }}>
+                {nlResults.length === 0 ? 'No matching cases found — Clear search' : `${nlResults.length} matching case(s) — Clear search`}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
       <ScrollView contentContainerStyle={[s.listContent, IS_IPAD && s.iPadList]}>
         {cases.length === 0 && (
           <View style={s.emptyState}>
@@ -156,13 +203,21 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
           </View>
         )}
         {/* On iPad, show 2-column grid of case cards */}
-        {IS_IPAD ? (
-          <View style={s.iPadGrid}>
-            {cases.map(c => <CaseCard key={c.id} c={c} onPress={() => { setSelectedCase(c); setView('detail'); }} activeCaseId={activeCaseId} />)}
-          </View>
-        ) : (
-          cases.map(c => <CaseCard key={c.id} c={c} onPress={() => { setSelectedCase(c); setView('detail'); }} activeCaseId={activeCaseId} />)
-        )}
+        {(() => {
+          const visibleCases = nlResults === null ? cases : cases.filter(c => nlResults.some(r => r.caseId === c.id));
+          const reasonFor = (id: string) => nlResults?.find(r => r.caseId === id)?.reason;
+          const cardList = visibleCases.map(c => (
+            <View key={c.id}>
+              <CaseCard c={c} onPress={() => { setSelectedCase(c); setView('detail'); }} activeCaseId={activeCaseId} />
+              {nlResults !== null && (
+                <Text style={{ color: C.purpleMid, fontSize: 10, lineHeight: 14, marginTop: -4, marginBottom: 8, paddingHorizontal: 4, fontStyle: 'italic' }}>
+                  {reasonFor(c.id)}
+                </Text>
+              )}
+            </View>
+          ));
+          return IS_IPAD ? <View style={s.iPadGrid}>{cardList}</View> : cardList;
+        })()}
         <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>

@@ -303,6 +303,56 @@ Provide:
   return await callClaude(system, user);
 }
 
+// ─── Natural-Language Case Search ──────────────────────────────────────────
+
+export async function searchCasesNaturalLanguage(
+  query: string,
+  cases: CaseReport[]
+): Promise<{ caseId: string; title: string; reason: string }[]> {
+  if (cases.length === 0 || !query.trim()) return [];
+
+  const casesSummary = cases.map((c: any) => ({
+    id: c.id,
+    title: c.title,
+    tags: c.tags || [],
+    status: c.status,
+    notes: (c.notes || []).map((n: any) => n.text).join(' | '),
+    searchQueries: (c.searches || []).map((s: any) => s.query).join(', '),
+  }));
+
+  const system = `You are a case search assistant for a professional investigation platform.
+Given a natural-language query and a list of saved cases (with titles, tags, status, field notes, and logged search queries), identify which cases are genuinely relevant to the query.
+Only include cases with an explainable connection to specific content in that case — never guess or include weak/speculative matches.
+Respond ONLY with valid JSON, no markdown, no preamble.`;
+
+  const user = `QUERY: ${query}
+
+CASES:
+${JSON.stringify(casesSummary, null, 2)}
+
+Respond with this exact JSON structure:
+{
+  "matches": [
+    { "id": "<case id>", "reason": "<short explanation referencing the specific matched content, e.g. a note, tag, or search query>" }
+  ]
+}
+If no cases match, return {"matches": []}.`;
+
+  await AuditLog.log('SEARCH_QUERY', `AI Case Search: ${query}`);
+  const result = await callClaude(system, user);
+  try {
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return [];
+    const parsed = JSON.parse(jsonMatch[0]);
+    return (parsed.matches || []).map((m: any) => {
+      const c = cases.find((cc: any) => cc.id === m.id);
+      return { caseId: m.id, title: c?.title || 'Unknown case', reason: m.reason };
+    });
+  } catch {
+    return [];
+  }
+}
+
 // ─── v3.0 AI Features ──────────────────────────────────────────────────────
 
 export async function generateRiskProfile(
