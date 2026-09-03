@@ -3,11 +3,11 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, SafeAreaView, StatusBar, Alert, Modal,
 } from 'react-native';
-import { CaseReport, FieldNote } from '../types';
+import { CaseReport, FieldNote, PostContactUpdate } from '../types';
 import { Storage } from '../utils/storage';
 import { C, STATUS_COLORS, PRIORITY_COLORS, CASE_TAGS, NOTE_TAGS, IS_IPAD, SPACE, FONT } from '../utils/theme';
 import { exportCasePDF } from '../utils/pdfExport';
-import { generateCaseReport, summarizeNotes, searchCasesNaturalLanguage } from '../utils/aiEngine';
+import { generateCaseReport, summarizeNotes, searchCasesNaturalLanguage, analyzePostContactUpdate } from '../utils/aiEngine';
 
 interface Props {
   onBack: () => void;
@@ -25,6 +25,9 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [noteTag, setNoteTag] = useState('General');
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateText, setUpdateText] = useState('');
+  const [savingUpdate, setSavingUpdate] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [aiScreen, setAiScreen] = useState<{ mode: 'report'|'summarize'; title: string; fetch: () => Promise<string> } | null>(null);
   const [nlQuery, setNlQuery] = useState('');
@@ -102,6 +105,34 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
     await Storage.saveCases(updated);
     setNoteText(''); setShowNoteModal(false);
     Alert.alert('✓ Note Added');
+  };
+
+  const addPostContactUpdate = async () => {
+    if (!updateText.trim() || !selectedCase) return;
+    setSavingUpdate(true);
+    try {
+      const aiSummary = await analyzePostContactUpdate(updateText.trim(), selectedCase.title);
+      const update: PostContactUpdate = {
+        id: Date.now().toString(),
+        rawText: updateText.trim(),
+        aiSummary,
+        timestamp: new Date().toLocaleString('en-US'),
+      };
+      const updated = cases.map(c =>
+        c.id === selectedCase.id
+          ? { ...c, postContactUpdates: [update, ...(c.postContactUpdates || [])], updatedAt: new Date().toLocaleString('en-US') }
+          : c
+      );
+      setCases(updated);
+      setSelectedCase(updated.find(c => c.id === selectedCase.id) || null);
+      await Storage.saveCases(updated);
+      setUpdateText(''); setShowUpdateModal(false);
+      Alert.alert('✓ Post-Contact Update Added');
+    } catch (e: any) {
+      Alert.alert('Analysis Error', e?.message || 'Could not analyze update.');
+    } finally {
+      setSavingUpdate(false);
+    }
   };
 
   const updateStatus = async (id: string, status: CaseReport['status']) => {
@@ -408,6 +439,21 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
           </View>
         ))}
 
+        {/* Post-Contact Updates */}
+        <View style={[s.sectionRow, { marginTop: 16 }]}>
+          <Text style={s.sectionTitle}>Post-Contact Updates ({(selectedCase.postContactUpdates || []).length})</Text>
+          <TouchableOpacity onPress={() => setShowUpdateModal(true)}>
+            <Text style={s.sectionAdd}>+ Add</Text>
+          </TouchableOpacity>
+        </View>
+        {(selectedCase.postContactUpdates || []).length === 0 && <Text style={s.emptyBody}>No post-contact updates yet. Tap + Add.</Text>}
+        {(selectedCase.postContactUpdates || []).map(u => (
+          <View key={u.id} style={s.noteCard}>
+            <Text style={s.noteTime}>{u.timestamp}</Text>
+            <Text style={[s.noteText, { marginTop: 4 }]}>{u.aiSummary}</Text>
+          </View>
+        ))}
+
         {/* Search log */}
         <Text style={[s.sectionTitle, { marginTop: 16 }]}>Search Log ({selectedCase.searches.length})</Text>
         {selectedCase.searches.length === 0 && <Text style={s.emptyBody}>No searches logged. Set this case as active to link searches.</Text>}
@@ -444,6 +490,24 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
               </TouchableOpacity>
               <TouchableOpacity style={[s.modalBtn, { backgroundColor: C.accent, flex: 1 }]} onPress={addNoteToCase}>
                 <Text style={{ color: C.bg, fontWeight: '700' }}>Save Note</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showUpdateModal} transparent animationType="slide">
+        <View style={s.modalOverlay}>
+          <View style={[s.modalCard, IS_IPAD && s.iPadModal]}>
+            <Text style={s.modalTitle}>Add Post-Contact Update</Text>
+            <TextInput style={[s.input, s.noteInput]} value={updateText} onChangeText={setUpdateText}
+              placeholder="What happened after contact? AI will summarize this into the case record…" placeholderTextColor={C.textDim} multiline numberOfLines={6} />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity style={[s.modalBtn, { backgroundColor: C.card }]} onPress={() => { setShowUpdateModal(false); setUpdateText(''); }} disabled={savingUpdate}>
+                <Text style={{ color: C.textMid }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.modalBtn, { backgroundColor: C.accent, flex: 1 }]} onPress={addPostContactUpdate} disabled={savingUpdate}>
+                <Text style={{ color: C.bg, fontWeight: '700' }}>{savingUpdate ? 'Analyzing…' : 'Save & Analyze'}</Text>
               </TouchableOpacity>
             </View>
           </View>

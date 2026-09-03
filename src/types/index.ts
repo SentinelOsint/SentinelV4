@@ -46,6 +46,13 @@ export interface FieldNote {
   caseId?: string;
 }
 
+export interface PostContactUpdate {
+  id: string;
+  rawText: string;
+  aiSummary: string;
+  timestamp: string;
+}
+
 export interface CaseReport {
   id: string;
   title: string;
@@ -57,6 +64,7 @@ export interface CaseReport {
   tags: string[];
   searches: HistoryItem[];
   notes: FieldNote[];
+  postContactUpdates?: PostContactUpdate[];
   createdAt: string;
   updatedAt: string;
 }

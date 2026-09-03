@@ -303,6 +303,33 @@ Provide:
   return await callClaude(system, user);
 }
 
+// ─── Post-Contact Update Analyzer ──────────────────────────────────────────
+
+export async function analyzePostContactUpdate(
+  rawText: string,
+  caseTitle?: string
+): Promise<string> {
+  if (!rawText.trim()) throw new Error('No update text provided.');
+
+  const system = `You are an expert field intelligence analyst summarizing a post-contact update for a professional investigation case.
+Extract what actually happened, any new information learned, and any change to risk or next steps.
+Be concise and structured. Use professional investigative language. Never speculate beyond what is stated.`;
+
+  const user = `Case: ${caseTitle || 'Unknown case'}
+
+Post-contact update (raw field input):
+${rawText}
+
+Provide:
+1. Summary of what occurred
+2. New information learned (if any)
+3. Change in risk or status (if any, otherwise state "No change indicated")
+4. Recommended next steps (if apparent)`;
+
+  await AuditLog.log('SEARCH_QUERY', `AI Post-Contact Update Analysis`);
+  return await callClaude(system, user);
+}
+
 // ─── Natural-Language Case Search ──────────────────────────────────────────
 
 export async function searchCasesNaturalLanguage(
