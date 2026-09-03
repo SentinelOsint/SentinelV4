@@ -20,7 +20,7 @@ export type Screen =
   | 'cases'
   | 'notes'
   | 'history'
-  | 'timeline' | 'upgrade' | 'watchlist' | 'one_input' | 'settings';
+  | 'timeline' | 'upgrade' | 'watchlist' | 'one_input' | 'settings' | 'image_forensics';
 
 export type OsintResultType = 'data' | 'link' | 'copy' | 'info' | 'warn';
 

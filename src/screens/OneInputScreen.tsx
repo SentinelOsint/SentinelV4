@@ -12,7 +12,7 @@ import {
   StyleSheet, Linking, ActivityIndicator, Alert,
 } from 'react-native';
 import { C, SPACE, FONT, IS_IPAD, CARD } from '../utils/theme';
-import { buildOneInputResult, OneInputResult, InputType } from '../utils/oneInputSearch';
+import { buildOneInputResult, OneInputResult, InputType, ModuleResult } from '../utils/oneInputSearch';
 import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult } from '../utils/aiEngine';
 import { exportSearchPDF, exportInvestigationReport } from '../utils/pdfExport';
 import { Storage } from '../utils/storage';
@@ -80,7 +80,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
     if (!result?.modules) return [];
     const keywords = ROLE_MODULE_PRIORITY[professionalRole];
     if (!keywords || keywords.length === 0) return result.modules;
-    const scored = result.modules.map((m: any, i: number) => {
+    const scored = result.modules.map((m: ModuleResult, i: number) => {
       const rank = keywords.findIndex((k) => m.module.includes(k));
       return { m, i, rank: rank === -1 ? 999 : rank };
     });
