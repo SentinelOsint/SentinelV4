@@ -7,7 +7,7 @@ import { CaseReport, FieldNote, PostContactUpdate } from '../types';
 import { Storage } from '../utils/storage';
 import { C, STATUS_COLORS, PRIORITY_COLORS, CASE_TAGS, NOTE_TAGS, IS_IPAD, SPACE, FONT } from '../utils/theme';
 import { exportCasePDF } from '../utils/pdfExport';
-import { generateCaseReport, summarizeNotes, searchCasesNaturalLanguage, analyzePostContactUpdate } from '../utils/aiEngine';
+import { generateCaseReport, summarizeNotes, searchCasesNaturalLanguage, analyzePostContactUpdate, getAIErrorMessage } from '../utils/aiEngine';
 
 interface Props {
   onBack: () => void;
@@ -129,7 +129,7 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
       setUpdateText(''); setShowUpdateModal(false);
       Alert.alert('✓ Post-Contact Update Added');
     } catch (e: any) {
-      Alert.alert('Analysis Error', e?.message || 'Could not analyze update.');
+      Alert.alert('Analysis Error', getAIErrorMessage(e));
     } finally {
       setSavingUpdate(false);
     }
