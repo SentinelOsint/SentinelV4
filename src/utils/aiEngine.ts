@@ -116,7 +116,7 @@ export async function hasAPIKey(): Promise<boolean> {
 
 // ── Core API call ─────────────────────────────────────────────────────────────
 
-async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
+export async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
   // Check usage cap — uses reduced limit during Apple's 14-day refund window
   const usage = await getUsage();
   const effectiveCap = await getEffectiveAICap();

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { C, IS_IPAD, SPACE } from '../utils/theme';
 import { AuditLog, AuditEntry, AuditEventType } from '../utils/auditLog';
+import { callClaude, getAIErrorMessage } from '../utils/aiEngine';
 
 interface TimelineSummary {
   summary:    string;
@@ -179,23 +180,13 @@ Rules:
 - Prioritize actionable intelligence`;
 
       const systemPrompt = 'You are a senior OSINT investigation analyst. Respond ONLY with valid JSON, no markdown, no preamble. Never speculate beyond the provided data.';
-      const res = await fetch('https://sentinel-backend-production-05e1.up.railway.app/ai/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          systemPrompt, userPrompt: prompt,
-        }),
-      });
-
-      const data = await res.json();
-      const text = data.result || '';
+      await AuditLog.log('SEARCH_QUERY', `AI Timeline Summary: ${entries.length} events`);
+      const text = await callClaude(systemPrompt, prompt);
       const clean = text.replace(/```json|```/g, '').trim();
       const parsed: TimelineSummary = JSON.parse(clean);
       setSummary(parsed);
-    } catch (e) {
-      Alert.alert('AI Error', 'Could not generate summary. Check your connection.');
+    } catch (e: any) {
+      Alert.alert('AI Error', getAIErrorMessage(e));
       setShowAI(false);
     } finally {
       setAiLoading(false);
