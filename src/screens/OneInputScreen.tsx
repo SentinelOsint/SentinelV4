@@ -16,11 +16,13 @@ import { buildOneInputResult, OneInputResult, InputType, ModuleResult } from '..
 import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult } from '../utils/aiEngine';
 import { exportSearchPDF, exportInvestigationReport } from '../utils/pdfExport';
 import { Storage } from '../utils/storage';
+import { FieldNote, PostContactUpdate } from '../types';
 
 interface Props {
   isPro: boolean;
   onBack: () => void;
   onUpgrade: () => void;
+  activeCaseId?: string | null;
 }
 
 const TYPE_COLORS: Record<InputType, string> = {
@@ -43,7 +45,7 @@ const TYPE_ICONS: Record<InputType, string> = {
   company: '🏢',
 };
 
-export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
+export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId }: Props) {
   const [query, setQuery]           = useState('');
   const [identityAssistantInput, setIdentityAssistantInput] = useState('');
   const [result, setResult]         = useState<OneInputResult | null>(null);
@@ -88,6 +90,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
     return scored.map((s) => s.m);
   }, [result, professionalRole]);
   const [briefView, setBriefView] = useState<'quick' | 'operational' | 'full'>('operational');
+  const [linkedCaseData, setLinkedCaseData] = useState<{ title: string; notes: FieldNote[]; postContactUpdates: PostContactUpdate[] } | null>(null);
   const [reviewStatus, setReviewStatus] = useState<'draft' | 'verification_required' | 'ready_for_review' | 'reviewed' | 'locked'>('draft');
   const [isLocked, setIsLocked] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<string>('');
@@ -350,9 +353,28 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
       const rejectedAssociationsForContext = (riskData?.confirmedAndSupportedInformation || [])
         .filter((_: any, i: number) => validatedFindings[`confirmed_${i}`] === 'rejected')
         .map((item: any) => item.statement);
+      let linkedCaseTitle: string | undefined;
+      let caseUserNotes: string | undefined;
+      if (activeCaseId) {
+        try {
+          const allCases = await Storage.getCases();
+          const linkedCase = allCases.find(c => c.id === activeCaseId);
+          if (linkedCase) {
+            linkedCaseTitle = linkedCase.title;
+            const noteLines = (linkedCase.notes || []).map(n => `[Field Note] ${n.text}`);
+            const updateLines = (linkedCase.postContactUpdates || []).map(u => `[Post-Contact Update] ${u.aiSummary}`);
+            const combined = [...noteLines, ...updateLines].join('\n');
+            caseUserNotes = combined.trim() || undefined;
+            setLinkedCaseData({ title: linkedCase.title, notes: linkedCase.notes || [], postContactUpdates: linkedCase.postContactUpdates || [] });
+          }
+        } catch (e) {
+          console.warn('Could not load active case context', e);
+        }
+      }
       const briefJson = await generatePreContactBrief(result.query, result.detectedAs, allFindings, assessmentPurpose || 'Not specified', {
         confirmedFindings: confirmedFindingsForContext,
         rejectedAssociations: rejectedAssociationsForContext,
+        userNotes: caseUserNotes,
       }, professionalRole || 'Not specified');
       const jsonMatch = briefJson.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON found in response');
@@ -671,6 +693,45 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
 
+                    {/* Operational Briefing Mode — condensed view for field/team use */}
+                    {briefView === 'operational' && riskData?.potentialRiskIndicators?.length > 0 && (() => {
+                      const severityOrder: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+                      const topRisks = [...riskData.potentialRiskIndicators]
+                        .sort((a: any, b: any) => (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3))
+                        .slice(0, 3);
+                      return (
+                        <View style={{ backgroundColor: '#0a0f1a', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+                          <Text style={{ color: '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>TOP RISK INDICATORS</Text>
+                          {topRisks.map((r: any, i: number) => {
+                            const sevColor = r.severity === 'HIGH' ? '#ff453a' : r.severity === 'MEDIUM' ? '#ff9f0a' : '#4a9eff';
+                            return (
+                              <View key={i} style={{ borderLeftWidth: 3, borderLeftColor: sevColor, paddingLeft: 10, marginBottom: 8 }}>
+                                <Text style={{ color: sevColor, fontSize: 9, fontWeight: '700', marginBottom: 2 }}>{r.severity}</Text>
+                                <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 17 }}>{r.indicator}</Text>
+                              </View>
+                            );
+                          })}
+                        </View>
+                      );
+                    })()}
+                    {briefView === 'operational' && linkedCaseData && (linkedCaseData.notes.length > 0 || linkedCaseData.postContactUpdates.length > 0) && (
+                      <View style={{ backgroundColor: '#0a0f1a', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+                        <Text style={{ color: '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>📁 {linkedCaseData.title.toUpperCase()}</Text>
+                        {linkedCaseData.postContactUpdates.slice(0, 3).map((u) => (
+                          <View key={u.id} style={{ marginBottom: 8 }}>
+                            <Text style={{ color: '#6b7a99', fontSize: 8, fontWeight: '700', marginBottom: 2 }}>POST-CONTACT UPDATE · {u.timestamp}</Text>
+                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 17 }}>{u.aiSummary}</Text>
+                          </View>
+                        ))}
+                        {linkedCaseData.notes.slice(0, 3).map((n) => (
+                          <View key={n.id} style={{ marginBottom: 8 }}>
+                            <Text style={{ color: '#6b7a99', fontSize: 8, fontWeight: '700', marginBottom: 2 }}>FIELD NOTE · {n.tag}</Text>
+                            <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 17 }}>{n.text}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
                     {/* Visible Value Summary */}
                     {riskData && (() => {
                       const confirmedCount = riskData.confirmedAndSupportedInformation?.length || 0;
@@ -793,7 +854,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       );
                     })()}
                     {/* Identity Confidence */}
-                    {riskData.identityConfidence && (
+                    {briefView === 'full' && riskData.identityConfidence && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('identity', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('identity')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🪪 IDENTITY CONFIDENCE</Text>
@@ -824,7 +885,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
                     {/* Known Information */}
 {/* Confirmed and Supported Information */}
-                    {riskData.confirmedAndSupportedInformation?.length > 0 && (
+                    {briefView === 'full' && riskData.confirmedAndSupportedInformation?.length > 0 && (
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('confirmed')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>✅ Confirmed & Supported ({riskData.confirmedAndSupportedInformation.length})</Text>
@@ -861,7 +922,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
 
                     {/* Possible Associations */}
-                    {riskData.possibleAssociations?.length > 0 && (
+                    {briefView === 'full' && riskData.possibleAssociations?.length > 0 && (
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('associations')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🔗 Possible Associations ({riskData.possibleAssociations.length})</Text>
@@ -888,7 +949,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
 
                     {/* Potential Risk Indicators */}
-                    {riskData.potentialRiskIndicators?.length > 0 && (
+                    {briefView === 'full' && riskData.potentialRiskIndicators?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('risk', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('risk')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🚨 Potential Risk Indicators ({riskData.potentialRiskIndicators.length})</Text>
@@ -949,7 +1010,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
                     {/* Contradictions */}
-                    {riskData.contradictionsAndInconsistencies?.length > 0 && (
+                    {briefView === 'full' && riskData.contradictionsAndInconsistencies?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('contra', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('contra')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>⚠️ Contradictions ({riskData.contradictionsAndInconsistencies.length})</Text>
@@ -986,7 +1047,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
                     {/* Information Gaps */}
-                    {riskData.informationGaps?.length > 0 && (
+                    {briefView === 'full' && riskData.informationGaps?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('gaps', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('gaps')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🔍 Information Gaps ({riskData.informationGaps.length})</Text>
@@ -1035,7 +1096,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
                     {/* Recommended Checks */}
-                    {riskData.recommendedChecksBeforeContact?.length > 0 && (
+                    {briefView === 'full' && riskData.recommendedChecksBeforeContact?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('checks', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('checks')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>📋 Recommended Verification ({riskData.recommendedChecksBeforeContact.length})</Text>
@@ -1047,7 +1108,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
                     {/* Operational Considerations */}
-                    {riskData.operationalConsiderations?.length > 0 && (
+                    {briefView === 'full' && riskData.operationalConsiderations?.length > 0 && (
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('ops')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🎯 Operational Considerations</Text>
@@ -1059,7 +1120,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                       </View>
                     )}
                     {/* Identity Resolution */}
-                    {riskData.identityResolution && (
+                    {briefView === 'full' && riskData.identityResolution && (
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('identity_res')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🔍 Identity Resolution</Text>
@@ -1134,7 +1195,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
 
                     {/* AI-Assisted Interpretation */}
-                    {riskData.aiAssistedInterpretation?.length > 0 && (
+                    {briefView === 'full' && riskData.aiAssistedInterpretation?.length > 0 && (
                       <View style={styles.riskSection} onLayout={(e) => registerSection('ai_interp', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('ai_interp')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={{ color: '#9b6dff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 2 }}>🤖 AI-ASSISTED INTERPRETATION ({riskData.aiAssistedInterpretation.length})</Text>
@@ -1159,7 +1220,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
 
                     {/* Confidence & Limitations */}
-                    {riskData.confidenceAndLimitations && (
+                    {briefView === 'full' && riskData.confidenceAndLimitations && (
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('conf')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>📊 Confidence & Limitations</Text>
@@ -1314,7 +1375,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
 
                     {/* Evidence Classifier */}
-                    {riskData.evidenceClassifier?.length > 0 && (
+                    {briefView === 'full' && riskData.evidenceClassifier?.length > 0 && (
                       <View style={{ marginBottom: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('evidence_classifier')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                           <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🏷️ EVIDENCE CLASSIFICATION ({riskData.evidenceClassifier.length})</Text>
@@ -1385,7 +1446,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade }: Props) {
                     )}
 
                     {/* Query Builder */}
-                    {riskData.queryVariations && (riskData.queryVariations.nameVariations?.length > 0 || riskData.queryVariations.booleanSuggestions?.length > 0) && (
+                    {briefView === 'full' && riskData.queryVariations && (riskData.queryVariations.nameVariations?.length > 0 || riskData.queryVariations.booleanSuggestions?.length > 0) && (
                       <View style={{ marginBottom: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('query_builder')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                           <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🔎 QUERY VARIATIONS</Text>
@@ -1425,7 +1486,7 @@ Return to the search field and enter this variation.`)}
                     )}
 
                     {/* Research Plan */}
-                    {riskData.researchPlan && (
+                    {briefView === 'full' && riskData.researchPlan && (
                       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('research_plan')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                           <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🗺️ RESEARCH PLAN</Text>
@@ -1458,7 +1519,7 @@ Return to the search field and enter this variation.`)}
                     )}
 
                     {/* Manual Source Guidance */}
-                    {riskData.manualSourceGuidance?.length > 0 && (
+                    {briefView === 'full' && riskData.manualSourceGuidance?.length > 0 && (
                       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('manual_sources')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                           <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>📋 MANUAL SOURCE GUIDANCE</Text>
@@ -1487,7 +1548,7 @@ Return to the search field and enter this variation.`)}
                     )}
 
                     {/* Recommended Intelligence Path */}
-                    {riskData.recommendedIntelligencePath?.length > 0 && (
+                    {briefView === 'full' && riskData.recommendedIntelligencePath?.length > 0 && (
                       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('path')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                           <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>RECOMMENDED INTELLIGENCE PATH</Text>
