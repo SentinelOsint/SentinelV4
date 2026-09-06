@@ -543,6 +543,72 @@ ASSESSMENT
   return await callClaude(system, user);
 }
 
+// ─── Entity Resolution & Relationship Intelligence ─────────────────────────
+
+export async function generateEntityRelationshipMap(
+  query: string,
+  findings: OsintResult[],
+  riskData?: any
+): Promise<{ entities: { type: string; value: string; relationship: string; confidence: string; source: string }[] }> {
+  const findingsText = findings
+    .filter((f) => f.value && f.value.trim())
+    .map((f) => `${f.label}: ${f.value}`)
+    .join('\n');
+
+  const briefContext = riskData ? `
+CONFIRMED & SUPPORTED FINDINGS:
+${JSON.stringify(riskData.confirmedAndSupportedInformation || [], null, 2)}
+
+POSSIBLE ASSOCIATIONS:
+${JSON.stringify(riskData.possibleAssociations || [], null, 2)}
+` : '';
+
+  const system = `You are an entity resolution analyst for a professional investigation platform.
+Given a subject and their associated intelligence findings, identify DISTINCT ENTITIES connected to the subject — people, phone numbers, email addresses, companies, addresses, vehicles, and domains — and describe each entity's relationship to the subject with a calibrated confidence level.
+
+Confidence levels (use exactly these labels):
+- CONFIRMED: directly and unambiguously verified by an authoritative source
+- SOURCE_SUPPORTED: supported by at least one credible source, not independently verified
+- PROBABLE: likely based on strong circumstantial evidence
+- POSSIBLE: plausible but weakly supported
+- CONTRADICTORY: sources disagree about this entity's connection
+- UNVERIFIED: mentioned but with no clear source basis
+
+Never assign CONFIRMED unless the finding was explicitly source-confirmed in the provided data. Do not invent entities not grounded in the findings.
+Respond ONLY with valid JSON, no markdown, no preamble.`;
+
+  const user = `SUBJECT/QUERY: ${query}
+
+INTELLIGENCE FINDINGS:
+${findingsText}
+${briefContext}
+
+Respond with this exact JSON structure:
+{
+  "entities": [
+    {
+      "type": "PERSON|PHONE|EMAIL|COMPANY|ADDRESS|VEHICLE|DOMAIN",
+      "value": "<the entity's identifying value, e.g. the phone number or company name>",
+      "relationship": "<short description of how this entity connects to the subject>",
+      "confidence": "CONFIRMED|SOURCE_SUPPORTED|PROBABLE|POSSIBLE|CONTRADICTORY|UNVERIFIED",
+      "source": "<which finding or source this is based on>"
+    }
+  ]
+}
+If no distinct entities beyond the subject itself can be identified, return {"entities": []}.`;
+
+  await AuditLog.log('SEARCH_QUERY', `AI Entity Relationship Map: ${query}`);
+  const result = await callClaude(system, user);
+  try {
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return { entities: [] };
+    const parsed = JSON.parse(jsonMatch[0]);
+    return { entities: parsed.entities || [] };
+  } catch {
+    return { entities: [] };
+  }
+}
+
 // ─── Image Forensics: Backend Endpoint Wrappers ─────────────────────────────
 
 async function postImageEndpoint(path: string, body: Record<string, unknown>): Promise<any> {

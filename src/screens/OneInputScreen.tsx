@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { C, SPACE, FONT, IS_IPAD, CARD } from '../utils/theme';
 import { buildOneInputResult, OneInputResult, InputType, ModuleResult } from '../utils/oneInputSearch';
-import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult } from '../utils/aiEngine';
+import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult, generateEntityRelationshipMap } from '../utils/aiEngine';
 import { exportSearchPDF, exportInvestigationReport } from '../utils/pdfExport';
 import { Storage } from '../utils/storage';
 import { FieldNote, PostContactUpdate } from '../types';
@@ -113,6 +113,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['identity', 'risk']));
   const [expandedEvidenceItems, setExpandedEvidenceItems] = useState<Set<number>>(new Set());
+  const [entityMap, setEntityMap] = useState<{ entities: any[] } | null>(null);
+  const [entityMapLoading, setEntityMapLoading] = useState(false);
   const toggleEvidenceItem = (i: number) => {
     const next = new Set(expandedEvidenceItems);
     if (next.has(i)) next.delete(i);
@@ -1442,6 +1444,68 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                             </View>
                           );
                         })}
+                      </View>
+                    )}
+
+                    {/* Entity Resolution & Relationship Intelligence */}
+                    {briefView === 'full' && (
+                      <View style={{ marginBottom: 12 }}>
+                        <TouchableOpacity onPress={() => toggleSection('entity_map')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🕸️ ENTITY RELATIONSHIPS</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('entity_map') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('entity_map') && (
+                          <View>
+                            {!entityMap && (
+                              <TouchableOpacity
+                                style={{ backgroundColor: '#0a0f1a', borderWidth: 1, borderColor: '#4a9eff40', borderRadius: 8, paddingVertical: 10, alignItems: 'center' }}
+                                disabled={entityMapLoading}
+                                onPress={async () => {
+                                  if (!isPro) { Alert.alert('Pro Feature', 'Entity Relationship Mapping requires a Pro subscription.'); return; }
+                                  setEntityMapLoading(true);
+                                  try {
+                                    const findingsForMap = result.modules.flatMap((m: any) =>
+                                      m.links.map((l: any) => ({ label: `${m.module} — ${l.label}`, value: l.url, type: 'link' as const }))
+                                    );
+                                    const map = await generateEntityRelationshipMap(result.query, findingsForMap, riskData);
+                                    setEntityMap(map);
+                                  } catch (e: any) {
+                                    Alert.alert('AI Error', e?.message || 'Could not generate relationship map.');
+                                  } finally {
+                                    setEntityMapLoading(false);
+                                  }
+                                }}
+                              >
+                                {entityMapLoading ? <ActivityIndicator color="#4a9eff" /> : <Text style={{ color: '#4a9eff', fontSize: 12, fontWeight: '700' }}>Generate Relationship Map</Text>}
+                              </TouchableOpacity>
+                            )}
+                            {entityMap && entityMap.entities.length === 0 && (
+                              <Text style={{ color: '#6b7a99', fontSize: 11, fontStyle: 'italic' }}>No distinct connected entities identified from current findings.</Text>
+                            )}
+                            {entityMap && entityMap.entities.map((e: any, i: number) => {
+                              const confColor: Record<string, string> = {
+                                'CONFIRMED': '#34c759',
+                                'SOURCE_SUPPORTED': '#34c75999',
+                                'PROBABLE': '#ff9f0a',
+                                'POSSIBLE': '#ff9f0a99',
+                                'CONTRADICTORY': '#ff453a',
+                                'UNVERIFIED': '#4a5568',
+                              };
+                              const color = confColor[e.confidence] || '#6b7a99';
+                              return (
+                                <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: color }}>
+                                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <Text style={{ color: '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 0.5 }}>{e.type}</Text>
+                                    <Text style={{ color, fontSize: 9, fontWeight: '700' }}>{e.confidence?.replace(/_/g, ' ')}</Text>
+                                  </View>
+                                  <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '700', marginBottom: 3 }}>{e.value}</Text>
+                                  <Text style={{ color: '#6b7a99', fontSize: 11, lineHeight: 16, marginBottom: 3 }}>{e.relationship}</Text>
+                                  {e.source && <Text style={{ color: '#4a5568', fontSize: 9 }}>Source: {e.source}</Text>}
+                                </View>
+                              );
+                            })}
+                          </View>
+                        )}
                       </View>
                     )}
 
