@@ -10,6 +10,7 @@ import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 import { SecureStorage } from './secureStorage';
 import { AuditLog } from './auditLog';
+import { buildOneInputResult } from './oneInputSearch';
 
 const WATCH_LIST_KEY   = 'sentinel_watchlist_v1';
 const BACKGROUND_TASK  = 'SENTINEL_WATCH_CHECK';
@@ -112,6 +113,37 @@ async function checkEmail(item: WatchItem): Promise<string | null> {
   return item.lastResult || 'monitored';
 }
 
+async function checkPerson(item: WatchItem): Promise<string | null> {
+  try {
+    const result = await buildOneInputResult(item.value, true);
+    // Compare alert-marked link counts (🚨 / [HIGH]) per module, not total link counts —
+    // most modules return a fixed curated link list of constant length, so only the
+    // dynamic automated-check alert markers (e.g. a new wanted/sanctions hit) are a
+    // meaningful signal of real change between checks.
+    return result.modules.map((m: any) => {
+      const alertCount = m.links.filter((l: any) => l.label?.includes('🚨') || l.label?.includes('[HIGH]')).length;
+      return `${m.module}:${alertCount}`;
+    }).sort().join('|');
+  } catch {
+    return null;
+  }
+}
+
+function describePersonChanges(oldFingerprint: string, newFingerprint: string): string[] {
+  const oldMap = new Map(oldFingerprint.split('|').filter(Boolean).map((p) => {
+    const [mod, count] = p.split(':');
+    return [mod, count];
+  }));
+  const changes: string[] = [];
+  for (const part of newFingerprint.split('|').filter(Boolean)) {
+    const [mod, count] = part.split(':');
+    const oldCount = oldMap.get(mod);
+    if (oldCount === undefined && count !== '0') changes.push(`New alert indicator in ${mod} (${count})`);
+    else if (oldCount !== undefined && oldCount !== count) changes.push(`${mod} alert count changed: ${oldCount} → ${count}`);
+  }
+  return changes;
+}
+
 async function checkItem(item: WatchItem): Promise<void> {
   if (!item.active) return;
 
@@ -136,10 +168,15 @@ async function checkItem(item: WatchItem): Promise<void> {
       break;
     }
     case 'person':
-    case 'phone':
-      // Person and phone monitoring uses manual check reminder
-      newResult = item.lastResult || 'monitoring-active';
+    case 'phone': {
+      const fingerprint = await checkPerson(item);
+      if (fingerprint && item.lastResult && item.lastResult !== 'monitoring-active' && fingerprint !== item.lastResult) {
+        const changes = describePersonChanges(item.lastResult, fingerprint);
+        if (changes.length > 0) alertMessage = `Changes detected for ${item.label}: ${changes.join('; ')}`;
+      }
+      newResult = fingerprint || item.lastResult || 'monitoring-active';
       break;
+    }
     default:
       newResult = item.lastResult || 'monitored';
   }
