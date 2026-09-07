@@ -177,10 +177,19 @@ export interface ReportTemplate {
     confidenceFactors?: Record<string, string>;
     limitations?: string[];
   };
+  reportType?: 'investigator' | 'executive' | 'due_diligence' | 'client_ready';
 }
 
 export async function exportInvestigationReport(t: ReportTemplate): Promise<void> {
   const { caseData } = t;
+  const reportType = t.reportType || 'investigator';
+  const includeFullLogs = reportType === 'investigator' || reportType === 'due_diligence';
+  const reportLabel: Record<string, string> = {
+    investigator: 'INVESTIGATOR REPORT',
+    executive: 'EXECUTIVE SUMMARY',
+    due_diligence: 'DUE DILIGENCE REPORT',
+    client_ready: 'CLIENT-READY REPORT',
+  };
   const statusClass   = caseData.status   === 'active'  ? 'badge-green' : caseData.status   === 'pending' ? 'badge-amber' : 'badge-gray';
   const priorityClass = caseData.priority === 'high'    ? 'badge-red'   : caseData.priority === 'medium'  ? 'badge-amber' : 'badge-green';
 
@@ -265,7 +274,7 @@ const signatureBlock = `
     <div class="page">
       <div class="header">
         <div class="logo">SENTINEL</div>
-        <div class="logo-sub">FIELD INTELLIGENCE PLATFORM · INVESTIGATION REPORT</div>
+        <div class="logo-sub">FIELD INTELLIGENCE PLATFORM · ${reportLabel[reportType]}</div>
         <div class="report-title">${caseData.title}</div>
         <div class="meta-row">
           <div class="meta-item"><strong>Case ID:</strong> ${caseData.id}</div>
@@ -288,12 +297,12 @@ const signatureBlock = `
       ${aiBlock}
       ${findingsBlock}
       ${timelineBlock}
-
+      ${includeFullLogs ? `
       <div class="section-header">RESEARCH LOG (${caseData.searches.length} Searches)</div>
       ${searchRows || '<div style="padding:12px 0;color:#9bb0c4;font-size:13px;">No searches recorded.</div>'}
 
       <div class="section-header">FIELD NOTES (${caseData.notes.length} Entries)</div>
-      ${noteRows || '<div style="padding:12px 0;color:#9bb0c4;font-size:13px;">No notes recorded.</div>'}
+      ${noteRows || '<div style="padding:12px 0;color:#9bb0c4;font-size:13px;">No notes recorded.</div>'}` : ''}
 
       ${sourceAppendixBlock}
       ${methodologyBlock}

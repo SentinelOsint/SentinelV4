@@ -307,7 +307,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
     }
   };
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (reportType: 'investigator' | 'executive' | 'due_diligence' | 'client_ready' = 'investigator') => {
     if (!result) return;
     setExporting(true);
     try {
@@ -333,11 +333,12 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
             description: `Pre-Contact Brief · Identity: ${riskData.preContactOverview?.identityConfidence || 'UNKNOWN'} · Status: ${riskData.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' ') || 'NOT DETERMINED'}`,
             tags: ['one-input', 'ai-analysis', result.inputType],
           },
-          aiSummary: riskData.summary,
+          aiSummary: (reportType === 'client_ready' && clientSummary) ? clientSummary : riskData.summary,
           keyFindings: [...(riskData.keyFindings || []), ...(riskData.redFlags || []).map((r: string) => `🚨 ${r}`), ...(riskData.contradictions || []).map((c: string) => `⚠️ ${c}`)],
           investigator: (brandingSettings.reportInvestigatorName as string) || undefined,
           firmName: (brandingSettings.reportFirmName as string) || undefined,
           licenseNumber: (brandingSettings.reportLicenseNumber as string) || undefined,
+          reportType,
           sourceAppendix: Array.from(new Set(
             (riskData.evidenceClassifier || []).flatMap((e: any) => e.sourceReferences || [])
           )) as string[],
@@ -1730,7 +1731,15 @@ Return to the search field and enter this variation.`)}
             {result && (
               <TouchableOpacity
                 style={styles.pdfBtn}
-                onPress={handleExportPDF}
+                onPress={() => {
+                  Alert.alert('Export PDF', 'Choose a report type:', [
+                    { text: 'Investigator Report', onPress: () => handleExportPDF('investigator') },
+                    { text: 'Executive Summary', onPress: () => handleExportPDF('executive') },
+                    { text: 'Due Diligence Report', onPress: () => handleExportPDF('due_diligence') },
+                    { text: 'Client-Ready Report', onPress: () => handleExportPDF('client_ready') },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]);
+                }}
                 disabled={exporting}
               >
                 <Text style={styles.pdfBtnText}>{exporting ? '…' : '↓  Export PDF'}</Text>
