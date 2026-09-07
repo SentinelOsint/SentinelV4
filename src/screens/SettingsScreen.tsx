@@ -26,6 +26,10 @@ export default function SettingsScreen({ onBack, isPro = false }: Props) {
   const [batchDataKey,  setBatchDataKey]  = useState('');
   const [shodanKey,     setShodanKey]     = useState('');
   const [showApiKeys,   setShowApiKeys]   = useState(false);
+  const [firmName,        setFirmName]        = useState('');
+  const [investigatorName, setInvestigatorName] = useState('');
+  const [licenseNumber,   setLicenseNumber]   = useState('');
+  const [showBranding,    setShowBranding]    = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -42,6 +46,9 @@ export default function SettingsScreen({ onBack, isPro = false }: Props) {
     if (settings.tracerfyKey)   setTracerfyKey(settings.tracerfyKey as string);
     if (settings.batchDataKey)  setBatchDataKey(settings.batchDataKey as string);
     if (settings.shodanKey)     setShodanKey(settings.shodanKey as string);
+    if (settings.reportFirmName)        setFirmName(settings.reportFirmName as string);
+    if (settings.reportInvestigatorName) setInvestigatorName(settings.reportInvestigatorName as string);
+    if (settings.reportLicenseNumber)    setLicenseNumber(settings.reportLicenseNumber as string);
   };
 
   const handleSetTimeout = async (min: number) => {
@@ -122,6 +129,14 @@ export default function SettingsScreen({ onBack, isPro = false }: Props) {
     await Storage.saveSetting('shodanKey',    shodanKey.trim());
     await AuditLog.log('SETTINGS_CHANGE', 'API keys updated');
     Alert.alert('✓ Saved', 'API keys saved securely on this device.');
+  };
+
+  const handleSaveBranding = async () => {
+    await Storage.saveSetting('reportFirmName', firmName.trim());
+    await Storage.saveSetting('reportInvestigatorName', investigatorName.trim());
+    await Storage.saveSetting('reportLicenseNumber', licenseNumber.trim());
+    await AuditLog.log('SETTINGS_CHANGE', 'Report branding updated');
+    Alert.alert('✓ Saved', 'This will now be included automatically on every exported PDF report.');
   };
 
   const scoreColor = (score: number) => score >= 85 ? C.green : score >= 60 ? C.amber : C.red;
@@ -306,6 +321,46 @@ export default function SettingsScreen({ onBack, isPro = false }: Props) {
               </>)}
               <TouchableOpacity style={[s.actionBtn, { borderColor: C.green, backgroundColor: C.greenDim, marginBottom: 0 }]} onPress={handleSaveAPIKeys}>
                 <Text style={[s.actionBtnText, { color: C.green }]}>💾 Save API Keys</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* ── Report Branding ─────────────────────────────────────── */}
+        <Text style={s.sectionTitle}>PDF Report Branding</Text>
+        <View style={s.card}>
+          <TouchableOpacity style={s.timeoutRow} onPress={() => setShowBranding(!showBranding)}>
+            <Text style={s.timeoutLabel}>🏢 Configure Report Branding</Text>
+            <Text style={{ color: C.accent }}>{showBranding ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+          {showBranding && (
+            <View style={{ padding: 14 }}>
+              <Text style={s.apiLabel}>Firm Name</Text>
+              <TextInput
+                style={s.apiInput}
+                value={firmName}
+                onChangeText={setFirmName}
+                placeholder="e.g. Acme Investigations LLC"
+                placeholderTextColor={C.textDim}
+              />
+              <Text style={s.apiLabel}>Investigator Name</Text>
+              <TextInput
+                style={s.apiInput}
+                value={investigatorName}
+                onChangeText={setInvestigatorName}
+                placeholder="Your full name"
+                placeholderTextColor={C.textDim}
+              />
+              <Text style={s.apiLabel}>License Number</Text>
+              <TextInput
+                style={s.apiInput}
+                value={licenseNumber}
+                onChangeText={setLicenseNumber}
+                placeholder="e.g. PI-000000"
+                placeholderTextColor={C.textDim}
+              />
+              <TouchableOpacity style={[s.actionBtn, { borderColor: C.green, backgroundColor: C.greenDim, marginBottom: 0 }]} onPress={handleSaveBranding}>
+                <Text style={[s.actionBtnText, { color: C.green }]}>💾 Save Branding</Text>
               </TouchableOpacity>
             </View>
           )}

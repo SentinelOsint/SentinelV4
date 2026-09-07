@@ -311,6 +311,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
     if (!result) return;
     setExporting(true);
     try {
+      const brandingSettings = await Storage.getSettings();
       const osintResults = result.modules.flatMap(m =>
         m.links.map(l => ({ label: l.label, value: l.url, type: 'link' as const }))
       );
@@ -334,6 +335,9 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
           },
           aiSummary: riskData.summary,
           keyFindings: [...(riskData.keyFindings || []), ...(riskData.redFlags || []).map((r: string) => `🚨 ${r}`), ...(riskData.contradictions || []).map((c: string) => `⚠️ ${c}`)],
+          investigator: (brandingSettings.reportInvestigatorName as string) || undefined,
+          firmName: (brandingSettings.reportFirmName as string) || undefined,
+          licenseNumber: (brandingSettings.reportLicenseNumber as string) || undefined,
           sourceAppendix: Array.from(new Set(
             (riskData.evidenceClassifier || []).flatMap((e: any) => e.sourceReferences || [])
           )) as string[],
