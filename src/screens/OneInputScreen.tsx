@@ -334,6 +334,15 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
           },
           aiSummary: riskData.summary,
           keyFindings: [...(riskData.keyFindings || []), ...(riskData.redFlags || []).map((r: string) => `🚨 ${r}`), ...(riskData.contradictions || []).map((c: string) => `⚠️ ${c}`)],
+          sourceAppendix: Array.from(new Set(
+            (riskData.evidenceClassifier || []).flatMap((e: any) => e.sourceReferences || [])
+          )) as string[],
+          methodologyNotes: riskData.confidenceAndLimitations ? {
+            overallConfidence: riskData.confidenceAndLimitations.overallConfidence,
+            basis: riskData.confidenceAndLimitations.basis,
+            confidenceFactors: riskData.confidenceAndLimitations.confidenceFactors,
+            limitations: riskData.confidenceAndLimitations.limitations,
+          } : undefined,
         });
       } else {
         await exportSearchPDF('One-Input Search', result.query, osintResults);

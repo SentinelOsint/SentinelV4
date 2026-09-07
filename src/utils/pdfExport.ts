@@ -170,6 +170,13 @@ export interface ReportTemplate {
   aiSummary?:     string;
   keyFindings?:   string[];
   timeline?:      { timestamp: string; event: string; module: string }[];
+  sourceAppendix?: string[];
+  methodologyNotes?: {
+    overallConfidence?: string;
+    basis?: string;
+    confidenceFactors?: Record<string, string>;
+    limitations?: string[];
+  };
 }
 
 export async function exportInvestigationReport(t: ReportTemplate): Promise<void> {
@@ -223,7 +230,28 @@ export async function exportInvestigationReport(t: ReportTemplate): Promise<void
       <div class="note-text">${n.text}</div>
     </div>`).join('');
 
-  const signatureBlock = `
+  const sourceAppendixBlock = t.sourceAppendix && t.sourceAppendix.length > 0 ? `
+    <div class="section-header">SOURCES & REFERENCES (${t.sourceAppendix.length})</div>
+    <div class="case-card">
+      ${t.sourceAppendix.map((s, i) => `
+        <div class="result-row">
+          <div class="result-label">${i + 1}</div>
+          <div class="result-value">${s}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  const methodologyBlock = t.methodologyNotes ? `
+    <div class="section-header">METHODOLOGY & LIMITATIONS</div>
+    <div class="case-card">
+      ${t.methodologyNotes.overallConfidence ? `<div class="result-row"><div class="result-label">Overall Confidence</div><div class="result-value">${t.methodologyNotes.overallConfidence}</div></div>` : ''}
+      ${t.methodologyNotes.basis ? `<div class="result-row"><div class="result-label">Basis</div><div class="result-value">${t.methodologyNotes.basis}</div></div>` : ''}
+      ${t.methodologyNotes.confidenceFactors ? Object.entries(t.methodologyNotes.confidenceFactors).map(([k, v]) => `
+        <div class="result-row"><div class="result-label">${k.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())}</div><div class="result-value">${v}</div></div>`).join('') : ''}
+      ${t.methodologyNotes.limitations && t.methodologyNotes.limitations.length > 0 ? `
+        <div class="result-row"><div class="result-label">Limitations</div><div class="result-value">${t.methodologyNotes.limitations.join('; ')}</div></div>` : ''}
+    </div>` : '';
+
+const signatureBlock = `
     <div class="section-header">INVESTIGATOR CERTIFICATION</div>
     <div class="case-card">
       <div class="result-row"><div class="result-label">Investigator</div><div class="result-value">${t.investigator || '________________________'}</div></div>
@@ -267,6 +295,8 @@ export async function exportInvestigationReport(t: ReportTemplate): Promise<void
       <div class="section-header">FIELD NOTES (${caseData.notes.length} Entries)</div>
       ${noteRows || '<div style="padding:12px 0;color:#9bb0c4;font-size:13px;">No notes recorded.</div>'}
 
+      ${sourceAppendixBlock}
+      ${methodologyBlock}
       ${signatureBlock}
 
       <div class="disclaimer">⚖️ This report contains privileged investigative work product. Prepared by a professional investigator. Use in compliance with DPPA and applicable laws.</div>
