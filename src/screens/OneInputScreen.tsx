@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { C, SPACE, FONT, IS_IPAD, CARD } from '../utils/theme';
 import { buildOneInputResult, OneInputResult, InputType, ModuleResult } from '../utils/oneInputSearch';
-import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult, generateEntityRelationshipMap } from '../utils/aiEngine';
+import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult, generateEntityRelationshipMap, generateClientReadySummary } from '../utils/aiEngine';
 import { exportSearchPDF, exportInvestigationReport } from '../utils/pdfExport';
 import { Storage } from '../utils/storage';
 import { FieldNote, PostContactUpdate } from '../types';
@@ -115,6 +115,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
   const [expandedEvidenceItems, setExpandedEvidenceItems] = useState<Set<number>>(new Set());
   const [entityMap, setEntityMap] = useState<{ entities: any[] } | null>(null);
   const [entityMapLoading, setEntityMapLoading] = useState(false);
+  const [clientSummary, setClientSummary] = useState<string | null>(null);
+  const [clientSummaryLoading, setClientSummaryLoading] = useState(false);
   const toggleEvidenceItem = (i: number) => {
     const next = new Set(expandedEvidenceItems);
     if (next.has(i)) next.delete(i);
@@ -1231,6 +1233,17 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                         {expandedSections.has('conf') && (
                           <>
                             <Text style={styles.riskBulletGreen}>◆ Overall: {riskData.confidenceAndLimitations.overallConfidence} — {riskData.confidenceAndLimitations.basis}</Text>
+                            {riskData.confidenceAndLimitations.confidenceFactors && (
+                              <View style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginTop: 8, marginBottom: 8 }}>
+                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>CONFIDENCE PROVENANCE</Text>
+                                {Object.entries(riskData.confidenceAndLimitations.confidenceFactors).map(([key, value]: [string, any]) => (
+                                  <Text key={key} style={{ color: '#e8eaf0', fontSize: 11, lineHeight: 17, marginBottom: 4 }}>
+                                    <Text style={{ color: '#4a9eff', fontWeight: '700' }}>{key.replace(/([A-Z])/g, ' $1').replace(/^./, (s: string) => s.toUpperCase())}: </Text>
+                                    {value}
+                                  </Text>
+                                ))}
+                              </View>
+                            )}
                             {riskData.confidenceAndLimitations.limitations?.map((l: string, i: number) => (
                               <Text key={i} style={styles.riskBulletAmber}>△ {l}</Text>
                             ))}
@@ -1504,6 +1517,45 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                 </View>
                               );
                             })}
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* AI Client-Ready Summary */}
+                    {briefView === 'full' && (
+                      <View style={{ marginBottom: 12 }}>
+                        <TouchableOpacity onPress={() => toggleSection('client_summary')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>📄 CLIENT-READY SUMMARY</Text>
+                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('client_summary') ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {expandedSections.has('client_summary') && (
+                          <View>
+                            {!clientSummary && (
+                              <TouchableOpacity
+                                style={{ backgroundColor: '#0a0f1a', borderWidth: 1, borderColor: '#4a9eff40', borderRadius: 8, paddingVertical: 10, alignItems: 'center' }}
+                                disabled={clientSummaryLoading}
+                                onPress={async () => {
+                                  if (!isPro) { Alert.alert('Pro Feature', 'AI Client-Ready Summary requires a Pro subscription.'); return; }
+                                  setClientSummaryLoading(true);
+                                  try {
+                                    const summary = await generateClientReadySummary(result.query, riskData);
+                                    setClientSummary(summary);
+                                  } catch (e: any) {
+                                    Alert.alert('AI Error', e?.message || 'Could not generate client-ready summary.');
+                                  } finally {
+                                    setClientSummaryLoading(false);
+                                  }
+                                }}
+                              >
+                                {clientSummaryLoading ? <ActivityIndicator color="#4a9eff" /> : <Text style={{ color: '#4a9eff', fontSize: 12, fontWeight: '700' }}>Generate Client-Ready Summary</Text>}
+                              </TouchableOpacity>
+                            )}
+                            {clientSummary && (
+                              <View style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 12, borderWidth: 1, borderColor: '#1e2a3a' }}>
+                                <Text style={{ color: '#e8eaf0', fontSize: 13, lineHeight: 20 }}>{clientSummary}</Text>
+                              </View>
+                            )}
                           </View>
                         )}
                       </View>

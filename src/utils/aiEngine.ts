@@ -609,6 +609,25 @@ If no distinct entities beyond the subject itself can be identified, return {"en
   }
 }
 
+// ─── AI Client-Ready Summary ────────────────────────────────────────────────
+
+export async function generateClientReadySummary(query: string, riskData: any): Promise<string> {
+  const system = `You are writing a client-ready summary of a professional intelligence assessment, for an audience that is NOT a trained investigator (e.g. an attorney, executive, or client receiving a report).
+Remove investigative jargon and internal classification labels (e.g. never say "SOURCE_CONFIRMED" or "POSSIBLE_ASSOCIATION" — describe them in plain language instead).
+Preserve every necessary caveat about confidence and verification status — never present a possible association as a confirmed fact, and never soften an unresolved contradiction or gap into false certainty.
+Write in clear, professional plain language. Keep it concise: 3-5 short paragraphs maximum.`;
+
+  const user = `Write a client-ready summary of this intelligence assessment for: ${query}
+
+FULL ASSESSMENT DATA:
+${JSON.stringify(riskData, null, 2)}
+
+Write a polished, professional summary suitable for sharing with a client or non-investigator stakeholder. Cover: what was assessed, the key finding(s), the confidence level explained in plain language, and any important caveats about what still requires verification before this information is acted on.`;
+
+  await AuditLog.log('SEARCH_QUERY', `AI Client-Ready Summary: ${query}`);
+  return await callClaude(system, user);
+}
+
 // ─── Image Forensics: Backend Endpoint Wrappers ─────────────────────────────
 
 async function postImageEndpoint(path: string, body: Record<string, unknown>): Promise<any> {
@@ -696,13 +715,18 @@ HALLUCINATION GUARD (apply to every statement):
 - Never fill an evidence gap with a generalized assumption about criminal behavior or character.
 - If you cannot support a claim, remove it or place it explicitly in aiAssistedInterpretation with full uncertainty disclosure.
 
-BIAS CHECK (apply before finalizing):
+BIAS CHECK 2.0 (apply before finalizing):
 - Is any single unverified finding receiving disproportionate weight?
 - Has neutral or positive evidence been overlooked or minimized?
 - Has the user's initial framing or query influenced the direction of the analysis?
 - Has an uncertain association been elevated to a risk indicator without sufficient basis?
 - Has the same source been cited multiple times as if it provides independent corroboration?
-- If any of these are true, rebalance the brief before output.
+- Confirmation bias: has evidence supporting an early hypothesis about the subject been favored over evidence against it?
+- Anchoring bias: has the first-found piece of information disproportionately shaped the interpretation of everything found afterward?
+- Availability/recency bias: has a recent or prominent finding been weighted more heavily than an older but equally credible one, without justification?
+- Mirror-imaging: has the subject's likely behavior been assumed based on "typical" patterns rather than the specific evidence available about this subject?
+- Base-rate neglect: has a rare/dramatic finding (e.g. a name-collision wanted-list hit) been treated as more probable than the base rate for coincidental matches would suggest, without identity confirmation?
+- If any of these are true, rebalance the brief before output. Note in confidenceAndLimitations.basis if a bias was identified and corrected during analysis.
 
 SOURCE RECONCILIATION (apply when sources conflict):
 When different sources provide different information, explain WHY before labeling it a contradiction:
@@ -771,6 +795,7 @@ HIGH confidence requires: multiple independent authoritative sources, no unresol
 MEDIUM confidence: some corroboration but either single-source, moderate source quality, or minor unresolved ambiguity.
 LOW confidence: single weak source, significant identity ambiguity, or unresolved contradictions present.
 INSUFFICIENT: not enough evidence of any quality to assess.
+Populate confidenceAndLimitations.confidenceFactors with a rating and one-sentence note for each of the five factors above — this is the provenance trail showing exactly why overallConfidence was set to its value, not just the final number.
 AI GAP PRIORITIZATION 2.0 (apply when assigning priority to each information gap):
 Priority must reflect impact, not just category. For each gap, assess:
 - What would change in identityConfidence, operationalRiskStatus, or a specific risk indicator if this gap were resolved?
@@ -1018,6 +1043,13 @@ Respond with this exact JSON structure:
   "confidenceAndLimitations": {
     "overallConfidence": "<HIGH|MEDIUM|LOW>",
     "basis": "<what this brief is based on>",
+    "confidenceFactors": {
+      "evidenceQuantity": "<STRONG|MODERATE|WEAK> — <one-sentence note>",
+      "evidenceQuality": "<STRONG|MODERATE|WEAK> — <one-sentence note>",
+      "sourceIndependence": "<STRONG|MODERATE|WEAK> — <one-sentence note>",
+      "contradictions": "<NONE|MINOR|SIGNIFICANT> — <one-sentence note>",
+      "identityCertainty": "<STRONG|MODERATE|WEAK> — <one-sentence note>"
+    },
     "limitations": ["<limitation 1>", "<limitation 2>"],
     "disclaimer": "This brief is based on available open-source intelligence at the time of query. All findings require professional verification before operational use."
   }
