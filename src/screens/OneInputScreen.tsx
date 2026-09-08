@@ -117,6 +117,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
   const [entityMap, setEntityMap] = useState<{ entities: any[] } | null>(null);
   const [entityMapLoading, setEntityMapLoading] = useState(false);
   const [identityGaugeExpanded, setIdentityGaugeExpanded] = useState(false);
+  const [analyticalGaugeExpanded, setAnalyticalGaugeExpanded] = useState(false);
   const [clientSummary, setClientSummary] = useState<string | null>(null);
   const [clientSummaryLoading, setClientSummaryLoading] = useState(false);
   const toggleEvidenceItem = (i: number) => {
@@ -646,7 +647,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
               {confidence > 0 && (
                 <View style={styles.confidenceBox}>
                   <Text style={styles.confidenceNum}>{displayConf}%</Text>
-                  <Text style={styles.confidenceLbl}>confidence</Text>
+                  <Text style={styles.confidenceLbl}>search coverage</Text>
                 </View>
               )}
             </View>
@@ -1272,18 +1273,25 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                         </TouchableOpacity>
                         {expandedSections.has('conf') && (
                           <>
-                            <Text style={styles.riskBulletGreen}>◆ Overall: {riskData.confidenceAndLimitations.overallConfidence} — {riskData.confidenceAndLimitations.basis}</Text>
-                            {riskData.confidenceAndLimitations.confidenceFactors && (
-                              <View style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginTop: 8, marginBottom: 8 }}>
-                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>CONFIDENCE PROVENANCE</Text>
-                                {Object.entries(riskData.confidenceAndLimitations.confidenceFactors).map(([key, value]: [string, any]) => (
-                                  <Text key={key} style={{ color: '#e8eaf0', fontSize: 11, lineHeight: 17, marginBottom: 4 }}>
-                                    <Text style={{ color: '#4a9eff', fontWeight: '700' }}>{key.replace(/([A-Z])/g, ' $1').replace(/^./, (s: string) => s.toUpperCase())}: </Text>
-                                    {value}
-                                  </Text>
-                                ))}
-                              </View>
-                            )}
+                            <ConfidenceGauge
+                              label="ANALYTICAL CONFIDENCE"
+                              level={riskData.confidenceAndLimitations.overallConfidence}
+                              expanded={analyticalGaugeExpanded}
+                              onToggle={() => setAnalyticalGaugeExpanded(!analyticalGaugeExpanded)}
+                            >
+                              <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 10 }}>{riskData.confidenceAndLimitations.basis}</Text>
+                              {riskData.confidenceAndLimitations.confidenceFactors && (
+                                <View>
+                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>PROVENANCE</Text>
+                                  {Object.entries(riskData.confidenceAndLimitations.confidenceFactors).map(([key, value]: [string, any]) => (
+                                    <Text key={key} style={{ color: '#e8eaf0', fontSize: 11, lineHeight: 17, marginBottom: 4 }}>
+                                      <Text style={{ color: '#4a9eff', fontWeight: '700' }}>{key.replace(/([A-Z])/g, ' $1').replace(/^./, (s: string) => s.toUpperCase())}: </Text>
+                                      {value}
+                                    </Text>
+                                  ))}
+                                </View>
+                              )}
+                            </ConfidenceGauge>
                             {riskData.confidenceAndLimitations.limitations?.map((l: string, i: number) => (
                               <Text key={i} style={styles.riskBulletAmber}>△ {l}</Text>
                             ))}
