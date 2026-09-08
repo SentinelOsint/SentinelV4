@@ -893,6 +893,7 @@ Respond with this exact JSON structure:
     "level": "<HIGH|MEDIUM|LOW|INSUFFICIENT>",
     "basis": "<what evidence supports this confidence level — be specific, not generic>",
     "explanation": "<plain-language explanation of why confidence is at this level, e.g. Name, DOB, and phone align across three independent sources — HIGH. OR: Only a name was provided, which is common and shared by many individuals — INSUFFICIENT.>",
+    "identityConfidenceSupportingFactors": ["<specific factor that increases identity confidence, e.g. 'Phone and email independently point to the same subject'>"],
     "whatWouldIncreaseConfidence": "<the single most impactful identifier that would raise confidence>",
     "uncertainties": ["<uncertainty 1>", "<uncertainty 2>"]
   },
