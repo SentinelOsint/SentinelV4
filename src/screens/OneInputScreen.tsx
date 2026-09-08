@@ -14,6 +14,7 @@ import {
 import { C, SPACE, FONT, IS_IPAD, CARD } from '../utils/theme';
 import { buildOneInputResult, OneInputResult, InputType, ModuleResult } from '../utils/oneInputSearch';
 import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult, generateEntityRelationshipMap, generateClientReadySummary } from '../utils/aiEngine';
+import ConfidenceGauge from '../components/ConfidenceGauge';
 import { exportSearchPDF, exportInvestigationReport } from '../utils/pdfExport';
 import { Storage } from '../utils/storage';
 import { FieldNote, PostContactUpdate } from '../types';
@@ -115,6 +116,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
   const [expandedEvidenceItems, setExpandedEvidenceItems] = useState<Set<number>>(new Set());
   const [entityMap, setEntityMap] = useState<{ entities: any[] } | null>(null);
   const [entityMapLoading, setEntityMapLoading] = useState(false);
+  const [identityGaugeExpanded, setIdentityGaugeExpanded] = useState(false);
   const [clientSummary, setClientSummary] = useState<string | null>(null);
   const [clientSummaryLoading, setClientSummaryLoading] = useState(false);
   const toggleEvidenceItem = (i: number) => {
@@ -816,15 +818,39 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       return (
                         <View style={{ backgroundColor: '#0a0f1a', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#1e3a5f' }}>
                           <Text style={{ color: '#4a9eff', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 12 }}>PRE-CONTACT OVERVIEW</Text>
-                          <View style={{ flexDirection: 'row', gap: IS_IPAD ? 12 : 8, marginBottom: IS_IPAD ? 16 : 12 }}>
-                            <View style={{ flex: 1, backgroundColor: confColor + '15', borderRadius: IS_IPAD ? 10 : 8, padding: IS_IPAD ? 14 : 10, borderWidth: 1, borderColor: confColor + '40' }}>
-                              <Text style={{ color: '#8e8e93', fontSize: IS_IPAD ? 10 : 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>IDENTITY CONFIDENCE</Text>
-                              <Text style={{ color: confColor, fontSize: IS_IPAD ? 18 : 14, fontWeight: '800' }}>{ov.identityConfidence}</Text>
-                            </View>
-                            <View style={{ flex: 1, backgroundColor: statusColor + '15', borderRadius: IS_IPAD ? 10 : 8, padding: IS_IPAD ? 14 : 10, borderWidth: 1, borderColor: statusColor + '40' }}>
-                              <Text style={{ color: '#8e8e93', fontSize: IS_IPAD ? 10 : 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>OPERATIONAL STATUS</Text>
-                              <Text style={{ color: statusColor, fontSize: IS_IPAD ? 13 : 11, fontWeight: '800' }}>{ov.operationalRiskStatus?.replace(/_/g, ' ')}</Text>
-                            </View>
+                          <View style={{ backgroundColor: confColor + '10', borderRadius: IS_IPAD ? 10 : 8, padding: IS_IPAD ? 14 : 12, marginBottom: 10, borderWidth: 1, borderColor: confColor + '30' }}>
+                            <ConfidenceGauge
+                              label="IDENTITY CONFIDENCE"
+                              level={ov.identityConfidence}
+                              expanded={identityGaugeExpanded}
+                              onToggle={() => setIdentityGaugeExpanded(!identityGaugeExpanded)}
+                            >
+                              {riskData.identityConfidence && (
+                                <>
+                                  <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 10 }}>{riskData.identityConfidence.explanation}</Text>
+                                  {riskData.identityConfidence.identityConfidenceSupportingFactors?.length > 0 && (
+                                    <View style={{ marginBottom: 8 }}>
+                                      <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>SUPPORTING</Text>
+                                      {riskData.identityConfidence.identityConfidenceSupportingFactors.map((f: string, i: number) => (
+                                        <Text key={i} style={{ color: '#34c759', fontSize: 11, lineHeight: 16, marginBottom: 3 }}>✓ {f}</Text>
+                                      ))}
+                                    </View>
+                                  )}
+                                  {riskData.identityConfidence.uncertainties?.length > 0 && (
+                                    <View>
+                                      <Text style={{ color: '#ff9f0a', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>UNRESOLVED</Text>
+                                      {riskData.identityConfidence.uncertainties.map((u: string, i: number) => (
+                                        <Text key={i} style={{ color: '#ff9f0a', fontSize: 11, lineHeight: 16, marginBottom: 3 }}>! {u}</Text>
+                                      ))}
+                                    </View>
+                                  )}
+                                </>
+                              )}
+                            </ConfidenceGauge>
+                          </View>
+                          <View style={{ backgroundColor: statusColor + '15', borderRadius: IS_IPAD ? 10 : 8, padding: IS_IPAD ? 14 : 10, marginBottom: IS_IPAD ? 16 : 12, borderWidth: 1, borderColor: statusColor + '40' }}>
+                            <Text style={{ color: '#8e8e93', fontSize: IS_IPAD ? 10 : 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>OPERATIONAL STATUS</Text>
+                            <Text style={{ color: statusColor, fontSize: IS_IPAD ? 13 : 11, fontWeight: '800' }}>{ov.operationalRiskStatus?.replace(/_/g, ' ')}</Text>
                           </View>
                           <View style={{ marginBottom: 10 }}>
                             <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>PRIMARY FINDING</Text>
