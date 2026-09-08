@@ -1552,11 +1552,19 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                 'CONTRADICTORY': '#ff453a',
                                 'UNVERIFIED': '#4a5568',
                               };
+                              const entityIcons: Record<string, string> = {
+                                'PERSON': '👤', 'PHONE': '📞', 'EMAIL': '✉️', 'COMPANY': '🏢',
+                                'ADDRESS': '📍', 'VEHICLE': '🚗', 'DOMAIN': '🌐',
+                              };
                               const color = confColor[e.confidence] || '#6b7a99';
+                              const icon = entityIcons[e.type] || '◆';
                               return (
                                 <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: color }}>
-                                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                                    <Text style={{ color: '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 0.5 }}>{e.type}</Text>
+                                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                      <Text style={{ fontSize: 14 }}>{icon}</Text>
+                                      <Text style={{ color: '#4a9eff', fontSize: 9, fontWeight: '700', letterSpacing: 0.5 }}>{e.type}</Text>
+                                    </View>
                                     <Text style={{ color, fontSize: 9, fontWeight: '700' }}>{e.confidence?.replace(/_/g, ' ')}</Text>
                                   </View>
                                   <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '700', marginBottom: 3 }}>{e.value}</Text>
