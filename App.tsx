@@ -15,6 +15,8 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, SafeAreaView, StatusBar, ActivityIndicator,
@@ -1157,16 +1159,20 @@ export default function App() {
             {IS_IPAD ? (
               /* iPad: side-by-side layout */
               <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity
-                  style={{ flex: 2, backgroundColor: '#2563eb', borderRadius: 14, padding: 20, borderWidth: 0 }}
-                  onPress={() => navigate('one_input')}
-                  activeOpacity={0.85}
-                >
-                  <Text style={{ fontSize: 32, marginBottom: 10 }}>🎯</Text>
-                  <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700', marginBottom: 6 }}>New Pre-Contact Assessment</Text>
-                  <Text style={{ color: '#dbe6fd', fontSize: 13, lineHeight: 19, marginBottom: 12 }}>One query → intelligence sweep → Pre-Contact Brief</Text>
-                  <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700' }}>Start Assessment ›</Text>
-                </TouchableOpacity>
+                <View style={{ flex: 2, shadowColor: '#2563eb', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 }}>
+                  <TouchableOpacity
+                    style={{ borderRadius: 14, overflow: 'hidden' }}
+                    onPress={() => navigate('one_input')}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient colors={['#2563eb', '#1a3fa0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 20 }}>
+                      <Text style={{ fontSize: 32, marginBottom: 10 }}>🎯</Text>
+                      <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700', marginBottom: 6 }}>New Pre-Contact Assessment</Text>
+                      <Text style={{ color: '#dbe6fd', fontSize: 13, lineHeight: 19, marginBottom: 12 }}>One query → intelligence sweep → Pre-Contact Brief</Text>
+                      <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700' }}>Start Assessment ›</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
                 <View style={{ flex: 1, gap: 12 }}>
                   <TouchableOpacity
                     style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#1e2a3a' }}
@@ -1189,18 +1195,22 @@ export default function App() {
             ) : (
               /* iPhone: stacked layout */
               <View style={{ gap: 8 }}>
-                <TouchableOpacity
-                  style={{ backgroundColor: '#2563eb', borderRadius: CARD.radius, padding: CARD.padding, borderWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 }}
-                  onPress={() => navigate('one_input')}
-                  activeOpacity={0.85}
-                >
-                  <Text style={{ fontSize: 24 }}>🎯</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '700', marginBottom: 2 }}>New Pre-Contact Assessment</Text>
-                    <Text style={{ color: '#dbe6fd', fontSize: 11 }}>One query → intelligence sweep → Pre-Contact Brief</Text>
-                  </View>
-                  <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700' }}>›</Text>
-                </TouchableOpacity>
+                <View style={{ shadowColor: '#2563eb', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 }}>
+                  <TouchableOpacity
+                    style={{ borderRadius: CARD.radius, overflow: 'hidden' }}
+                    onPress={() => navigate('one_input')}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient colors={['#2563eb', '#1a3fa0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: CARD.padding, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <Text style={{ fontSize: 24 }}>🎯</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '700', marginBottom: 2 }}>New Pre-Contact Assessment</Text>
+                        <Text style={{ color: '#dbe6fd', fontSize: 11 }}>One query → intelligence sweep → Pre-Contact Brief</Text>
+                      </View>
+                      <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700' }}>›</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   <TouchableOpacity
                     style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: CARD.radius, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor, alignItems: 'flex-start' }}
@@ -1255,32 +1265,61 @@ export default function App() {
                 </View>
               </View>
             )}
-            {modules.map(m => {
-              const isOneInput = m.id === 'one_input';
-              const isSettings = m.id === 'settings';
-              return (
-                <TouchableOpacity
-                  key={m.id}
-                  style={[
-                    s.moduleCard,
-                    { width: isOneInput ? '100%' : CARD_WIDTH },
-                    isSettings && s.securityCard,
-                    isOneInput && s.oneInputCard,
-                  ]}
-                  onPress={() => navigate(m.id as Screen)}
-                  activeOpacity={0.72}
-                >
-                  {isOneInput && (
-                    <View style={s.oneInputBadge}>
-                      <Text style={s.oneInputBadgeTxt}>PRIMARY WORKFLOW</Text>
-                    </View>
-                  )}
-                  <Text style={[s.moduleIcon, isOneInput && { fontSize: IS_IPAD ? 40 : 32 }]}>{m.icon}</Text>
-                  <Text style={[s.moduleTitle, isOneInput && s.oneInputTitle]}>{m.title}</Text>
-                  <Text style={[s.moduleDesc, isOneInput && s.oneInputDesc]}>{m.desc}</Text>
-                </TouchableOpacity>
-              );
-            })}
+            {(() => {
+              const moduleColors: Record<string, string> = {
+                phone: '#facc15', email: '#a855f7', social: '#ec4899', ip: '#06b6d4',
+                domain: '#2563eb', company: '#f59e0b', vehicle: '#10b981', faa: '#3b82f6',
+                court: '#ef4444', geo: '#f43f5e', geo_map: '#14b8a6', image: '#8b5cf6',
+                breach: '#eab308', image_forensics: '#06b6d4',
+              };
+              const moduleIconNames: Record<string, keyof typeof Ionicons.glyphMap> = {
+                phone: 'call', email: 'mail', social: 'people', ip: 'globe-outline',
+                domain: 'link', company: 'business', vehicle: 'car-sport', faa: 'airplane',
+                court: 'shield-checkmark', geo: 'location', geo_map: 'map', image: 'image',
+                breach: 'lock-open', image_forensics: 'search-circle',
+              };
+              return modules.map(m => {
+                const isOneInput = m.id === 'one_input';
+                const isSettings = m.id === 'settings';
+                const badgeColor = moduleColors[m.id] || C.accent;
+                return (
+                  <TouchableOpacity
+                    key={m.id}
+                    style={[
+                      s.moduleCard,
+                      { width: isOneInput ? '100%' : CARD_WIDTH },
+                      isSettings && s.securityCard,
+                      isOneInput && s.oneInputCard,
+                    ]}
+                    onPress={() => navigate(m.id as Screen)}
+                    activeOpacity={0.72}
+                  >
+                    {isOneInput && (
+                      <View style={s.oneInputBadge}>
+                        <Text style={s.oneInputBadgeTxt}>PRIMARY WORKFLOW</Text>
+                      </View>
+                    )}
+                    {isOneInput ? (
+                      <Text style={[s.moduleIcon, { fontSize: IS_IPAD ? 40 : 32 }]}>{m.icon}</Text>
+                    ) : (
+                      <View style={{
+                        width: IS_IPAD ? 48 : 44, height: IS_IPAD ? 48 : 44, borderRadius: IS_IPAD ? 24 : 22,
+                        backgroundColor: badgeColor + '30', justifyContent: 'center', alignItems: 'center',
+                        marginBottom: IS_IPAD ? 8 : 10,
+                      }}>
+                        {moduleIconNames[m.id] ? (
+                          <Ionicons name={moduleIconNames[m.id]} size={IS_IPAD ? 26 : 24} color={badgeColor} />
+                        ) : (
+                          <Text style={{ fontSize: IS_IPAD ? 24 : 22 }}>{m.icon}</Text>
+                        )}
+                      </View>
+                    )}
+                    <Text style={[s.moduleTitle, isOneInput && s.oneInputTitle]}>{m.title}</Text>
+                    <Text style={[s.moduleDesc, isOneInput && s.oneInputDesc]}>{m.desc}</Text>
+                  </TouchableOpacity>
+                );
+              });
+            })()}
             <View style={{ width: '100%', marginTop: 8 }}>
               <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10 }}>TOOLS AND RECORDS</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
