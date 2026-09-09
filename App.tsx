@@ -1126,6 +1126,7 @@ export default function App() {
       { id: 'geo_map',  icon: '🗺️', title: 'Map View',       desc: 'Pin locations, field map' },
       { id: 'image',    icon: '🖼️', title: 'Image Analysis', desc: 'EXIF, reverse search, AI' },
       { id: 'breach',   icon: '🔓', title: 'Data Breaches',  desc: 'Pwned, dark web, pastes' },
+      { id: 'image_forensics', icon: '🔬', title: 'Image Forensics', desc: 'Metadata, ELA, hidden data' },
     ];
     return (
       <SafeAreaView style={s.safe}>
@@ -1157,13 +1158,14 @@ export default function App() {
               /* iPad: side-by-side layout */
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <TouchableOpacity
-                  style={{ flex: 2, backgroundColor: '#0f1a2e', borderRadius: 14, padding: 20, borderWidth: 1, borderColor: '#2563eb40' }}
+                  style={{ flex: 2, backgroundColor: '#2563eb', borderRadius: 14, padding: 20, borderWidth: 0 }}
                   onPress={() => navigate('one_input')}
+                  activeOpacity={0.85}
                 >
                   <Text style={{ fontSize: 32, marginBottom: 10 }}>🎯</Text>
-                  <Text style={{ color: '#e8eaf0', fontSize: 18, fontWeight: '700', marginBottom: 6 }}>New Pre-Contact Assessment</Text>
-                  <Text style={{ color: '#4a5568', fontSize: 13, lineHeight: 19, marginBottom: 12 }}>One query → intelligence sweep → Pre-Contact Brief</Text>
-                  <Text style={{ color: '#2563eb', fontSize: 12, fontWeight: '600' }}>Start Assessment ›</Text>
+                  <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700', marginBottom: 6 }}>New Pre-Contact Assessment</Text>
+                  <Text style={{ color: '#dbe6fd', fontSize: 13, lineHeight: 19, marginBottom: 12 }}>One query → intelligence sweep → Pre-Contact Brief</Text>
+                  <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700' }}>Start Assessment ›</Text>
                 </TouchableOpacity>
                 <View style={{ flex: 1, gap: 12 }}>
                   <TouchableOpacity
@@ -1188,15 +1190,16 @@ export default function App() {
               /* iPhone: stacked layout */
               <View style={{ gap: 8 }}>
                 <TouchableOpacity
-                  style={{ backgroundColor: '#0f1a2e', borderRadius: CARD.radius, padding: CARD.padding, borderWidth: CARD.borderWidth, borderColor: '#2563eb40', flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                  style={{ backgroundColor: '#2563eb', borderRadius: CARD.radius, padding: CARD.padding, borderWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 }}
                   onPress={() => navigate('one_input')}
+                  activeOpacity={0.85}
                 >
                   <Text style={{ fontSize: 24 }}>🎯</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#e8eaf0', fontSize: 14, fontWeight: '700', marginBottom: 2 }}>New Pre-Contact Assessment</Text>
-                    <Text style={{ color: '#4a5568', fontSize: 11 }}>One query → intelligence sweep → Pre-Contact Brief</Text>
+                    <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '700', marginBottom: 2 }}>New Pre-Contact Assessment</Text>
+                    <Text style={{ color: '#dbe6fd', fontSize: 11 }}>One query → intelligence sweep → Pre-Contact Brief</Text>
                   </View>
-                  <Text style={{ color: '#2563eb', fontSize: 18 }}>›</Text>
+                  <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700' }}>›</Text>
                 </TouchableOpacity>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   <TouchableOpacity
@@ -1226,30 +1229,7 @@ export default function App() {
                 </View>
               </View>
             )}
-            <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 16 }}>TOOLS AND RECORDS</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-              {[
-                { id: 'notes',      icon: '📋', title: 'Field Notes',  desc: `${notes.length} saved` },
-                { id: 'timeline',   icon: '🕐', title: 'Timeline',     desc: 'Activity log' },
-                { id: 'geo_map',    icon: '🗺️', title: 'Map View',     desc: 'Field map' },
-                { id: 'history',    icon: '🔍', title: 'History',      desc: `${history.length} queries` },
-                { id: 'settings',   icon: '🔐', title: 'Security',     desc: 'Encryption & audit' },
-                { id: 'case_intake',icon: '📋', title: 'Case Intake',  desc: 'AI pre-assessment' },
-                { id: 'image_forensics', icon: '🔬', title: 'Image Forensics', desc: 'Metadata, ELA, hidden data' },
-
-              ].map(t => (
-                <TouchableOpacity
-                  key={t.id}
-                  style={{ width: '47%', backgroundColor: '#0a0f1a', borderRadius: CARD.radiusSm, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor }}
-                  onPress={() => navigate(t.id as any)}
-                >
-                  <Text style={{ fontSize: 18, marginBottom: 4 }}>{t.icon}</Text>
-                  <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>{t.title}</Text>
-                  <Text style={{ color: '#4a5568', fontSize: 10 }}>{t.desc}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10 }}>INTELLIGENCE AREAS</Text>
+            <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 16 }}>INTELLIGENCE AREAS</Text>
           </View>
 
           <ScrollView
@@ -1301,6 +1281,29 @@ export default function App() {
                 </TouchableOpacity>
               );
             })}
+            <View style={{ width: '100%', marginTop: 8 }}>
+              <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10 }}>TOOLS AND RECORDS</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                {[
+                  { id: 'notes',      icon: '📋', title: 'Field Notes',  desc: `${notes.length} saved` },
+                  { id: 'timeline',   icon: '🕐', title: 'Timeline',     desc: 'Activity log' },
+                  { id: 'geo_map',    icon: '🗺️', title: 'Map View',     desc: 'Field map' },
+                  { id: 'history',    icon: '🔍', title: 'History',      desc: `${history.length} queries` },
+                  { id: 'settings',   icon: '🔐', title: 'Security',     desc: 'Encryption & audit' },
+                  { id: 'case_intake',icon: '📋', title: 'Case Intake',  desc: 'AI pre-assessment' },
+                ].map(t => (
+                  <TouchableOpacity
+                    key={t.id}
+                    style={{ width: '47%', backgroundColor: '#0a0f1a', borderRadius: CARD.radiusSm, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor }}
+                    onPress={() => navigate(t.id as any)}
+                  >
+                    <Text style={{ fontSize: 18, marginBottom: 4 }}>{t.icon}</Text>
+                    <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>{t.title}</Text>
+                    <Text style={{ color: '#4a5568', fontSize: 10 }}>{t.desc}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
             <View style={{ height: 24, width: '100%' }} />
           </ScrollView>
         </Animated.View>
