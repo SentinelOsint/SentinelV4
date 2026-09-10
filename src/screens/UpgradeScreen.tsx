@@ -34,7 +34,7 @@ export default function UpgradeScreen({ reason = 'expired', onBack, onSubscribe 
   const [loading,    setLoading]    = useState(false);
   const [restoring,  setRestoring]  = useState(false);
   const [iapReady,   setIapReady]   = useState(false);
-  const [proPrice,   setProPrice]   = useState('$79.99');
+  const [proPrice,   setProPrice]   = useState('$59.99');
 
   useEffect(() => {
     (async () => {
