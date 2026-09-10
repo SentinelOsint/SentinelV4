@@ -915,7 +915,7 @@ export default function App() {
   if (forceUpdateRequired) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0f1a', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
       <Text style={{ color: '#e8eaf0', fontSize: 20, fontWeight: '700', marginBottom: 12, textAlign: 'center' }}>Update Required</Text>
-      <Text style={{ color: '#6b7a99', fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 24 }}>
+      <Text style={{ color: '#b5c2dc', fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 24 }}>
         A new version of Sentinel is available with important fixes. Please update to continue.
       </Text>
       <TouchableOpacity
@@ -1182,7 +1182,7 @@ export default function App() {
                   >
                     <Text style={{ fontSize: 24, marginBottom: 6 }}>📁</Text>
                     <Text style={{ color: '#e8eaf0', fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Active Cases</Text>
-                    <Text style={{ color: '#4a5568', fontSize: 11 }}>Manage investigations</Text>
+                    <Text style={{ color: '#a5aec2', fontSize: 11 }}>Manage investigations</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#1e2a3a' }}
@@ -1190,7 +1190,7 @@ export default function App() {
                   >
                     <Text style={{ fontSize: 24, marginBottom: 6 }}>📋</Text>
                     <Text style={{ color: '#e8eaf0', fontSize: 14, fontWeight: '600', marginBottom: 4 }}>New Case Intake</Text>
-                    <Text style={{ color: '#4a5568', fontSize: 11 }}>AI pre-assessment + voice</Text>
+                    <Text style={{ color: '#a5aec2', fontSize: 11 }}>AI pre-assessment + voice</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1220,7 +1220,7 @@ export default function App() {
                   >
                     <Text style={{ fontSize: 18, marginBottom: 4 }}>📁</Text>
                     <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>Active Cases</Text>
-                    <Text style={{ color: '#4a5568', fontSize: 10 }}>Manage investigations</Text>
+                    <Text style={{ color: '#a5aec2', fontSize: 10 }}>Manage investigations</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: CARD.radius, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor, alignItems: 'flex-start' }}
@@ -1228,7 +1228,7 @@ export default function App() {
                   >
                     <Text style={{ fontSize: 18, marginBottom: 4 }}>📋</Text>
                     <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>New Case Intake</Text>
-                    <Text style={{ color: '#4a5568', fontSize: 10 }}>AI pre-assessment + voice</Text>
+                    <Text style={{ color: '#a5aec2', fontSize: 10 }}>AI pre-assessment + voice</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ flex: 1, backgroundColor: '#0a0f1a', borderRadius: CARD.radius, padding: CARD.paddingSm, borderWidth: CARD.borderWidth, borderColor: CARD.borderColor, alignItems: 'flex-start' }}
@@ -1236,7 +1236,7 @@ export default function App() {
                   >
                     <Text style={{ fontSize: 18, marginBottom: 4 }}>👁️</Text>
                     <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>Watch List</Text>
-                    <Text style={{ color: '#4a5568', fontSize: 10 }}>Monitor targets</Text>
+                    <Text style={{ color: '#a5aec2', fontSize: 10 }}>Monitor targets</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1340,7 +1340,7 @@ export default function App() {
                   >
                     <Text style={{ fontSize: 18, marginBottom: 4 }}>{t.icon}</Text>
                     <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '600', marginBottom: 2 }}>{t.title}</Text>
-                    <Text style={{ color: '#4a5568', fontSize: 10 }}>{t.desc}</Text>
+                    <Text style={{ color: '#a5aec2', fontSize: 10 }}>{t.desc}</Text>
                   </TouchableOpacity>
                 ))}
               </View>

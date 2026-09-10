@@ -77,7 +77,7 @@ export const C = {
   // Text
   text:      '#e8edf5',
   textMid:   '#8899b0',
-  textDim:   '#4a5568',
+  textDim:   '#a5aec2',
 
   // Blue — actions, recommendations, intelligence paths, neutral support
   accent:    '#2563eb',
@@ -106,7 +106,7 @@ export const C = {
   greenMid:  '#34c759',
 
   // Gray — neutral context, unavailable, not assessed, limitations
-  gray:      '#4a5568',
+  gray:      '#a5aec2',
   grayDim:   '#0f1218',
   grayMid:   '#6b7a99',
 

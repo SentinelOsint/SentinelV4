@@ -524,7 +524,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
               >
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: '#e8eaf0', fontSize: 13, fontWeight: '600', marginBottom: 2 }}>{s.label}</Text>
-                  <Text style={{ color: '#4a5568', fontSize: 11 }}>{s.desc}</Text>
+                  <Text style={{ color: '#a5aec2', fontSize: 11 }}>{s.desc}</Text>
                 </View>
                 <Text style={{ color: '#2563eb', fontSize: 16 }}>›</Text>
               </TouchableOpacity>
@@ -554,7 +554,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
           />
           {/* Assessment Purpose */}
           <View style={{ marginBottom: 10 }}>
-            <Text style={{ color: '#6b7a99', fontSize: 10, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 }}>Assessment Purpose (optional)</Text>
+            <Text style={{ color: '#b5c2dc', fontSize: 10, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 }}>Assessment Purpose (optional)</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 {['Before Contact', 'Identity Verification', 'Process Service', 'Due Diligence', 'Executive Protection', 'Company Assessment', 'Other'].map((p) => (
@@ -563,7 +563,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                     style={{ backgroundColor: assessmentPurpose === p ? '#2563eb' : '#0a0f1a', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: assessmentPurpose === p ? '#2563eb' : '#1e2a3a' }}
                     onPress={() => setAssessmentPurpose(assessmentPurpose === p ? '' : p)}
                   >
-                    <Text style={{ color: assessmentPurpose === p ? '#fff' : '#6b7a99', fontSize: 11, fontWeight: '600' }}>{p}</Text>
+                    <Text style={{ color: assessmentPurpose === p ? '#fff' : '#b5c2dc', fontSize: 11, fontWeight: '600' }}>{p}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -572,7 +572,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
 
           {/* Professional Role */}
           <View style={{ marginBottom: 10 }}>
-            <Text style={{ color: '#6b7a99', fontSize: 10, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 }}>Professional Role</Text>
+            <Text style={{ color: '#b5c2dc', fontSize: 10, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 }}>Professional Role</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 {['Private Investigator', 'Executive Protection', 'Process Server', 'Bail/Fugitive Recovery', 'Corporate Security', 'Due Diligence', 'Corporate Investigation', 'Other'].map((r) => (
@@ -585,7 +585,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       Storage.saveSetting('professionalRole', next).catch(() => {});
                     }}
                   >
-                    <Text style={{ color: professionalRole === r ? '#fff' : '#6b7a99', fontSize: 11, fontWeight: '600' }}>{r}</Text>
+                    <Text style={{ color: professionalRole === r ? '#fff' : '#b5c2dc', fontSize: 11, fontWeight: '600' }}>{r}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -638,7 +638,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
             <View style={[styles.typeBadge, { backgroundColor: typeColor + '20', borderColor: typeColor }]}>
               <Text style={styles.typeBadgeIcon}>{typeIcon}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 2 }}>DETECTED TARGET</Text>
+                <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', letterSpacing: 1, marginBottom: 2 }}>DETECTED TARGET</Text>
                 <Text style={[styles.typeBadgeLabel, { color: typeColor }]}>
                   {result.detectedAs}
                 </Text>
@@ -679,7 +679,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                             style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: briefView === v ? '#2563eb' : 'transparent' }}
                             onPress={() => setBriefView(v)}
                           >
-                            <Text style={{ color: briefView === v ? '#fff' : '#6b7a99', fontSize: 10, fontWeight: '600' }}>
+                            <Text style={{ color: briefView === v ? '#fff' : '#b5c2dc', fontSize: 10, fontWeight: '600' }}>
                               {v === 'quick' ? '10s' : v === 'operational' ? 'Ops' : 'Full'}
                             </Text>
                           </TouchableOpacity>
@@ -695,20 +695,20 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                     {/* Quick View — 10 second */}
                     {briefView === 'quick' && riskData?.preContactOverview && (
                       <View style={{ backgroundColor: '#0a0f1a', borderRadius: 10, padding: 14, marginBottom: 8 }}>
-                        <Text style={{ color: '#2563eb', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>10-SECOND BRIEF</Text>
+                        <Text style={{ color: '#2563eb', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>10-SECOND BRIEF</Text>
                         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
                           <View style={{ flex: 1, backgroundColor: '#0f1520', borderRadius: 8, padding: 8 }}>
-                            <Text style={{ color: '#6b7a99', fontSize: 8, marginBottom: 2 }}>IDENTITY</Text>
+                            <Text style={{ color: '#b5c2dc', fontSize: 8, marginBottom: 2 }}>IDENTITY</Text>
                             <Text style={{ color: riskData.preContactOverview.identityConfidence === 'HIGH' ? '#34c759' : riskData.preContactOverview.identityConfidence === 'INSUFFICIENT' ? '#ff453a' : '#ff9f0a', fontSize: 13, fontWeight: '800' }}>{riskData.preContactOverview.identityConfidence}</Text>
                           </View>
                           <View style={{ flex: 2, backgroundColor: '#0f1520', borderRadius: 8, padding: 8 }}>
-                            <Text style={{ color: '#6b7a99', fontSize: 8, marginBottom: 2 }}>STATUS</Text>
+                            <Text style={{ color: '#b5c2dc', fontSize: 8, marginBottom: 2 }}>STATUS</Text>
                             <Text style={{ color: '#ff9f0a', fontSize: 11, fontWeight: '700' }}>{riskData.preContactOverview.operationalRiskStatus?.replace(/_/g, ' ')}</Text>
                           </View>
                         </View>
                         <Text style={{ color: '#e8eaf0', fontSize: 13, lineHeight: 19, marginBottom: 10, fontWeight: '500' }}>{riskData.preContactOverview.primaryFinding}</Text>
                         <View style={{ backgroundColor: '#ff950015', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#ff950040' }}>
-                          <Text style={{ color: '#6b7a99', fontSize: 8, fontWeight: '700', marginBottom: 4 }}>NEXT BEST ACTION</Text>
+                          <Text style={{ color: '#b5c2dc', fontSize: 8, fontWeight: '700', marginBottom: 4 }}>NEXT BEST ACTION</Text>
                           <Text style={{ color: '#ff9500', fontSize: 12, fontWeight: '600', lineHeight: 17 }}>{riskData.preContactOverview.immediateVerificationRequirement}</Text>
                         </View>
                       </View>
@@ -722,12 +722,12 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                         .slice(0, 3);
                       return (
                         <View style={{ backgroundColor: '#0a0f1a', borderRadius: 10, padding: 14, marginBottom: 10 }}>
-                          <Text style={{ color: '#2563eb', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>TOP RISK INDICATORS</Text>
+                          <Text style={{ color: '#2563eb', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>TOP RISK INDICATORS</Text>
                           {topRisks.map((r: any, i: number) => {
                             const sevColor = r.severity === 'HIGH' ? '#ff453a' : r.severity === 'MEDIUM' ? '#ff9f0a' : '#2563eb';
                             return (
                               <View key={i} style={{ borderLeftWidth: 3, borderLeftColor: sevColor, paddingLeft: 10, marginBottom: 8 }}>
-                                <Text style={{ color: sevColor, fontSize: 9, fontWeight: '700', marginBottom: 2 }}>{r.severity}</Text>
+                                <Text style={{ color: sevColor, fontSize: 11, fontWeight: '700', marginBottom: 2 }}>{r.severity}</Text>
                                 <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 17 }}>{r.indicator}</Text>
                               </View>
                             );
@@ -737,16 +737,16 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                     })()}
                     {briefView === 'operational' && linkedCaseData && (linkedCaseData.notes.length > 0 || linkedCaseData.postContactUpdates.length > 0) && (
                       <View style={{ backgroundColor: '#0a0f1a', borderRadius: 10, padding: 14, marginBottom: 10 }}>
-                        <Text style={{ color: '#2563eb', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>📁 {linkedCaseData.title.toUpperCase()}</Text>
+                        <Text style={{ color: '#2563eb', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>📁 {linkedCaseData.title.toUpperCase()}</Text>
                         {linkedCaseData.postContactUpdates.slice(0, 3).map((u) => (
                           <View key={u.id} style={{ marginBottom: 8 }}>
-                            <Text style={{ color: '#6b7a99', fontSize: 8, fontWeight: '700', marginBottom: 2 }}>POST-CONTACT UPDATE · {u.timestamp}</Text>
+                            <Text style={{ color: '#b5c2dc', fontSize: 8, fontWeight: '700', marginBottom: 2 }}>POST-CONTACT UPDATE · {u.timestamp}</Text>
                             <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 17 }}>{u.aiSummary}</Text>
                           </View>
                         ))}
                         {linkedCaseData.notes.slice(0, 3).map((n) => (
                           <View key={n.id} style={{ marginBottom: 8 }}>
-                            <Text style={{ color: '#6b7a99', fontSize: 8, fontWeight: '700', marginBottom: 2 }}>FIELD NOTE · {n.tag}</Text>
+                            <Text style={{ color: '#b5c2dc', fontSize: 8, fontWeight: '700', marginBottom: 2 }}>FIELD NOTE · {n.tag}</Text>
                             <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 17 }}>{n.text}</Text>
                           </View>
                         ))}
@@ -764,7 +764,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       const qualityPassed = validationResult?.isValid !== false;
                       return (
                         <View style={{ backgroundColor: '#0a1520', borderRadius: 10, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#1e3a5f' }}>
-                          <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>ASSESSMENT PREPARED</Text>
+                          <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>ASSESSMENT PREPARED</Text>
                           <View style={{ gap: 5 }}>
                             {confirmedCount > 0 && <Text style={{ color: '#e8eaf0', fontSize: 11 }}>✓ <Text style={{ color: '#34c759', fontWeight: '700' }}>{confirmedCount}</Text> source-confirmed finding{confirmedCount !== 1 ? 's' : ''} organized</Text>}
                             {associationsCount > 0 && <Text style={{ color: '#e8eaf0', fontSize: 11 }}>◈ <Text style={{ color: '#ff9f0a', fontWeight: '700' }}>{associationsCount}</Text> possible association{associationsCount !== 1 ? 's' : ''} identified</Text>}
@@ -786,8 +786,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                         borderColor: validationResult.errors.length > 0 ? '#dc262640' : validationResult.warnings.length > 0 ? '#d9770640' : '#34c75940'
                       }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: validationResult.errors.length > 0 || validationResult.warnings.length > 0 ? 6 : 0 }}>
-                          <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', letterSpacing: 1.5 }}>ANALYTICAL QUALITY CHECK</Text>
-                          <Text style={{ color: validationResult.errors.length > 0 ? '#ff453a' : validationResult.warnings.length > 0 ? '#ff9f0a' : '#34c759', fontSize: 9, fontWeight: '700' }}>
+                          <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 }}>ANALYTICAL QUALITY CHECK</Text>
+                          <Text style={{ color: validationResult.errors.length > 0 ? '#ff453a' : validationResult.warnings.length > 0 ? '#ff9f0a' : '#34c759', fontSize: 11, fontWeight: '700' }}>
                             {validationResult.errors.length > 0 ? '⚠️ ISSUES FOUND' : validationResult.warnings.length > 0 ? '△ REVIEW SUGGESTED' : '✓ PASSED'}
                           </Text>
                         </View>
@@ -808,17 +808,17 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                         'REQUIRES_VERIFICATION': '#ffcc00',
                         'REQUIRES_IDENTITY_VERIFICATION': '#ff9500',
                         'ELEVATED_CAUTION': '#ff3b30',
-                        'NOT_DETERMINED': '#8e8e93',
-                        'INSUFFICIENT_IDENTIFIERS': '#8e8e93',
+                        'NOT_DETERMINED': '#c5c5ca',
+                        'INSUFFICIENT_IDENTIFIERS': '#c5c5ca',
                       };
                       const confColors: Record<string, string> = {
                         'HIGH': '#30d158', 'MEDIUM': '#ffcc00', 'LOW': '#ff9500', 'INSUFFICIENT': '#ff3b30'
                       };
-                      const statusColor = statusColors[ov.operationalRiskStatus] || '#8e8e93';
-                      const confColor = confColors[ov.identityConfidence] || '#8e8e93';
+                      const statusColor = statusColors[ov.operationalRiskStatus] || '#c5c5ca';
+                      const confColor = confColors[ov.identityConfidence] || '#c5c5ca';
                       return (
                         <View style={{ backgroundColor: '#0a0f1a', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#1e3a5f' }}>
-                          <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 12 }}>PRE-CONTACT OVERVIEW</Text>
+                          <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '700', letterSpacing: 2, marginBottom: 12 }}>PRE-CONTACT OVERVIEW</Text>
                           <View style={{ backgroundColor: confColor + '10', borderRadius: IS_IPAD ? 10 : 8, padding: IS_IPAD ? 14 : 12, marginBottom: 10, borderWidth: 1, borderColor: confColor + '30' }}>
                             <ConfidenceGauge
                               label="IDENTITY CONFIDENCE"
@@ -831,7 +831,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                   <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 10 }}>{riskData.identityConfidence.explanation}</Text>
                                   {riskData.identityConfidence.identityConfidenceSupportingFactors?.length > 0 && (
                                     <View style={{ marginBottom: 8 }}>
-                                      <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>SUPPORTING</Text>
+                                      <Text style={{ color: '#34c759', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>SUPPORTING</Text>
                                       {riskData.identityConfidence.identityConfidenceSupportingFactors.map((f: string, i: number) => (
                                         <Text key={i} style={{ color: '#34c759', fontSize: 11, lineHeight: 16, marginBottom: 3 }}>✓ {f}</Text>
                                       ))}
@@ -839,7 +839,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                   )}
                                   {riskData.identityConfidence.uncertainties?.length > 0 && (
                                     <View>
-                                      <Text style={{ color: '#ff9f0a', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>UNRESOLVED</Text>
+                                      <Text style={{ color: '#ff9f0a', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>UNRESOLVED</Text>
                                       {riskData.identityConfidence.uncertainties.map((u: string, i: number) => (
                                         <Text key={i} style={{ color: '#ff9f0a', fontSize: 11, lineHeight: 16, marginBottom: 3 }}>! {u}</Text>
                                       ))}
@@ -850,15 +850,15 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                             </ConfidenceGauge>
                           </View>
                           <View style={{ backgroundColor: statusColor + '15', borderRadius: IS_IPAD ? 10 : 8, padding: IS_IPAD ? 14 : 10, marginBottom: IS_IPAD ? 16 : 12, borderWidth: 1, borderColor: statusColor + '40' }}>
-                            <Text style={{ color: '#8e8e93', fontSize: IS_IPAD ? 10 : 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>OPERATIONAL STATUS</Text>
+                            <Text style={{ color: '#c5c5ca', fontSize: IS_IPAD ? 10 : 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>OPERATIONAL STATUS</Text>
                             <Text style={{ color: statusColor, fontSize: IS_IPAD ? 13 : 11, fontWeight: '800' }}>{ov.operationalRiskStatus?.replace(/_/g, ' ')}</Text>
                           </View>
                           <View style={{ marginBottom: 10 }}>
-                            <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>PRIMARY FINDING</Text>
+                            <Text style={{ color: '#c5c5ca', fontSize: 11, fontWeight: '600', letterSpacing: 1, marginBottom: 4 }}>PRIMARY FINDING</Text>
                             <Text style={{ color: '#e8eaf0', fontSize: 13, lineHeight: 19 }}>{ov.primaryFinding}</Text>
                           </View>
                           <View style={{ backgroundColor: '#ff950015', borderRadius: 8, padding: 12, borderWidth: 1, borderColor: '#ff950040' }}>
-                            <Text style={{ color: '#8e8e93', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 6 }}>NEXT BEST ACTION</Text>
+                            <Text style={{ color: '#c5c5ca', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 6 }}>NEXT BEST ACTION</Text>
                             <Text style={{ color: '#ff9500', fontSize: 13, fontWeight: '600', lineHeight: 19, marginBottom: 8 }}>{ov.immediateVerificationRequirement}</Text>
                             <TouchableOpacity
                               style={{ backgroundColor: '#ff950025', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6, alignSelf: 'flex-start', borderWidth: 1, borderColor: '#ff950050' }}
@@ -878,23 +878,23 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                 { label: 'Contradiction Review', key: 'contradictionReview' },
                               ].map((item) => {
                                 const val = ov.researchReadiness[item.key];
-                                const color = val === 'COMPLETE' ? '#34c759' : val === 'PARTIALLY_COMPLETE' ? '#ff9f0a' : val === 'NOT_APPLICABLE' ? '#4a5568' : '#ff453a';
+                                const color = val === 'COMPLETE' ? '#34c759' : val === 'PARTIALLY_COMPLETE' ? '#ff9f0a' : val === 'NOT_APPLICABLE' ? '#a5aec2' : '#ff453a';
                                 return (
                                   <View key={item.key} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                                    <Text style={{ color: '#6b7a99', fontSize: 10 }}>{item.label}</Text>
+                                    <Text style={{ color: '#b5c2dc', fontSize: 10 }}>{item.label}</Text>
                                     <Text style={{ color, fontSize: 10, fontWeight: '600' }}>{val?.replace(/_/g, ' ') || 'NOT ASSESSED'}</Text>
                                   </View>
                                 );
                               })}
                               <View style={{ marginTop: 6, backgroundColor: '#0a0f1a', borderRadius: 6, padding: 8 }}>
-                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 1, marginBottom: 2 }}>PRE-CONTACT READINESS</Text>
+                                <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', letterSpacing: 1, marginBottom: 2 }}>PRE-CONTACT READINESS</Text>
                                 <Text style={{ color: ov.researchReadiness.preContactReadiness === 'READY' ? '#34c759' : '#ff9f0a', fontSize: 11, fontWeight: '700' }}>
                                   {ov.researchReadiness.preContactReadiness?.replace(/_/g, ' ') || 'NOT DETERMINED'}
                                 </Text>
                               </View>
                             </View>
                           )}
-                          <Text style={{ color: '#4a5568', fontSize: 10, marginTop: 10, fontStyle: 'italic' }}>This status reflects available evidence and does not confirm that contact is safe.</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 10, marginTop: 10, fontStyle: 'italic' }}>This status reflects available evidence and does not confirm that contact is safe.</Text>
                         </View>
                       );
                     })()}
@@ -903,7 +903,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection} onLayout={(e) => registerSection('identity', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('identity')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🪪 IDENTITY CONFIDENCE</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('identity') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('identity') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('identity') && (
                           <>
@@ -917,7 +917,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                             )}
                             {riskData.identityConfidence.whatWouldIncreaseConfidence && (
                               <View style={{ backgroundColor: '#0a1a0a', borderRadius: 6, padding: 8, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: '#34c759' }}>
-                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 2 }}>TO INCREASE CONFIDENCE</Text>
+                                <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', marginBottom: 2 }}>TO INCREASE CONFIDENCE</Text>
                                 <Text style={{ color: '#34c759', fontSize: 11, lineHeight: 16 }}>{riskData.identityConfidence.whatWouldIncreaseConfidence}</Text>
                               </View>
                             )}
@@ -934,7 +934,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('confirmed')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>✅ Confirmed & Supported ({riskData.confirmedAndSupportedInformation.length})</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('confirmed') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('confirmed') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('confirmed') && riskData.confirmedAndSupportedInformation.map((item: any, i: number) => {
                           const fid = `confirmed_${i}`;
@@ -942,22 +942,22 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                           return (
                             <View key={i} style={{ backgroundColor: val === 'rejected' ? '#1a0505' : '#051a0d', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: val === 'confirmed' ? '#34c759' : val === 'rejected' ? '#ff453a' : '#34c75960' }}>
                               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>{item.confidence}</Text>
-                                <Text style={{ color: '#4a5568', fontSize: 9 }}>{item.source}</Text>
+                                <Text style={{ color: '#34c759', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>{item.confidence}</Text>
+                                <Text style={{ color: '#a5aec2', fontSize: 9 }}>{item.source}</Text>
                               </View>
                               <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{item.statement}</Text>
                               {item.whyItMatters && (
-                                <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, fontStyle: 'italic', marginBottom: 6 }}>→ {item.whyItMatters}</Text>
+                                <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15, fontStyle: 'italic', marginBottom: 6 }}>→ {item.whyItMatters}</Text>
                               )}
                               <View style={{ flexDirection: 'row', gap: 6 }}>
                                 <TouchableOpacity style={{ flex: 1, backgroundColor: val === 'confirmed' ? '#34c75930' : '#1a2a1a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#34c75940' }} onPress={() => validateFinding(fid, val === 'confirmed' ? 'needs_review' : 'confirmed')}>
-                                  <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '600' }}>✓ Confirm</Text>
+                                  <Text style={{ color: '#34c759', fontSize: 11, fontWeight: '600' }}>✓ Confirm</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={{ flex: 1, backgroundColor: val === 'rejected' ? '#2a0a0a' : '#1a0a0a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#ff453a40' }} onPress={() => validateFinding(fid, val === 'rejected' ? 'needs_review' : 'rejected')}>
-                                  <Text style={{ color: '#ff453a', fontSize: 9, fontWeight: '600' }}>✕ Reject</Text>
+                                  <Text style={{ color: '#ff453a', fontSize: 11, fontWeight: '600' }}>✕ Reject</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={{ flex: 1, backgroundColor: '#1a1a0a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#ff9f0a40' }} onPress={() => validateFinding(fid, 'needs_review')}>
-                                  <Text style={{ color: '#ff9f0a', fontSize: 9, fontWeight: '600' }}>? Review</Text>
+                                  <Text style={{ color: '#ff9f0a', fontSize: 11, fontWeight: '600' }}>? Review</Text>
                                 </TouchableOpacity>
                               </View>
                             </View>
@@ -971,22 +971,22 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('associations')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🔗 Possible Associations ({riskData.possibleAssociations.length})</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('associations') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('associations') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('associations') && riskData.possibleAssociations.map((item: any, i: number) => (
                           <View key={i} style={{ backgroundColor: '#1a1000', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#d97706' }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                              <Text style={{ color: '#d97706', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>POSSIBLE ASSOCIATION — {item.confidence}</Text>
+                              <Text style={{ color: '#d97706', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>POSSIBLE ASSOCIATION — {item.confidence}</Text>
                             </View>
                             <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 6 }}>{item.statement}</Text>
                             {item.whyIdentified && (
-                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>Why identified: {item.whyIdentified}</Text>
+                              <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>Why identified: {item.whyIdentified}</Text>
                             )}
                             {item.alternativeExplanation && (
-                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>◇ Alternative: {item.alternativeExplanation}</Text>
+                              <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>◇ Alternative: {item.alternativeExplanation}</Text>
                             )}
                             {item.recommendedVerification && (
-                              <Text style={{ color: '#2563eb', fontSize: 10, lineHeight: 15 }}>→ {item.recommendedVerification}</Text>
+                              <Text style={{ color: '#5b9bfb', fontSize: 12, lineHeight: 15 }}>→ {item.recommendedVerification}</Text>
                             )}
                           </View>
                         ))}
@@ -998,7 +998,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection} onLayout={(e) => registerSection('risk', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('risk')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🚨 Potential Risk Indicators ({riskData.potentialRiskIndicators.length})</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('risk') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('risk') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('risk') && riskData.potentialRiskIndicators.map((r: any, i: number) => {
                           const sevColor = r.severity === 'HIGH' ? '#ff453a' : r.severity === 'MEDIUM' ? '#ff9f0a' : '#2563eb';
@@ -1012,42 +1012,42 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                 <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 8 }}>{r.indicator}</Text>
                                 {/* Compact status — always visible */}
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: isExpanded ? 8 : 0 }}>
-                                  <Text style={{ color: '#6b7a99', fontSize: 9 }}>Target: <Text style={{ color: isUnverifiedIdentity ? '#ff9f0a' : '#34c759', fontWeight: '700' }}>{isUnverifiedIdentity ? 'UNVERIFIED' : 'CONFIRMED'}</Text></Text>
-                                  <Text style={{ color: sevColor, fontSize: 9, fontWeight: '700' }}>{r.severity} IF MATCHED</Text>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 9 }}>Target: <Text style={{ color: isUnverifiedIdentity ? '#ff9f0a' : '#34c759', fontWeight: '700' }}>{isUnverifiedIdentity ? 'UNVERIFIED' : 'CONFIRMED'}</Text></Text>
+                                  <Text style={{ color: sevColor, fontSize: 11, fontWeight: '700' }}>{r.severity} IF MATCHED</Text>
                                 </View>
                                 {/* Expanded details */}
                                 {isExpanded && (
                                   <>
                                     <View style={{ gap: 4, marginBottom: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#ffffff10' }}>
                                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                        <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>SOURCE RECORD</Text>
-                                        <Text style={{ color: r.status === 'CONFIRMED' ? '#34c759' : '#ff9f0a', fontSize: 9, fontWeight: '700' }}>
+                                        <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', letterSpacing: 0.5 }}>SOURCE RECORD</Text>
+                                        <Text style={{ color: r.status === 'CONFIRMED' ? '#34c759' : '#ff9f0a', fontSize: 11, fontWeight: '700' }}>
                                           {r.status === 'CONFIRMED' ? 'CONFIRMED' : 'REQUIRES VERIFICATION'}
                                         </Text>
                                       </View>
                                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                        <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>TARGET ASSOCIATION</Text>
-                                        <Text style={{ color: isUnverifiedIdentity ? '#ff9f0a' : '#34c759', fontSize: 9, fontWeight: '700' }}>
+                                        <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', letterSpacing: 0.5 }}>TARGET ASSOCIATION</Text>
+                                        <Text style={{ color: isUnverifiedIdentity ? '#ff9f0a' : '#34c759', fontSize: 11, fontWeight: '700' }}>
                                           {isUnverifiedIdentity ? 'UNVERIFIED' : 'CONFIRMED'}
                                         </Text>
                                       </View>
                                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                        <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 }}>SEVERITY IF MATCHED</Text>
-                                        <Text style={{ color: sevColor, fontSize: 9, fontWeight: '700' }}>{r.severity}</Text>
+                                        <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', letterSpacing: 0.5 }}>SEVERITY IF MATCHED</Text>
+                                        <Text style={{ color: sevColor, fontSize: 11, fontWeight: '700' }}>{r.severity}</Text>
                                       </View>
                                     </View>
                                     {r.evidentiaryBasis && (
-                                      <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>Basis: {r.evidentiaryBasis}</Text>
+                                      <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>Basis: {r.evidentiaryBasis}</Text>
                                     )}
                                     {r.alternativeExplanation && (
-                                      <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>◇ Alternative: {r.alternativeExplanation}</Text>
+                                      <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>◇ Alternative: {r.alternativeExplanation}</Text>
                                     )}
                                     {r.sourceReferences?.length > 0 && (
-                                      <Text style={{ color: '#4a5568', fontSize: 9, marginTop: 4 }}>Sources: {r.sourceReferences.join(' · ')}</Text>
+                                      <Text style={{ color: '#a5aec2', fontSize: 9, marginTop: 4 }}>Sources: {r.sourceReferences.join(' · ')}</Text>
                                     )}
                                   </>
                                 )}
-                                <Text style={{ color: '#4a5568', fontSize: 9, marginTop: 6, textAlign: 'right' }}>{isExpanded ? '▲ Less' : '▼ More details'}</Text>
+                                <Text style={{ color: '#a5aec2', fontSize: 9, marginTop: 6, textAlign: 'right' }}>{isExpanded ? '▲ Less' : '▼ More details'}</Text>
                               </View>
                             </TouchableOpacity>
                           );
@@ -1059,33 +1059,33 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection} onLayout={(e) => registerSection('contra', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('contra')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>⚠️ Contradictions ({riskData.contradictionsAndInconsistencies.length})</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('contra') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('contra') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('contra') && riskData.contradictionsAndInconsistencies.map((c: any, i: number) => (
                           <View key={i} style={{ backgroundColor: '#1a1000', borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#d97706' }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                              <Text style={{ color: '#d97706', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>{c.contradictionType?.replace(/_/g, ' ') || 'CONTRADICTION'} — {c.significance}</Text>
+                              <Text style={{ color: '#d97706', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>{c.contradictionType?.replace(/_/g, ' ') || 'CONTRADICTION'} — {c.significance}</Text>
                             </View>
                             <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 8 }}>{c.description}</Text>
                             {(c.sourceA || c.sourceB) && (
                               <View style={{ backgroundColor: '#0a0a00', borderRadius: 6, padding: 8, marginBottom: 6 }}>
                                 {c.sourceA && (
-                                  <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>
                                     <Text style={{ color: '#d97706', fontWeight: '600' }}>{c.sourceA.name}: </Text>{c.sourceA.claim}
                                   </Text>
                                 )}
                                 {c.sourceB && (
-                                  <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15 }}>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15 }}>
                                     <Text style={{ color: '#d97706', fontWeight: '600' }}>{c.sourceB.name}: </Text>{c.sourceB.claim}
                                   </Text>
                                 )}
                               </View>
                             )}
                             {c.possibleExplanation && (
-                              <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 6, fontStyle: 'italic' }}>◇ Possible explanation: {c.possibleExplanation}</Text>
+                              <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15, marginBottom: 6, fontStyle: 'italic' }}>◇ Possible explanation: {c.possibleExplanation}</Text>
                             )}
                             {c.recommendedResolution && (
-                              <Text style={{ color: '#2563eb', fontSize: 10, lineHeight: 15 }}>→ {c.recommendedResolution}</Text>
+                              <Text style={{ color: '#5b9bfb', fontSize: 12, lineHeight: 15 }}>→ {c.recommendedResolution}</Text>
                             )}
                           </View>
                         ))}
@@ -1096,7 +1096,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection} onLayout={(e) => registerSection('gaps', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('gaps')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🔍 Information Gaps ({riskData.informationGaps.length})</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('gaps') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('gaps') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('gaps') && riskData.informationGaps.map((g: any, i: number) => {
                           const priority = g.priority || (g.importance === 'HIGH' ? 'CRITICAL' : g.importance === 'MEDIUM' ? 'IMPORTANT' : 'USEFUL');
@@ -1105,12 +1105,12 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                           return (
                             <View key={i} style={{ backgroundColor: prioBg, borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: prioColor }}>
                               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                <Text style={{ color: prioColor, fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>{priority}</Text>
-                                {g.impact && <Text style={{ color: '#4a5568', fontSize: 8 }}>{g.impact?.replace(/_/g, ' ')}</Text>}
+                                <Text style={{ color: prioColor, fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>{priority}</Text>
+                                {g.impact && <Text style={{ color: '#a5aec2', fontSize: 8 }}>{g.impact?.replace(/_/g, ' ')}</Text>}
                               </View>
                               <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 4 }}>{g.gap}</Text>
                               {g.priorityReason && (
-                                <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 6, fontStyle: 'italic' }}>{g.priorityReason}</Text>
+                                <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15, marginBottom: 6, fontStyle: 'italic' }}>{g.priorityReason}</Text>
                               )}
                               {g.suggestedCheck && (
                                 <Text style={{ color: '#2563eb', fontSize: 11, lineHeight: 16, marginBottom: 8 }}>→ {g.suggestedCheck}</Text>
@@ -1120,19 +1120,19 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                   style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#2563eb40' }}
                                   onPress={() => Alert.alert('Add Identifier', 'Add a new identifier (DOB, address, phone) to refine this search.')}
                                 >
-                                  <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '600' }}>+ Add Identifier</Text>
+                                  <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '600' }}>+ Add Identifier</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                   style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#2563eb40' }}
                                   onPress={() => Alert.alert('Create Task', 'Mark this gap as a follow-up verification task.')}
                                 >
-                                  <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '600' }}>📋 Create Task</Text>
+                                  <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '600' }}>📋 Create Task</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                  style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#4a556840' }}
+                                  style={{ backgroundColor: '#1a2a3a', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#a5aec240' }}
                                   onPress={() => Alert.alert('Mark Unavailable', 'This gap will be marked as unavailable.')}
                                 >
-                                  <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '600' }}>Mark Unavailable</Text>
+                                  <Text style={{ color: '#a5aec2', fontSize: 10, fontWeight: '600' }}>Mark Unavailable</Text>
                                 </TouchableOpacity>
                               </View>
                             </View>
@@ -1145,7 +1145,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection} onLayout={(e) => registerSection('checks', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('checks')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>📋 Recommended Verification ({riskData.recommendedChecksBeforeContact.length})</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('checks') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('checks') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('checks') && riskData.recommendedChecksBeforeContact.map((c: any, i: number) => (
                           <Text key={i} style={styles.riskBulletBlue}>→ [{c.priority}] {c.module} — {c.reason}</Text>
@@ -1157,7 +1157,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('ops')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🎯 Operational Considerations</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('ops') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('ops') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('ops') && riskData.operationalConsiderations.map((o: string, i: number) => (
                           <Text key={i} style={styles.riskBulletGreen}>◆ {o}</Text>
@@ -1169,23 +1169,23 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('identity_res')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>🔍 Identity Resolution</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('identity_res') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('identity_res') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('identity_res') && (() => {
                           const ir = riskData.identityResolution;
                           const assessColor = ir.assessment?.includes('LIKELY_SAME') ? '#34c759' :
                                              ir.assessment?.includes('LIKELY_DIFFERENT') ? '#ff453a' :
-                                             ir.assessment?.includes('POSSIBLY_SAME') ? '#ff9f0a' : '#6b7a99';
+                                             ir.assessment?.includes('POSSIBLY_SAME') ? '#ff9f0a' : '#b5c2dc';
                           return (
                             <View>
                               <View style={{ backgroundColor: assessColor + '15', borderRadius: 8, padding: 10, marginBottom: 8, borderWidth: 1, borderColor: assessColor + '40' }}>
-                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 4 }}>IDENTITY ASSESSMENT</Text>
+                                <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', marginBottom: 4 }}>IDENTITY ASSESSMENT</Text>
                                 <Text style={{ color: assessColor, fontSize: 13, fontWeight: '800', marginBottom: 6 }}>{ir.assessment?.replace(/_/g, ' ')}</Text>
                                 <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18 }}>{ir.conclusion}</Text>
                               </View>
                               {ir.supportingFactors?.length > 0 && (
                                 <View style={{ marginBottom: 6 }}>
-                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 4 }}>SUPPORTING FACTORS</Text>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', marginBottom: 4 }}>SUPPORTING FACTORS</Text>
                                   {ir.supportingFactors.map((f: string, i: number) => (
                                     <Text key={i} style={{ color: '#34c759', fontSize: 11, lineHeight: 16, marginBottom: 2 }}>◆ {f}</Text>
                                   ))}
@@ -1193,7 +1193,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                               )}
                               {ir.conflictingFactors?.length > 0 && (
                                 <View style={{ marginBottom: 6 }}>
-                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 4 }}>CONFLICTING FACTORS</Text>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', marginBottom: 4 }}>CONFLICTING FACTORS</Text>
                                   {ir.conflictingFactors.map((f: string, i: number) => (
                                     <Text key={i} style={{ color: '#ff9f0a', fontSize: 11, lineHeight: 16, marginBottom: 2 }}>△ {f}</Text>
                                   ))}
@@ -1201,17 +1201,17 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                               )}
                               {ir.minimumRequiredToConfirm && (
                                 <View style={{ backgroundColor: '#0a1a0a', borderRadius: 6, padding: 8 }}>
-                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 2 }}>TO CONFIRM IDENTITY</Text>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', marginBottom: 2 }}>TO CONFIRM IDENTITY</Text>
                                   <Text style={{ color: '#34c759', fontSize: 11, lineHeight: 16 }}>{ir.minimumRequiredToConfirm}</Text>
                                 </View>
                               )}
                               {ir.minimumRequiredToConfirm && (
                                 <View style={{ marginTop: 8 }}>
-                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 6 }}>ADD IDENTIFIER & RE-CHECK</Text>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', marginBottom: 6 }}>ADD IDENTIFIER & RE-CHECK</Text>
                                   <TextInput
                                     style={{ backgroundColor: '#0a0f1a', borderRadius: 6, borderWidth: 1, borderColor: '#1e2a3a', color: '#e8eaf0', fontSize: 13, minHeight: 42, paddingHorizontal: 10, paddingVertical: 10, marginBottom: 6 }}
                                     placeholder="Enter the identifier suggested above"
-                                    placeholderTextColor="#4a5568"
+                                    placeholderTextColor="#a5aec2"
                                     value={identityAssistantInput}
                                     onChangeText={setIdentityAssistantInput}
                                     autoCapitalize="none"
@@ -1244,7 +1244,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection} onLayout={(e) => registerSection('ai_interp', e.nativeEvent.layout.y)}>
                         <TouchableOpacity onPress={() => toggleSection('ai_interp')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={{ color: '#9b6dff', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 2 }}>🤖 AI-ASSISTED INTERPRETATION ({riskData.aiAssistedInterpretation.length})</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('ai_interp') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('ai_interp') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         <Text style={{ color: '#6b5b8a', fontSize: 10, marginBottom: 6, fontStyle: 'italic' }}>
                           Analytical interpretation generated from available findings. Not source-confirmed. Requires professional review.
@@ -1258,7 +1258,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                             {item.alternativeInterpretation && (
                               <Text style={{ color: '#6b5b8a', fontSize: 10, lineHeight: 15, marginBottom: 4 }}>◇ Alternative: {item.alternativeInterpretation}</Text>
                             )}
-                            <Text style={{ color: '#9b6dff', fontSize: 9, fontWeight: '600', marginTop: 4 }}>REQUIRES PROFESSIONAL REVIEW</Text>
+                            <Text style={{ color: '#9b6dff', fontSize: 11, fontWeight: '600', marginTop: 4 }}>REQUIRES PROFESSIONAL REVIEW</Text>
                           </View>
                         ))}
                       </View>
@@ -1269,7 +1269,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                       <View style={styles.riskSection}>
                         <TouchableOpacity onPress={() => toggleSection('conf')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={styles.riskSectionTitle}>📊 Confidence & Limitations</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('conf') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('conf') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('conf') && (
                           <>
@@ -1282,7 +1282,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                               <Text style={{ color: '#e8eaf0', fontSize: 12, lineHeight: 18, marginBottom: 10 }}>{riskData.confidenceAndLimitations.basis}</Text>
                               {riskData.confidenceAndLimitations.confidenceFactors && (
                                 <View>
-                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>PROVENANCE</Text>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>PROVENANCE</Text>
                                   {Object.entries(riskData.confidenceAndLimitations.confidenceFactors).map(([key, value]: [string, any]) => (
                                     <Text key={key} style={{ color: '#e8eaf0', fontSize: 11, lineHeight: 17, marginBottom: 4 }}>
                                       <Text style={{ color: '#2563eb', fontWeight: '700' }}>{key.replace(/([A-Z])/g, ' $1').replace(/^./, (s: string) => s.toUpperCase())}: </Text>
@@ -1303,13 +1303,13 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                     {/* Review Status */}
                     <View style={{ marginBottom: 10, backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#1e2a3a' }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', letterSpacing: 1 }}>ASSESSMENT STATUS</Text>
-                        {isLocked && <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '700' }}>🔒 LOCKED</Text>}
+                        <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>ASSESSMENT STATUS</Text>
+                        {isLocked && <Text style={{ color: '#34c759', fontSize: 11, fontWeight: '700' }}>🔒 LOCKED</Text>}
                       </View>
                       <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap' }}>
                         {(['draft', 'verification_required', 'ready_for_review', 'reviewed', 'locked'] as const).map((s) => {
                           const labels: Record<string, string> = { draft: 'Draft', verification_required: 'Verification Req.', ready_for_review: 'Ready for Review', reviewed: 'Reviewed', locked: '🔒 Lock' };
-                          const colors: Record<string, string> = { draft: '#4a5568', verification_required: '#ff9f0a', ready_for_review: '#2563eb', reviewed: '#34c759', locked: '#7c3aed' };
+                          const colors: Record<string, string> = { draft: '#a5aec2', verification_required: '#ff9f0a', ready_for_review: '#2563eb', reviewed: '#34c759', locked: '#7c3aed' };
                           const isActive = reviewStatus === s || (s === 'locked' && isLocked);
                           return (
                             <TouchableOpacity
@@ -1333,7 +1333,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                 }
                               }}
                             >
-                              <Text style={{ color: isActive ? colors[s] : '#4a5568', fontSize: 9, fontWeight: '600' }}>{labels[s]}</Text>
+                              <Text style={{ color: isActive ? colors[s] : '#a5aec2', fontSize: 11, fontWeight: '600' }}>{labels[s]}</Text>
                             </TouchableOpacity>
                           );
                         })}
@@ -1373,14 +1373,14 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                         style={{ marginTop: 8, padding: 8, alignItems: 'center' }}
                         onPress={() => setShowBriefHistory(!showBriefHistory)}
                       >
-                        <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '600' }}>
+                        <Text style={{ color: '#a5aec2', fontSize: 10, fontWeight: '600' }}>
                           {showBriefHistory ? '▲ Hide' : '▼ Show'} version history ({briefHistory.length} versions)
                         </Text>
                       </TouchableOpacity>
                     )}
                     {showBriefHistory && briefHistory.length > 1 && (
                       <View style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 12, marginTop: 4 }}>
-                        <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 }}>BRIEF VERSION HISTORY</Text>
+                        <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 }}>BRIEF VERSION HISTORY</Text>
                         {briefHistory.map((v, i) => (
                           <TouchableOpacity
                             key={i}
@@ -1391,21 +1391,21 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                               <Text style={{ color: i === briefHistory.length - 1 ? '#2563eb' : '#e8eaf0', fontSize: 12, fontWeight: '600' }}>
                                 Version {v.version} {i === briefHistory.length - 1 ? '(current)' : ''}
                               </Text>
-                              <Text style={{ color: '#4a5568', fontSize: 10, marginBottom: 4 }}>{v.timestamp}</Text>
+                              <Text style={{ color: '#a5aec2', fontSize: 10, marginBottom: 4 }}>{v.timestamp}</Text>
                               {(v as any).changes?.map((ch: string, ci: number) => (
-                                <Text key={ci} style={{ color: '#6b7a99', fontSize: 9, lineHeight: 13 }}>→ {ch}</Text>
+                                <Text key={ci} style={{ color: '#b5c2dc', fontSize: 9, lineHeight: 13 }}>→ {ch}</Text>
                               ))}
                             </View>
                             <View style={{ alignItems: 'flex-end' }}>
-                              <Text style={{ color: '#6b7a99', fontSize: 10 }}>{v.data.preContactOverview?.identityConfidence || 'N/A'}</Text>
-                              <Text style={{ color: '#6b7a99', fontSize: 9 }}>{v.data.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' ') || ''}</Text>
+                              <Text style={{ color: '#b5c2dc', fontSize: 10 }}>{v.data.preContactOverview?.identityConfidence || 'N/A'}</Text>
+                              <Text style={{ color: '#b5c2dc', fontSize: 9 }}>{v.data.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' ') || ''}</Text>
                             </View>
                             {i < briefHistory.length - 1 && (
                               <TouchableOpacity
                                 style={{ backgroundColor: '#1a2035', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginLeft: 8, marginTop: 2 }}
                                 onPress={() => setCompareVersion(compareVersion === v.version ? null : v.version)}
                               >
-                                <Text style={{ color: compareVersion === v.version ? '#2563eb' : '#4a5568', fontSize: 9, fontWeight: '600' }}>
+                                <Text style={{ color: compareVersion === v.version ? '#2563eb' : '#a5aec2', fontSize: 11, fontWeight: '600' }}>
                                   {compareVersion === v.version ? 'Cancel' : 'Compare'}
                                 </Text>
                               </TouchableOpacity>
@@ -1418,7 +1418,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                           if (!compareData || !currentData) return null;
                           return (
                             <View style={{ marginTop: 12, backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10 }}>
-                              <Text style={{ color: '#2563eb', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 }}>VERSION COMPARISON</Text>
+                              <Text style={{ color: '#2563eb', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 }}>VERSION COMPARISON</Text>
                               {[
                                 { label: 'Identity Confidence', v1: compareData.preContactOverview?.identityConfidence, v2: currentData.preContactOverview?.identityConfidence },
                                 { label: 'Operational Status', v1: compareData.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' '), v2: currentData.preContactOverview?.operationalRiskStatus?.replace(/_/g, ' ') },
@@ -1426,9 +1426,9 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                 { label: 'Information Gaps', v1: `${compareData.informationGaps?.length || 0}`, v2: `${currentData.informationGaps?.length || 0}` },
                               ].map((row, ri) => (
                                 <View key={ri} style={{ flexDirection: 'row', marginBottom: 6 }}>
-                                  <Text style={{ color: '#6b7a99', fontSize: 10, width: 120 }}>{row.label}</Text>
-                                  <Text style={{ color: row.v1 === row.v2 ? '#4a5568' : '#ff9f0a', fontSize: 10, flex: 1 }}>v{compareVersion}: {row.v1}</Text>
-                                  <Text style={{ color: row.v1 === row.v2 ? '#4a5568' : '#34c759', fontSize: 10, flex: 1 }}>current: {row.v2}</Text>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 10, width: 120 }}>{row.label}</Text>
+                                  <Text style={{ color: row.v1 === row.v2 ? '#a5aec2' : '#ff9f0a', fontSize: 10, flex: 1 }}>v{compareVersion}: {row.v1}</Text>
+                                  <Text style={{ color: row.v1 === row.v2 ? '#a5aec2' : '#34c759', fontSize: 10, flex: 1 }}>current: {row.v2}</Text>
                                 </View>
                               ))}
                             </View>
@@ -1441,8 +1441,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                     {briefView === 'full' && riskData.evidenceClassifier?.length > 0 && (
                       <View style={{ marginBottom: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('evidence_classifier')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🏷️ EVIDENCE CLASSIFICATION ({riskData.evidenceClassifier.length})</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('evidence_classifier') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>🏷️ EVIDENCE CLASSIFICATION ({riskData.evidenceClassifier.length})</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('evidence_classifier') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('evidence_classifier') && riskData.evidenceClassifier.map((item: any, i: number) => {
                           const classColor: Record<string, string> = {
@@ -1454,9 +1454,9 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                             'CONTRADICTION': '#ff453a',
                             'INFORMATION_GAP': '#2563eb',
                             'AI_ASSISTED_INTERPRETATION': '#9b6dff',
-                            'NOT_ASSESSED': '#4a5568',
+                            'NOT_ASSESSED': '#a5aec2',
                           };
-                          const color = classColor[item.classification] || '#6b7a99';
+                          const color = classColor[item.classification] || '#b5c2dc';
                           const eid = `evidence_${i}`;
                           const val = validatedFindings[eid];
                           const itemExpanded = expandedEvidenceItems.has(i);
@@ -1464,40 +1464,40 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                             <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: color }}>
                               <TouchableOpacity onPress={() => toggleEvidenceItem(i)}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                                  <Text style={{ color, fontSize: 9, fontWeight: '700', letterSpacing: 0.5 }}>{item.classification?.replace(/_/g, ' ')}</Text>
-                                  <Text style={{ color: '#4a5568', fontSize: 8 }}>{item.associationStatus?.replace(/_/g, ' ')}</Text>
+                                  <Text style={{ color, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{item.classification?.replace(/_/g, ' ')}</Text>
+                                  <Text style={{ color: '#a5aec2', fontSize: 8 }}>{item.associationStatus?.replace(/_/g, ' ')}</Text>
                                 </View>
                                 <Text style={{ color: '#e8eaf0', fontSize: 11, lineHeight: 17, marginBottom: 4 }}>{item.statement}</Text>
                                 {item.sourceReferences?.length > 0 && (
-                                  <Text style={{ color: '#4a5568', fontSize: 9 }}>Sources: {item.sourceReferences.join(' · ')}</Text>
+                                  <Text style={{ color: '#a5aec2', fontSize: 9 }}>Sources: {item.sourceReferences.join(' · ')}</Text>
                                 )}
                                 <Text style={{ color: '#2563eb', fontSize: 8, marginTop: 4 }}>{itemExpanded ? '▲ Hide provenance' : '▼ Show provenance'}</Text>
                               </TouchableOpacity>
                               {itemExpanded && (
                                 <View style={{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#1e2a3a' }}>
-                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', marginBottom: 4 }}>PROVENANCE CHAIN</Text>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '700', marginBottom: 4 }}>PROVENANCE CHAIN</Text>
                                   {item.findingId && (
-                                    <Text style={{ color: '#6b7a99', fontSize: 9, lineHeight: 14, marginBottom: 3 }}>Finding ID: {item.findingId}</Text>
+                                    <Text style={{ color: '#b5c2dc', fontSize: 9, lineHeight: 14, marginBottom: 3 }}>Finding ID: {item.findingId}</Text>
                                   )}
                                   {item.sourceTypes?.length > 0 && (
-                                    <Text style={{ color: '#6b7a99', fontSize: 9, lineHeight: 14, marginBottom: 3 }}>Source Types: {item.sourceTypes.join(', ')}</Text>
+                                    <Text style={{ color: '#b5c2dc', fontSize: 9, lineHeight: 14, marginBottom: 3 }}>Source Types: {item.sourceTypes.join(', ')}</Text>
                                   )}
                                   {item.retrievalStatus && (
-                                    <Text style={{ color: '#6b7a99', fontSize: 9, lineHeight: 14, marginBottom: 3 }}>Retrieval Status: {item.retrievalStatus.replace(/_/g, ' ')}</Text>
+                                    <Text style={{ color: '#b5c2dc', fontSize: 9, lineHeight: 14, marginBottom: 3 }}>Retrieval Status: {item.retrievalStatus.replace(/_/g, ' ')}</Text>
                                   )}
                                   {item.verificationRequirement && (
                                     <Text style={{ color: '#ff9f0a', fontSize: 9, lineHeight: 14, marginBottom: 6 }}>Verification Needed: {item.verificationRequirement}</Text>
                                   )}
-                                  <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '700', marginBottom: 4, marginTop: 2 }}>PROFESSIONAL DECISION</Text>
+                                  <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '700', marginBottom: 4, marginTop: 2 }}>PROFESSIONAL DECISION</Text>
                                   <View style={{ flexDirection: 'row', gap: 6 }}>
                                     <TouchableOpacity style={{ flex: 1, backgroundColor: val === 'confirmed' ? '#34c75930' : '#1a2a1a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#34c75940' }} onPress={() => validateFinding(eid, val === 'confirmed' ? 'needs_review' : 'confirmed')}>
-                                      <Text style={{ color: '#34c759', fontSize: 9, fontWeight: '600' }}>✓ Confirm</Text>
+                                      <Text style={{ color: '#34c759', fontSize: 11, fontWeight: '600' }}>✓ Confirm</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity style={{ flex: 1, backgroundColor: val === 'rejected' ? '#2a0a0a' : '#1a0a0a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#ff453a40' }} onPress={() => validateFinding(eid, val === 'rejected' ? 'needs_review' : 'rejected')}>
-                                      <Text style={{ color: '#ff453a', fontSize: 9, fontWeight: '600' }}>✕ Reject</Text>
+                                      <Text style={{ color: '#ff453a', fontSize: 11, fontWeight: '600' }}>✕ Reject</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity style={{ flex: 1, backgroundColor: '#1a1a0a', borderRadius: 6, padding: 5, alignItems: 'center', borderWidth: 1, borderColor: '#ff9f0a40' }} onPress={() => validateFinding(eid, 'needs_review')}>
-                                      <Text style={{ color: '#ff9f0a', fontSize: 9, fontWeight: '600' }}>? Review</Text>
+                                      <Text style={{ color: '#ff9f0a', fontSize: 11, fontWeight: '600' }}>? Review</Text>
                                     </TouchableOpacity>
                                   </View>
                                 </View>
@@ -1512,8 +1512,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                     {briefView === 'full' && (
                       <View style={{ marginBottom: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('entity_map')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🕸️ ENTITY RELATIONSHIPS</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('entity_map') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>🕸️ ENTITY RELATIONSHIPS</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('entity_map') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('entity_map') && (
                           <View>
@@ -1541,7 +1541,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                               </TouchableOpacity>
                             )}
                             {entityMap && entityMap.entities.length === 0 && (
-                              <Text style={{ color: '#6b7a99', fontSize: 11, fontStyle: 'italic' }}>No distinct connected entities identified from current findings.</Text>
+                              <Text style={{ color: '#b5c2dc', fontSize: 11, fontStyle: 'italic' }}>No distinct connected entities identified from current findings.</Text>
                             )}
                             {entityMap && entityMap.entities.map((e: any, i: number) => {
                               const confColor: Record<string, string> = {
@@ -1550,26 +1550,26 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                 'PROBABLE': '#ff9f0a',
                                 'POSSIBLE': '#ff9f0a99',
                                 'CONTRADICTORY': '#ff453a',
-                                'UNVERIFIED': '#4a5568',
+                                'UNVERIFIED': '#a5aec2',
                               };
                               const entityIcons: Record<string, string> = {
                                 'PERSON': '👤', 'PHONE': '📞', 'EMAIL': '✉️', 'COMPANY': '🏢',
                                 'ADDRESS': '📍', 'VEHICLE': '🚗', 'DOMAIN': '🌐',
                               };
-                              const color = confColor[e.confidence] || '#6b7a99';
+                              const color = confColor[e.confidence] || '#b5c2dc';
                               const icon = entityIcons[e.type] || '◆';
                               return (
                                 <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: color }}>
                                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                       <Text style={{ fontSize: 14 }}>{icon}</Text>
-                                      <Text style={{ color: '#2563eb', fontSize: 9, fontWeight: '700', letterSpacing: 0.5 }}>{e.type}</Text>
+                                      <Text style={{ color: '#2563eb', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{e.type}</Text>
                                     </View>
-                                    <Text style={{ color, fontSize: 9, fontWeight: '700' }}>{e.confidence?.replace(/_/g, ' ')}</Text>
+                                    <Text style={{ color, fontSize: 11, fontWeight: '700' }}>{e.confidence?.replace(/_/g, ' ')}</Text>
                                   </View>
                                   <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '700', marginBottom: 3 }}>{e.value}</Text>
-                                  <Text style={{ color: '#6b7a99', fontSize: 11, lineHeight: 16, marginBottom: 3 }}>{e.relationship}</Text>
-                                  {e.source && <Text style={{ color: '#4a5568', fontSize: 9 }}>Source: {e.source}</Text>}
+                                  <Text style={{ color: '#b5c2dc', fontSize: 11, lineHeight: 16, marginBottom: 3 }}>{e.relationship}</Text>
+                                  {e.source && <Text style={{ color: '#a5aec2', fontSize: 9 }}>Source: {e.source}</Text>}
                                 </View>
                               );
                             })}
@@ -1582,8 +1582,8 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                     {briefView === 'full' && (
                       <View style={{ marginBottom: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('client_summary')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>📄 CLIENT-READY SUMMARY</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('client_summary') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>📄 CLIENT-READY SUMMARY</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('client_summary') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('client_summary') && (
                           <View>
@@ -1621,14 +1621,14 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                     {briefView === 'full' && riskData.queryVariations && (riskData.queryVariations.nameVariations?.length > 0 || riskData.queryVariations.booleanSuggestions?.length > 0) && (
                       <View style={{ marginBottom: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('query_builder')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🔎 QUERY VARIATIONS</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('query_builder') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>🔎 QUERY VARIATIONS</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('query_builder') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
                         {expandedSections.has('query_builder') && (
                           <>
                             {riskData.queryVariations.nameVariations?.length > 0 && (
                               <View style={{ marginBottom: 8 }}>
-                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 4 }}>NAME VARIATIONS TO TRY</Text>
+                                <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', marginBottom: 4 }}>NAME VARIATIONS TO TRY</Text>
                                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                                   {riskData.queryVariations.nameVariations.map((v: string, i: number) => (
                                     <TouchableOpacity
@@ -1646,9 +1646,9 @@ Return to the search field and enter this variation.`)}
                             )}
                             {riskData.queryVariations.booleanSuggestions?.length > 0 && (
                               <View>
-                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 4 }}>BOOLEAN SEARCH SUGGESTIONS</Text>
+                                <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', marginBottom: 4 }}>BOOLEAN SEARCH SUGGESTIONS</Text>
                                 {riskData.queryVariations.booleanSuggestions.map((s: string, i: number) => (
-                                  <Text key={i} style={{ color: '#6b7a99', fontSize: 10, lineHeight: 16, marginBottom: 2 }}>→ {s}</Text>
+                                  <Text key={i} style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 16, marginBottom: 2 }}>→ {s}</Text>
                                 ))}
                               </View>
                             )}
@@ -1661,27 +1661,27 @@ Return to the search field and enter this variation.`)}
                     {briefView === 'full' && riskData.researchPlan && (
                       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('research_plan')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>🗺️ RESEARCH PLAN</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('research_plan') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>🗺️ RESEARCH PLAN</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('research_plan') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
-                        <Text style={{ color: '#6b7a99', fontSize: 11, marginBottom: 8, lineHeight: 16 }}>{riskData.researchPlan.sequenceSummary}</Text>
+                        <Text style={{ color: '#b5c2dc', fontSize: 11, marginBottom: 8, lineHeight: 16 }}>{riskData.researchPlan.sequenceSummary}</Text>
                         {expandedSections.has('research_plan') && (
                           <>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
-                              <Text style={{ color: '#6b7a99', fontSize: 9 }}>Identifier Strength</Text>
-                              <Text style={{ color: riskData.researchPlan.identifierStrength === 'STRONG' ? '#34c759' : riskData.researchPlan.identifierStrength === 'MODERATE' ? '#ff9f0a' : '#ff453a', fontSize: 9, fontWeight: '700' }}>
+                              <Text style={{ color: '#b5c2dc', fontSize: 9 }}>Identifier Strength</Text>
+                              <Text style={{ color: riskData.researchPlan.identifierStrength === 'STRONG' ? '#34c759' : riskData.researchPlan.identifierStrength === 'MODERATE' ? '#ff9f0a' : '#ff453a', fontSize: 11, fontWeight: '700' }}>
                                 {riskData.researchPlan.identifierStrength}
                               </Text>
                             </View>
                             {riskData.researchPlan.steps?.map((step: any, i: number) => (
-                              <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: step.status === 'COMPLETED' ? '#34c759' : step.status === 'RECOMMENDED' ? '#2563eb' : '#4a5568' }}>
+                              <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 2, borderLeftColor: step.status === 'COMPLETED' ? '#34c759' : step.status === 'RECOMMENDED' ? '#2563eb' : '#a5aec2' }}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                                   <Text style={{ color: '#e8eaf0', fontSize: 11, fontWeight: '700' }}>{step.stepNumber}. {step.title}</Text>
-                                  <Text style={{ color: step.status === 'COMPLETED' ? '#34c759' : step.status === 'RECOMMENDED' ? '#2563eb' : '#4a5568', fontSize: 8, fontWeight: '600' }}>{step.status}</Text>
+                                  <Text style={{ color: step.status === 'COMPLETED' ? '#34c759' : step.status === 'RECOMMENDED' ? '#2563eb' : '#a5aec2', fontSize: 8, fontWeight: '600' }}>{step.status}</Text>
                                 </View>
-                                <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>{step.reason}</Text>
+                                <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>{step.reason}</Text>
                                 {step.expectedOutcome && (
-                                  <Text style={{ color: '#2563eb', fontSize: 10, lineHeight: 15 }}>→ {step.expectedOutcome}</Text>
+                                  <Text style={{ color: '#5b9bfb', fontSize: 12, lineHeight: 15 }}>→ {step.expectedOutcome}</Text>
                                 )}
                               </View>
                             ))}
@@ -1694,23 +1694,23 @@ Return to the search field and enter this variation.`)}
                     {briefView === 'full' && riskData.manualSourceGuidance?.length > 0 && (
                       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('manual_sources')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>📋 MANUAL SOURCE GUIDANCE</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('manual_sources') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>📋 MANUAL SOURCE GUIDANCE</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('manual_sources') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
-                        <Text style={{ color: '#6b7a99', fontSize: 10, marginBottom: 8 }}>Sources that require manual execution — step-by-step instructions included.</Text>
+                        <Text style={{ color: '#b5c2dc', fontSize: 10, marginBottom: 8 }}>Sources that require manual execution — step-by-step instructions included.</Text>
                         {expandedSections.has('manual_sources') && riskData.manualSourceGuidance.map((src: any, i: number) => (
                           <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 12, marginBottom: 8, borderLeftWidth: 2, borderLeftColor: src.priority === 'HIGH' ? '#ff453a' : src.priority === 'MEDIUM' ? '#ff9f0a' : '#2563eb' }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                               <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '700', flex: 1 }}>{src.sourceName}</Text>
-                              <Text style={{ color: src.priority === 'HIGH' ? '#ff453a' : src.priority === 'MEDIUM' ? '#ff9f0a' : '#2563eb', fontSize: 9, fontWeight: '700' }}>{src.priority}</Text>
+                              <Text style={{ color: src.priority === 'HIGH' ? '#ff453a' : src.priority === 'MEDIUM' ? '#ff9f0a' : '#2563eb', fontSize: 11, fontWeight: '700' }}>{src.priority}</Text>
                             </View>
-                            <Text style={{ color: '#6b7a99', fontSize: 10, lineHeight: 15, marginBottom: 8 }}>{src.why}</Text>
+                            <Text style={{ color: '#b5c2dc', fontSize: 10, lineHeight: 15, marginBottom: 8 }}>{src.why}</Text>
                             {src.steps?.map((step: string, si: number) => (
                               <Text key={si} style={{ color: '#2563eb', fontSize: 11, lineHeight: 17, marginBottom: 3 }}>{si + 1}. {step}</Text>
                             ))}
                             {src.whatToRecord && (
                               <View style={{ backgroundColor: '#1a2035', borderRadius: 6, padding: 8, marginTop: 8 }}>
-                                <Text style={{ color: '#6b7a99', fontSize: 9, fontWeight: '600', marginBottom: 2 }}>WHAT TO RECORD</Text>
+                                <Text style={{ color: '#b5c2dc', fontSize: 11, fontWeight: '600', marginBottom: 2 }}>WHAT TO RECORD</Text>
                                 <Text style={{ color: '#e8eaf0', fontSize: 11 }}>{src.whatToRecord}</Text>
                               </View>
                             )}
@@ -1723,21 +1723,21 @@ Return to the search field and enter this variation.`)}
                     {briefView === 'full' && riskData.recommendedIntelligencePath?.length > 0 && (
                       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: '#1a2035', paddingTop: 12 }}>
                         <TouchableOpacity onPress={() => toggleSection('path')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                          <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>RECOMMENDED INTELLIGENCE PATH</Text>
-                          <Text style={{ color: '#4a5568', fontSize: 12 }}>{expandedSections.has('path') ? '▲' : '▼'}</Text>
+                          <Text style={{ color: '#5b9bfb', fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>RECOMMENDED INTELLIGENCE PATH</Text>
+                          <Text style={{ color: '#a5aec2', fontSize: 12 }}>{expandedSections.has('path') ? '▲' : '▼'}</Text>
                         </TouchableOpacity>
-                        <Text style={{ color: '#4a5568', fontSize: 10, marginBottom: 8 }}>Sources and modules selected for this intelligence assessment</Text>
+                        <Text style={{ color: '#a5aec2', fontSize: 10, marginBottom: 8 }}>Sources and modules selected for this intelligence assessment</Text>
                         {expandedSections.has('path') && riskData.recommendedIntelligencePath.map((p: any, i: number) => (
                           <View key={i} style={{ backgroundColor: '#0a0f1a', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 3, borderLeftColor: p.priority === 'HIGH' ? '#ff453a' : p.priority === 'MEDIUM' ? '#ff9f0a' : '#2563eb' }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                               <Text style={{ color: '#e8eaf0', fontSize: 12, fontWeight: '700' }}>{p.module}</Text>
-                              <Text style={{ color: p.status === 'RAN_AUTOMATICALLY' ? '#34c759' : p.status === 'RECOMMENDED_MANUAL' ? '#ff9f0a' : '#4a5568', fontSize: 9, fontWeight: '600' }}>
+                              <Text style={{ color: p.status === 'RAN_AUTOMATICALLY' ? '#34c759' : p.status === 'RECOMMENDED_MANUAL' ? '#ff9f0a' : '#a5aec2', fontSize: 11, fontWeight: '600' }}>
                                 {p.status?.replace(/_/g, ' ')}
                               </Text>
                             </View>
-                            <Text style={{ color: '#6b7a99', fontSize: 11, lineHeight: 16, marginBottom: 4 }}>{p.reason}</Text>
+                            <Text style={{ color: '#b5c2dc', fontSize: 11, lineHeight: 16, marginBottom: 4 }}>{p.reason}</Text>
                             {p.expectedContribution && (
-                              <Text style={{ color: '#2563eb', fontSize: 10, lineHeight: 15, marginBottom: 3 }}>→ {p.expectedContribution}</Text>
+                              <Text style={{ color: '#5b9bfb', fontSize: 12, lineHeight: 15, marginBottom: 3 }}>→ {p.expectedContribution}</Text>
                             )}
                             {p.identifierRequired && (
                               <Text style={{ color: '#ff9f0a', fontSize: 9, marginTop: 2 }}>Requires: {p.identifierRequired}</Text>
@@ -1832,7 +1832,7 @@ Return to the search field and enter this variation.`)}
             <Text style={styles.sectionTitle}>
               SUPPORTING INTELLIGENCE SOURCES
             </Text>
-            <Text style={{ color: '#4a5568', fontSize: 11, marginBottom: 8, marginTop: -4, paddingHorizontal: 4 }}>
+            <Text style={{ color: '#a5aec2', fontSize: 11, marginBottom: 8, marginTop: -4, paddingHorizontal: 4 }}>
               Intelligence workflow supported by {result.modules.reduce((acc, m) => acc + m.links.length, 0)} public sources across {result.modules.length} intelligence modules
             </Text>
 
@@ -1846,7 +1846,7 @@ Return to the search field and enter this variation.`)}
                 ? (hasAlert ? 'RESULT_REVIEWED' : 'QUERY_EXECUTED')
                 : 'SOURCE_AVAILABLE';
               const sourceStateColor = sourceState === 'RESULT_REVIEWED' ? '#34c759' :
-                                       sourceState === 'QUERY_EXECUTED' ? '#2563eb' : '#4a5568';
+                                       sourceState === 'QUERY_EXECUTED' ? '#2563eb' : '#a5aec2';
               const sourceStateLabel = sourceState === 'RESULT_REVIEWED' ? 'REVIEWED' :
                                        sourceState === 'QUERY_EXECUTED' ? 'QUERY EXECUTED' : 'AVAILABLE';
               return (
@@ -1985,13 +1985,13 @@ const styles = StyleSheet.create({
   loadingPhaseTxt: { color: C.textMid, fontSize: 13 },
   confidenceBox:  { alignItems: 'center', backgroundColor: C.accentDim, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
   confidenceNum:  { color: C.accent, fontSize: 16, fontWeight: '800' },
-  confidenceLbl:  { color: C.accent, fontSize: 9, fontWeight: '600', letterSpacing: 0.5 },
+  confidenceLbl:  { color: C.accent, fontSize: 11, fontWeight: '600', letterSpacing: 0.5 },
   riskScoreBox:   { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 12, borderRadius: 10, marginBottom: 12, flexWrap: 'wrap' },
   riskScoreNum:   { fontSize: 48, fontWeight: '900', lineHeight: 52 },
   riskLevel:      { fontSize: 12, fontWeight: '800', letterSpacing: 0.5, flexShrink: 1 },
   riskSummary:    { color: C.textMid, fontSize: 12, lineHeight: 16, marginTop: 4, flexShrink: 1, flexWrap: 'wrap' },
   riskSection:    { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#1a2035' },
-  riskSectionTitle: { color: '#6b7a99', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
+  riskSectionTitle: { color: '#b5c2dc', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
   riskBulletGreen: { color: '#34c759', fontSize: 12, lineHeight: 19, marginBottom: 4 },
   riskBulletRed:  { color: '#ff453a', fontSize: 12, lineHeight: 19, marginBottom: 4 },
   riskBulletAmber: { color: '#ff9f0a', fontSize: 12, lineHeight: 19, marginBottom: 4 },
@@ -2013,7 +2013,7 @@ const styles = StyleSheet.create({
                        marginBottom: 6 },
   proPreviewTitle:   { color: '#4CAF50', fontSize: FONT.sm, fontWeight: '700' },
   proPreviewBadge:   { backgroundColor: '#1a3a1a', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
-  proPreviewBadgeText: { color: '#4CAF50', fontSize: 9, fontWeight: '700' },
+  proPreviewBadgeText: { color: '#4CAF50', fontSize: 11, fontWeight: '700' },
   proPreviewSubtitle: { color: '#81C784', fontSize: FONT.xs, marginBottom: SPACE.sm, lineHeight: 16 },
   proPreviewList:    { gap: 6, marginBottom: SPACE.md },
   proPreviewRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
