@@ -1970,7 +1970,8 @@ const styles = StyleSheet.create({
   typeBadgeQuery: { color: C.textDim, fontSize: FONT.xs, marginTop: 2 },
 
   aiCard:         { margin: SPACE.md, marginTop: 0, backgroundColor: '#0f1520', borderRadius: 12, borderLeftWidth: 2, borderLeftColor: '#7c3aed40',
-                    padding: SPACE.md, borderWidth: 1, borderColor: '#6C3483' },
+                    padding: SPACE.md, borderWidth: 1, borderColor: '#6C3483',
+                    shadowColor: '#7c3aed', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
   aiCardHeader:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                     marginBottom: SPACE.sm },
   aiCardTitle:    { color: '#e8eaf0', fontSize: FONT.sm, fontWeight: '700' },

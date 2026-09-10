@@ -1134,17 +1134,19 @@ export default function App() {
       <SafeAreaView style={s.safe}>
         <StatusBar barStyle="light-content" backgroundColor={C.bg} />
         <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-          <View style={s.homeHeader}>
-            <View>
-              <Text style={s.logo}>SENTINEL</Text>
-              <Text style={s.logoSub}>FIELD INTELLIGENCE PLATFORM · NA v3.0{IS_IPAD ? ' · iPad' : ''}</Text>
-              <Text style={s.aiPowered}>✦ Searches FBI · Interpol · 50 States · Canada</Text>
+          <LinearGradient colors={['#152040', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
+            <View style={s.homeHeader}>
+              <View>
+                <Text style={[s.logo, { textShadowColor: '#2563eb99', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }]}>SENTINEL</Text>
+                <Text style={[s.logoSub, { color: '#8fa3c4' }]}>FIELD INTELLIGENCE PLATFORM · NA v3.8{IS_IPAD ? ' · iPad' : ''}</Text>
+                <Text style={[s.aiPowered, { color: '#a8c2ea', fontSize: IS_IPAD ? 13 : 11, letterSpacing: 0.8, textTransform: 'uppercase', marginTop: 4 }]}>✦ 130+ Sources · Global Law Enforcement & Sanctions</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                {activeCaseId && <View style={s.caseDot}><Text>📁</Text></View>}
+                <View style={s.statusDot} />
+              </View>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              {activeCaseId && <View style={s.caseDot}><Text>📁</Text></View>}
-              <View style={s.statusDot} />
-            </View>
-          </View>
+          </LinearGradient>
           <View style={s.disclaimer}>
             <Text style={s.disclaimerTxt}>⚖️ Not a CRA. Not for employment/credit/tenant screening.</Text>
           </View>
@@ -1155,7 +1157,7 @@ export default function App() {
           )}
           {/* Intelligence Workflow Section */}
           <View style={{ paddingHorizontal: GRID_PADDING, paddingBottom: 8 }}>
-            <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 4 }}>START AN INTELLIGENCE WORKFLOW</Text>
+            <Text style={{ color: '#a8c2ea', fontSize: 13, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 4 }}>START AN INTELLIGENCE WORKFLOW</Text>
             {IS_IPAD ? (
               /* iPad: side-by-side layout */
               <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -1239,7 +1241,7 @@ export default function App() {
                 </View>
               </View>
             )}
-            <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 16 }}>INTELLIGENCE AREAS</Text>
+            <Text style={{ color: '#a8c2ea', fontSize: 13, fontWeight: '700', letterSpacing: 2, marginBottom: 10, marginTop: 16 }}>INTELLIGENCE AREAS</Text>
           </View>
 
           <ScrollView
@@ -1321,7 +1323,7 @@ export default function App() {
               });
             })()}
             <View style={{ width: '100%', marginTop: 8 }}>
-              <Text style={{ color: '#4a5568', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 10 }}>TOOLS AND RECORDS</Text>
+              <Text style={{ color: '#a8c2ea', fontSize: 13, fontWeight: '700', letterSpacing: 2, marginBottom: 10 }}>TOOLS AND RECORDS</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                 {[
                   { id: 'notes',      icon: '📋', title: 'Field Notes',  desc: `${notes.length} saved` },
