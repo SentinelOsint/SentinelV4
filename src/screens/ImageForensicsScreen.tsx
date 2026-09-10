@@ -270,12 +270,12 @@ const styles = StyleSheet.create({
   },
   backText: { color: C.accent, fontSize: FONT.md },
   headerTitle: { color: C.text, fontSize: FONT.lg, fontWeight: '700' },
-  disclaimer: { color: C.textDim, fontSize: FONT.xs, lineHeight: 15, marginBottom: SPACE.md },
+  disclaimer: { color: '#c5d0e8', fontSize: FONT.md, lineHeight: 21, marginBottom: SPACE.md },
   pickerBox: {
     height: 180, borderRadius: CARD.radius, borderWidth: 1, borderColor: C.border, borderStyle: 'dashed',
     backgroundColor: C.surface, justifyContent: 'center', alignItems: 'center',
   },
-  pickerBoxText: { color: C.textMid, fontSize: FONT.sm },
+  pickerBoxText: { color: '#c5d0e8', fontSize: FONT.md },
   preview: { width: '100%', height: 220, borderRadius: CARD.radius, backgroundColor: C.surface },
   secondaryBtn: {
     flex: 1, backgroundColor: C.surface, borderRadius: CARD.radiusSm, borderWidth: 1, borderColor: C.border,
@@ -292,9 +292,9 @@ const styles = StyleSheet.create({
     backgroundColor: C.card, borderRadius: CARD.radius, borderWidth: CARD.borderWidth, borderColor: C.border,
     padding: CARD.padding, marginBottom: SPACE.md,
   },
-  cardTitle: { color: C.accent, fontSize: FONT.xs, fontWeight: '700', letterSpacing: 1.5, marginBottom: SPACE.sm },
-  cardLine: { color: C.text, fontSize: FONT.sm, lineHeight: 19, marginBottom: 3 },
-  cardNote: { color: C.textMid, fontSize: FONT.xs, lineHeight: 16, fontStyle: 'italic', marginTop: 4 },
+  cardTitle: { color: '#5b9bfb', fontSize: FONT.md, fontWeight: '700', letterSpacing: 1.2, marginBottom: SPACE.sm },
+  cardLine: { color: C.text, fontSize: FONT.md, lineHeight: 21, marginBottom: 4 },
+  cardNote: { color: '#a8b5cf', fontSize: FONT.sm, lineHeight: 18, fontStyle: 'italic', marginTop: 4 },
   elaImage: { width: '100%', height: 220, borderRadius: CARD.radiusSm, marginVertical: SPACE.sm, backgroundColor: C.surface },
   sectionLabel: { fontSize: FONT.xs, fontWeight: '700', letterSpacing: 1, marginBottom: 4 },
 });
