@@ -113,7 +113,7 @@ const TRIAL_KEY = 'sentinel_trial_v1';
 const TRIAL_KEYCHAIN_KEY = 'sentinel_trial_start_kc_v1';
 const SUB_KEY   = 'sentinel_subscription_v1';
 
-export type SubscriptionTier = 'trial' | 'pro' | 'expired';
+export type SubscriptionTier = 'trial' | 'essential' | 'pro' | 'expired';
 
 export const Trial = {
   async initialize(): Promise<void> {
@@ -155,12 +155,13 @@ export const Trial = {
     if (isReviewerBuild) return 'pro';
     const sub = await SecureStorage.get<string>(SUB_KEY);
     if (sub === 'pro')  return 'pro';
+    if (sub === 'essential') return 'essential';
     if (sub === 'expired') return 'expired';
     const trialActive = await Trial.isActive();
     return trialActive ? 'trial' : 'expired';
   },
 
-  async setSubscription(tier: 'pro' | 'expired'): Promise<void> {
+  async setSubscription(tier: 'essential' | 'pro' | 'expired'): Promise<void> {
     await SecureStorage.set(SUB_KEY, tier);
     await AuditLog.log('SETTINGS_CHANGE', `Subscription set: ${tier}`);
   },
@@ -197,8 +198,15 @@ export const Trial = {
 
   async getMaxCases(): Promise<number> {
     const tier = await Trial.getSubscriptionTier();
-    if (tier === 'pro') return 999;
-    if (tier === 'trial') return 3;
+    if (tier === 'pro' || tier === 'trial') return 999; // Trial gives the full Pro experience
+    if (tier === 'essential') return 3;
+    return 0;
+  },
+
+  async getMaxWatchTargets(): Promise<number> {
+    const tier = await Trial.getSubscriptionTier();
+    if (tier === 'pro' || tier === 'trial') return 999;
+    if (tier === 'essential') return 3;
     return 0;
   },
 };

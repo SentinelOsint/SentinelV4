@@ -27,6 +27,7 @@ const USAGE_KEY  = 'sentinel_ai_usage_v1';
 const APIKEY_KEY = 'sentinel_anthropic_key_v1';
 const MONTHLY_CAP = 500;
 const TRIAL_AI_CAP = 10;
+const ESSENTIAL_AI_CAP = 20;
 
 // New subscriber protection: limit AI queries during Apple's refund window
 // After 14 days, full monthly cap applies automatically
@@ -55,7 +56,8 @@ async function getEffectiveAICap(): Promise<number> {
   try {
     const { Trial } = await import('./storage');
     const tier = await Trial.getSubscriptionTier();
-    if (tier === 'trial') return TRIAL_AI_CAP; // Trial users get 10 AI queries
+    if (tier === 'trial') return TRIAL_AI_CAP; // Trial users get 10 AI queries (kept deliberately low — no card required to start a trial)
+    if (tier === 'essential') return ESSENTIAL_AI_CAP; // Essential subscribers get 20 AI analyses/month
     if (tier === 'expired') return 0; // Trial ended and no active paid subscription — block AI usage entirely
     const startDate = await getSubscriptionStartDate();
     if (!startDate) return NEW_SUBSCRIBER_CAP; // No start date — use conservative limit

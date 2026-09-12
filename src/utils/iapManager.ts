@@ -16,8 +16,15 @@ import { Trial } from './storage';
 import { AuditLog } from './auditLog';
 
 export const PRODUCT_IDS = {
+  ESSENTIAL: 'com.sentinel.osint.essential.monthly',
   PRO: 'com.sentinel.osint.pro.monthly',
 };
+
+function tierForProductId(productId: string): 'essential' | 'pro' | null {
+  if (productId === PRODUCT_IDS.PRO) return 'pro';
+  if (productId === PRODUCT_IDS.ESSENTIAL) return 'essential';
+  return null;
+}
 
 let purchaseUpdateSub: any = null;
 let purchaseErrorSub: any = null;
@@ -43,7 +50,7 @@ export async function endIAP(): Promise<void> {
 export async function getProducts() {
   try {
     const products = await fetchProducts({
-      skus: [PRODUCT_IDS.PRO],
+      skus: [PRODUCT_IDS.ESSENTIAL, PRODUCT_IDS.PRO],
       type: 'subs',
     });
     return products;
@@ -55,7 +62,7 @@ export async function getProducts() {
 
 export async function purchaseSubscription(
   productId: string,
-  onSuccess: (tier: 'pro') => void,
+  onSuccess: (tier: 'essential' | 'pro') => void,
   onError: (msg: string) => void
 ): Promise<void> {
   try {
@@ -67,7 +74,8 @@ export async function purchaseSubscription(
         try {
           await finishTransaction({ purchase, isConsumable: false });
         } catch {}
-        const tier: 'pro' = 'pro';
+        const purchasedProductId = purchase.productId || productId;
+        const tier = tierForProductId(purchasedProductId) || 'pro';
         await Trial.setSubscription(tier);
         await AuditLog.log('SETTINGS_CHANGE', `IAP subscription: ${tier}`);
         onSuccess(tier);
@@ -96,7 +104,7 @@ export async function purchaseSubscription(
 }
 
 export async function restorePurchasesIAP(
-  onSuccess: (tier: 'pro') => void,
+  onSuccess: (tier: 'essential' | 'pro') => void,
   onNotFound: () => void
 ): Promise<void> {
   try {
@@ -113,8 +121,8 @@ export async function restorePurchasesIAP(
             body: JSON.stringify({ receiptData: receipt }),
           });
           const data = await res.json();
-          if (data.valid && data.tier === 'pro') {
-            await Trial.setSubscription('pro');
+          if (data.valid && (data.tier === 'pro' || data.tier === 'essential')) {
+            await Trial.setSubscription(data.tier);
             await AuditLog.log('SETTINGS_CHANGE', `Restore validated: ${data.tier}`);
             onSuccess(data.tier);
             return;
