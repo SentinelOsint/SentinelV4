@@ -17,7 +17,7 @@ import {
 interface Props {
   reason?: 'expired' | 'ai' | 'pdf' | 'cases' | 'one_input';
   onBack:  () => void;
-  onSubscribe: (tier: 'pro') => void;
+  onSubscribe: (tier: 'pro' | 'essential') => void;
 }
 
 const REASONS: Record<string, { title: string; desc: string }> = {
