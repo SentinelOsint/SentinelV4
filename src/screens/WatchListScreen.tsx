@@ -13,6 +13,8 @@ import {
   toggleWatchItem, checkAllWatchItems, requestNotificationPermission,
   registerBackgroundCheck,
 } from '../utils/watchList';
+import { canAddWatchTarget } from '../utils/entitlements';
+import { Trial } from '../utils/storage';
 
 interface Props {
   isPro: boolean;
@@ -51,8 +53,17 @@ export default function WatchListScreen({ isPro, onBack }: Props) {
   }, [load]);
 
   const handleAdd = async () => {
-    if (!isPro) {
-      Alert.alert('Pro Feature', 'Watch List monitoring requires a Pro subscription.');
+    const canAdd = await canAddWatchTarget(items.length);
+    if (!canAdd) {
+      const max = await Trial.getMaxWatchTargets();
+      if (max === 0) {
+        Alert.alert('Subscription Required', 'Watch List monitoring requires an active subscription.');
+      } else {
+        Alert.alert(
+          'Watch List Limit Reached',
+          `Your plan allows up to ${max} Watch List target(s). Upgrade to Pro for unlimited monitoring.`
+        );
+      }
       return;
     }
     if (!label.trim() || !value.trim()) {
