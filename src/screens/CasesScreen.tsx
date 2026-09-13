@@ -8,6 +8,8 @@ import { Storage } from '../utils/storage';
 import { C, STATUS_COLORS, PRIORITY_COLORS, CASE_TAGS, NOTE_TAGS, IS_IPAD, SPACE, FONT } from '../utils/theme';
 import { exportCasePDF } from '../utils/pdfExport';
 import { generateCaseReport, summarizeNotes, searchCasesNaturalLanguage, analyzePostContactUpdate, getAIErrorMessage } from '../utils/aiEngine';
+import { canCreateNewCase } from '../utils/entitlements';
+import { Trial } from '../utils/storage';
 
 interface Props {
   onBack: () => void;
@@ -63,6 +65,19 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
 
   const createCase = async () => {
     if (!newTitle.trim()) { Alert.alert('Required', 'Case title is required.'); return; }
+    const canCreate = await canCreateNewCase(cases.length);
+    if (!canCreate) {
+      const max = await Trial.getMaxCases();
+      if (max === 0) {
+        Alert.alert('Subscription Required', 'Case management requires an active subscription.');
+      } else {
+        Alert.alert(
+          'Case Limit Reached',
+          `Your plan allows up to ${max} active case(s). Upgrade to Pro for unlimited cases.`
+        );
+      }
+      return;
+    }
     const now = new Date().toLocaleString('en-US');
     const c: CaseReport = {
       id: `CASE-${Date.now()}`,
