@@ -196,7 +196,11 @@ PODS:
   - ExpoIap (4.2.3):
     - ExpoModulesCore
     - openiap (= 2.1.4)
+  - ExpoImagePicker (55.0.24):
+    - ExpoModulesCore
   - ExpoKeepAwake (55.0.7):
+    - ExpoModulesCore
+  - ExpoLinearGradient (55.0.18):
     - ExpoModulesCore
   - ExpoLocalAuthentication (55.0.13):
     - ExpoModulesCore
@@ -2100,7 +2104,9 @@ DEPENDENCIES:
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo/node_modules/expo-font/ios`)
   - ExpoIap (from `../node_modules/expo-iap/ios`)
+  - ExpoImagePicker (from `../node_modules/expo-image-picker/ios`)
   - ExpoKeepAwake (from `../node_modules/expo/node_modules/expo-keep-awake/ios`)
+  - ExpoLinearGradient (from `../node_modules/expo-linear-gradient/ios`)
   - ExpoLocalAuthentication (from `../node_modules/expo-local-authentication/ios`)
   - "ExpoLogBox (from `../node_modules/expo/node_modules/@expo/log-box`)"
   - ExpoModulesCore (from `../node_modules/expo/node_modules/expo-modules-core`)
@@ -2232,8 +2238,12 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo/node_modules/expo-font/ios"
   ExpoIap:
     :path: "../node_modules/expo-iap/ios"
+  ExpoImagePicker:
+    :path: "../node_modules/expo-image-picker/ios"
   ExpoKeepAwake:
     :path: "../node_modules/expo/node_modules/expo-keep-awake/ios"
+  ExpoLinearGradient:
+    :path: "../node_modules/expo-linear-gradient/ios"
   ExpoLocalAuthentication:
     :path: "../node_modules/expo-local-authentication/ios"
   ExpoLogBox:
@@ -2434,7 +2444,9 @@ SPEC CHECKSUMS:
   ExpoFileSystem: a0e4a5a09c9c4f84338289b273a172609452dec9
   ExpoFont: cdd7a1d574a376fa003c713eff49e0a4df8672c7
   ExpoIap: 3d3cd51f651b96686d18b943b2281585561f1036
+  ExpoImagePicker: 7dd57ad3d0922e30efa9b52b3ce83099c2bf4352
   ExpoKeepAwake: 861c66deb0f9f28f87882610195f26c4b88fba6f
+  ExpoLinearGradient: 253c5895316f4354e795337948acd6c6ca5b0c7c
   ExpoLocalAuthentication: bdf67eef520f5eb22b105d139b9cb48aa994b071
   ExpoLogBox: 617da77cbc083627692b2ea050a3666808aef2cd
   ExpoModulesCore: 0e5079ef327756a902e966a894b9d8982719766c

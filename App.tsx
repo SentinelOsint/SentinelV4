@@ -174,7 +174,7 @@ export default function App() {
                   body: JSON.stringify({ receiptData: receipt }),
                 });
                 const data = await res.json();
-                if (data.valid && data.tier === 'pro') {
+                if (data.valid && (data.tier === 'pro' || data.tier === 'essential')) {
                   await Trial.setSubscription(data.tier);
                   validatedByServer = true;
                   break;
@@ -190,6 +190,8 @@ export default function App() {
           } else {
             // No purchases found — check if trial is still active
             const trialActive = await Trial.isActive();
+            const trialStart = await Trial.getStartDate();
+            const daysRemaining = await Trial.getDaysRemaining();
             if (!trialActive) {
               await Trial.setSubscription('expired');
             }
@@ -201,7 +203,11 @@ export default function App() {
 
         const tier = await Trial.getSubscriptionTier();
         setSubscriptionTier(tier);
-        setIsPro(tier === 'pro');
+        // isPro gates Pro-exclusive advanced features (Entity Resolution, Image Forensics,
+        // advanced report options, etc.) — trial gets the full Pro experience for these
+        // per the Essential/Pro model, since they cost nothing extra beyond AI usage,
+        // which is gated separately via the AI monthly-usage cap system.
+        setIsPro(tier === 'pro' || tier === 'trial');
       });
       // Initialize session manager with lock callback
       SessionManager.initialize(handleLock);
