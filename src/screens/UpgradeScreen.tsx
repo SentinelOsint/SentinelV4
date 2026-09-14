@@ -35,6 +35,7 @@ export default function UpgradeScreen({ reason = 'expired', onBack, onSubscribe 
   const [restoring,  setRestoring]  = useState(false);
   const [iapReady,   setIapReady]   = useState(false);
   const [proPrice,   setProPrice]   = useState('$59.99');
+  const [essentialPrice, setEssentialPrice] = useState('$24.99');
 
   useEffect(() => {
     (async () => {
@@ -48,13 +49,14 @@ export default function UpgradeScreen({ reason = 'expired', onBack, onSubscribe 
         const products = await getProducts();
         (products || []).forEach((p: any) => {
           if (p.productId === PRODUCT_IDS.PRO  && p.localizedPrice) setProPrice(p.localizedPrice);
+          if (p.productId === PRODUCT_IDS.ESSENTIAL && p.localizedPrice) setEssentialPrice(p.localizedPrice);
         });
       }
     })();
     return () => { endIAP(); };
   }, []);
 
-  const handlePurchase = async (productId: string, tier: 'pro') => {
+  const handlePurchase = async (productId: string, tier: 'pro' | 'essential') => {
     if (!iapReady) {
       Alert.alert('Not Available', 'App Store connection not ready. Please try again.');
       return;
@@ -64,7 +66,7 @@ export default function UpgradeScreen({ reason = 'expired', onBack, onSubscribe 
       productId,
       (purchasedTier) => {
         setLoading(false);
-        Alert.alert('✅ Success', 'Welcome to Sentinel Pro!', [
+        Alert.alert('✅ Success', `Welcome to Sentinel ${purchasedTier === 'essential' ? 'Essential' : 'Pro'}!`, [
           { text: 'Get Started', onPress: () => onSubscribe(purchasedTier) }
         ]);
       },
@@ -81,7 +83,7 @@ export default function UpgradeScreen({ reason = 'expired', onBack, onSubscribe 
     await restorePurchasesIAP(
       (restoredTier) => {
         setRestoring(false);
-        Alert.alert('✅ Restored', 'Your Pro subscription has been restored.', [
+        Alert.alert('✅ Restored', `Your ${restoredTier === 'essential' ? 'Essential' : 'Pro'} subscription has been restored.`, [
           { text: 'Continue', onPress: () => onSubscribe(restoredTier) }
         ]);
       },
@@ -114,6 +116,32 @@ export default function UpgradeScreen({ reason = 'expired', onBack, onSubscribe 
 
         <Text style={s.headline}>{title}</Text>
         <Text style={s.subhead}>{desc}</Text>
+
+        {/* Essential Card */}
+        <View style={s.planCard}>
+          <View style={s.planHeader}>
+            <Text style={s.planName}>Essential</Text>
+            <Text style={s.planPrice}>{essentialPrice}<Text style={s.planPer}>/mo</Text></Text>
+          </View>
+          <View style={s.featureList}>
+            {[
+              '✓ FBI + Interpol wanted checks',
+              '✓ All 50 US state wanted lists',
+              '✓ Canadian provincial databases',
+              '✓ OFAC · UN · EU · BIS sanctions',
+              '✓ AI Risk Score (0–100) — LOW / MEDIUM / HIGH / CRITICAL',
+              '✓ Up to 3 cases · 3 watch targets',
+              '✓ 20 AI analyses/month',
+            ].map((f, i) => <Text key={i} style={s.feature}>{f}</Text>)}
+          </View>
+          <TouchableOpacity
+            style={[s.buyBtn, s.essentialBtn]}
+            onPress={() => handlePurchase(PRODUCT_IDS.ESSENTIAL, 'essential')}
+            disabled={loading}
+          >
+            {loading ? <ActivityIndicator color={C.bg} /> : <Text style={s.buyBtnTxt}>Subscribe to Essential</Text>}
+          </TouchableOpacity>
+        </View>
 
         {/* Pro Card */}
         <View style={[s.planCard, s.proCard]}>
@@ -198,6 +226,7 @@ const s = StyleSheet.create({
   proFeature:    { color: C.text },
   buyBtn:        { borderRadius: 12, padding: 16, alignItems: 'center' },
   proBtn:        { backgroundColor: C.accent },
+  essentialBtn:  { backgroundColor: C.card, borderWidth: 1, borderColor: C.accent },
   buyBtnTxt:     { color: C.text, fontWeight: '700', fontSize: 16 },
   restoreBtn:    { alignItems: 'center', padding: 16, marginTop: 8 },
   restoreTxt:    { color: C.textDim, fontSize: 14 },

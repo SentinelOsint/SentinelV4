@@ -945,7 +945,7 @@ export default function App() {
   );
 
   // ── Expired subscription gate ─────────────────────────────────────────────
-  if (subscriptionTier !== 'trial' && subscriptionTier !== 'pro') return (
+  if (subscriptionTier !== 'trial' && subscriptionTier !== 'pro' && subscriptionTier !== 'essential') return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
       <StatusBar barStyle="light-content" backgroundColor={C.bg} />
       <Text style={{ fontSize: 48, marginBottom: 24 }}>🔒</Text>
@@ -968,7 +968,7 @@ export default function App() {
   );
 
   // ── Expired subscription gate ─────────────────────────────────────────────
-  if (subscriptionTier !== 'trial' && subscriptionTier !== 'pro') return (
+  if (subscriptionTier !== 'trial' && subscriptionTier !== 'pro' && subscriptionTier !== 'essential') return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
       <StatusBar barStyle="light-content" backgroundColor={C.bg} />
       <Text style={{ fontSize: 48, marginBottom: 24 }}>🔒</Text>
