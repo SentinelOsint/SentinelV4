@@ -188,7 +188,7 @@ export const Trial = {
 
   async canUseAI(): Promise<boolean> {
     const tier = await Trial.getSubscriptionTier();
-    return tier === 'pro' || tier === 'trial';
+    return tier === 'pro' || tier === 'trial' || tier === 'essential';
   },
 
   async canExportPDF(): Promise<boolean> {

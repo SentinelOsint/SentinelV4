@@ -57,8 +57,8 @@ async function personModules(q: string, isPro: boolean = false, tracerfyKey: str
   const wantedLinks: { label: string; url: string }[] = [];
   const personAutoLinks: { label: string; url: string }[] = [];
 
-  // Tracerfy live skip trace (Pro + user API key)
-  if (isPro && tracerfyKey) {
+  // Tracerfy live skip trace (Essential/Pro + user's own API key — cost is the user's, not Sentinel's)
+  if (tracerfyKey) {
     try {
       const nameParts = q.trim().split(' ');
       const firstName = nameParts[0] || '';

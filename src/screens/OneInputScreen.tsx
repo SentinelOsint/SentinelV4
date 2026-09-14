@@ -21,6 +21,7 @@ import { FieldNote, PostContactUpdate } from '../types';
 
 interface Props {
   isPro: boolean;
+  hasEntityResolution: boolean;
   onBack: () => void;
   onUpgrade: () => void;
   activeCaseId?: string | null;
@@ -46,7 +47,7 @@ const TYPE_ICONS: Record<InputType, string> = {
   company: '🏢',
 };
 
-export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId }: Props) {
+export default function OneInputScreen({ isPro, hasEntityResolution, onBack, onUpgrade, activeCaseId }: Props) {
   const [query, setQuery]           = useState('');
   const [identityAssistantInput, setIdentityAssistantInput] = useState('');
   const [result, setResult]         = useState<OneInputResult | null>(null);
@@ -1522,7 +1523,7 @@ export default function OneInputScreen({ isPro, onBack, onUpgrade, activeCaseId 
                                 style={{ backgroundColor: '#0a0f1a', borderWidth: 1, borderColor: '#2563eb40', borderRadius: 8, paddingVertical: 10, alignItems: 'center' }}
                                 disabled={entityMapLoading}
                                 onPress={async () => {
-                                  if (!isPro) { Alert.alert('Pro Feature', 'Entity Relationship Mapping requires a Pro subscription.'); return; }
+                                  if (!hasEntityResolution) { Alert.alert('Subscription Required', 'Entity Relationship Mapping requires an active subscription.'); return; }
                                   setEntityMapLoading(true);
                                   try {
                                     const findingsForMap = result.modules.flatMap((m: any) =>
