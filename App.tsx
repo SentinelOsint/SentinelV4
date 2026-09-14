@@ -989,7 +989,7 @@ export default function App() {
       </Text>
     </SafeAreaView>
   );
-  if (screen === 'cases')    return wrapAnimated(<CasesScreen onBack={goHome} activeCaseId={activeCaseId} onSetActiveCase={handleSetActiveCase} isPro={isPro} />);
+  if (screen === 'cases')    return wrapAnimated(<CasesScreen onBack={goHome} activeCaseId={activeCaseId} onSetActiveCase={handleSetActiveCase} isPro={isPro} canUseAI={true} />);
   if (screen === 'geo_map')  return wrapAnimated(<MapScreen onBack={goHome} onSaveNote={(t) => { setNoteText(t); setShowNoteModal(true); }} />);
   if (screen === 'settings') return wrapAnimated(<SettingsScreen onBack={goHome} isPro={isPro} />);
   if (screen === 'one_input') return wrapAnimated(<OneInputScreen isPro={isPro} hasEntityResolution={true} canUseAI={true} tierLabel={subscriptionTier === 'pro' ? 'PRO' : subscriptionTier === 'essential' ? 'ESSENTIAL' : subscriptionTier === 'trial' ? 'TRIAL' : ''} onBack={goHome} onUpgrade={() => setScreen('upgrade')} activeCaseId={activeCaseId} />);

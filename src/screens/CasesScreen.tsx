@@ -16,11 +16,12 @@ interface Props {
   activeCaseId: string | null;
   onSetActiveCase: (id: string | null) => void;
   isPro?: boolean;
+  canUseAI?: boolean;
 }
 
 type CaseView = 'list' | 'detail' | 'create';
 
-export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isPro = false }: Props) {
+export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isPro = false, canUseAI = false }: Props) {
   const [cases, setCases] = useState<CaseReport[]>([]);
   const [view, setView] = useState<CaseView>('list');
   const [selectedCase, setSelectedCase] = useState<CaseReport | null>(null);
@@ -400,7 +401,7 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
           <TouchableOpacity
             style={[s.actionBtn, { backgroundColor: '#1a0a2e', borderColor: '#a855f7' }]}
             onPress={() => {
-              if (!isPro) { Alert.alert('Pro Feature', 'AI Report requires a Pro subscription.'); return; }
+              if (!canUseAI) { Alert.alert('AI Unavailable', 'AI Report requires an active subscription.'); return; }
               setAiScreen({ mode: 'report', title: selectedCase.title, fetch: () => generateCaseReport(selectedCase) });
             }}
           >
@@ -409,7 +410,7 @@ export default function CasesScreen({ onBack, activeCaseId, onSetActiveCase, isP
           <TouchableOpacity
             style={[s.actionBtn, { backgroundColor: '#001a0a', borderColor: '#00ff88' }]}
             onPress={() => {
-              if (!isPro) { Alert.alert('Pro Feature', 'AI Summary requires a Pro subscription.'); return; }
+              if (!canUseAI) { Alert.alert('AI Unavailable', 'AI Summary requires an active subscription.'); return; }
               if (selectedCase.notes.length === 0) {
                 Alert.alert('No Notes', 'Add field notes to this case first.');
                 return;
