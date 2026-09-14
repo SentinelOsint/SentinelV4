@@ -24,9 +24,11 @@ export interface Entitlements {
   maxWatchTargets: number;
   aiAnalysesRemaining: number;
   aiAnalysesCap: number;
-  // Entity Resolution, Image Forensics, all 4 report types, custom report
-  // branding — Pro-exclusive. Trial gets these too (full Pro experience).
-  hasAdvancedFeatures: boolean;
+  // Advanced PDF reporting (all 4 report types) + custom report branding —
+  // Pro-exclusive per the finalized spec. Entity Resolution and Image
+  // Forensics are NOT here — Essential gets those too, gated per-screen.
+  // Trial gets this too (full Pro experience).
+  hasProOnlyReporting: boolean;
 }
 
 export async function getEntitlements(): Promise<Entitlements> {
@@ -44,7 +46,7 @@ export async function getEntitlements(): Promise<Entitlements> {
     maxWatchTargets,
     aiAnalysesRemaining: usage.remaining,
     aiAnalysesCap: usage.cap,
-    hasAdvancedFeatures: tier === 'pro' || tier === 'trial',
+    hasProOnlyReporting: tier === 'pro' || tier === 'trial',
   };
 }
 
@@ -58,7 +60,7 @@ export async function canAddWatchTarget(currentTargetCount: number): Promise<boo
   return currentTargetCount < max;
 }
 
-export async function hasAdvancedFeatures(): Promise<boolean> {
+export async function hasProOnlyReporting(): Promise<boolean> {
   const tier = await Trial.getSubscriptionTier();
   return tier === 'pro' || tier === 'trial';
 }
