@@ -28,6 +28,7 @@ import {
 
 interface Props {
   isPro: boolean;
+  hasImageForensics: boolean;
   onBack: () => void;
   onUpgrade: () => void;
 }
@@ -68,7 +69,7 @@ function parseInterpretation(text: string): { label: string; color: string; line
   return sections.length > 0 ? sections : [{ label: 'AI INTERPRETATION', color: C.purpleMid, lines: [text] }];
 }
 
-export default function ImageForensicsScreen({ isPro, onBack, onUpgrade }: Props) {
+export default function ImageForensicsScreen({ isPro, hasImageForensics, onBack, onUpgrade }: Props) {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -96,7 +97,7 @@ export default function ImageForensicsScreen({ isPro, onBack, onUpgrade }: Props
 
   const runAnalysis = async () => {
     if (!imageBase64) return;
-    if (!isPro) { onUpgrade(); return; }
+    if (!hasImageForensics) { onUpgrade(); return; }
     setLoading(true);
     setResults(null);
     try {

@@ -997,7 +997,7 @@ export default function App() {
   if (screen === 'upgrade') return wrapAnimated(<UpgradeScreen onBack={goHome} onSubscribe={async (tier) => { await Trial.setSubscription(tier); setSubscriptionTier(tier as SubscriptionTier); setIsPro(tier === 'pro'); goHome(); }} />);
   if (screen === 'watchlist') return wrapAnimated(<WatchListScreen isPro={isPro} onBack={goHome} />);
   if (screen === 'case_intake') return wrapAnimated(<CaseIntakeScreen isPro={isPro} onBack={goHome} onUpgrade={() => setScreen('upgrade')} />);
-  if (screen === 'image_forensics') return wrapAnimated(<ImageForensicsScreen isPro={isPro} onBack={goHome} onUpgrade={() => setScreen('upgrade')} />);
+  if (screen === 'image_forensics') return wrapAnimated(<ImageForensicsScreen isPro={isPro} hasImageForensics={true} onBack={goHome} onUpgrade={() => setScreen('upgrade')} />);
   // ── Note modal component ──────────────────────────────────────────────────
   const noteModalElement = (
     <Modal visible={showNoteModal} transparent animationType="slide">
