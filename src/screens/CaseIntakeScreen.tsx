@@ -16,6 +16,7 @@ import { AuditLog } from '../utils/auditLog';
 
 interface Props {
   isPro: boolean;
+  hasCaseIntake: boolean;
   onBack: () => void;
   onUpgrade: () => void;
 }
@@ -46,7 +47,7 @@ const COMPLEXITY_LABELS = {
   HIGH_COMPLEXITY: 'High Complexity — consider 2x rate or fixed fee',
 };
 
-export default function CaseIntakeScreen({ isPro, onBack, onUpgrade }: Props) {
+export default function CaseIntakeScreen({ isPro, hasCaseIntake, onBack, onUpgrade }: Props) {
   const [subjectName,  setSubjectName]  = useState('');
   const [subjectAge,   setSubjectAge]   = useState('');
   const [location,     setLocation]     = useState('');
@@ -144,7 +145,7 @@ export default function CaseIntakeScreen({ isPro, onBack, onUpgrade }: Props) {
     setAssessment(null);
   };
 
-  if (!isPro) {
+  if (!hasCaseIntake) {
     return (
       <SafeAreaView style={s.safe}>
         <StatusBar barStyle="light-content" backgroundColor={C.bg} />
