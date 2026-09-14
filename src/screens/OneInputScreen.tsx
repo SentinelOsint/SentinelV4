@@ -22,6 +22,8 @@ import { FieldNote, PostContactUpdate } from '../types';
 interface Props {
   isPro: boolean;
   hasEntityResolution: boolean;
+  canUseAI: boolean;
+  tierLabel: string;
   onBack: () => void;
   onUpgrade: () => void;
   activeCaseId?: string | null;
@@ -47,7 +49,7 @@ const TYPE_ICONS: Record<InputType, string> = {
   company: '🏢',
 };
 
-export default function OneInputScreen({ isPro, hasEntityResolution, onBack, onUpgrade, activeCaseId }: Props) {
+export default function OneInputScreen({ isPro, hasEntityResolution, canUseAI, tierLabel, onBack, onUpgrade, activeCaseId }: Props) {
   const [query, setQuery]           = useState('');
   const [identityAssistantInput, setIdentityAssistantInput] = useState('');
   const [result, setResult]         = useState<OneInputResult | null>(null);
@@ -491,7 +493,7 @@ export default function OneInputScreen({ isPro, hasEntityResolution, onBack, onU
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pre-Contact Assessment</Text>
         <View style={styles.tierBadge}>
-          <Text style={styles.tierText}>{isPro ? 'PRO' : 'SOLO'}</Text>
+          <Text style={styles.tierText}>{tierLabel}</Text>
         </View>
       </View>
 
@@ -653,14 +655,14 @@ export default function OneInputScreen({ isPro, hasEntityResolution, onBack, onU
               )}
             </View>
 
-            {/* AI Summary — Pro only */}
-            {isPro && (
+            {/* AI Summary — Essential (20/mo) + Pro (500/mo) */}
+            {canUseAI && (
               <View style={styles.aiCard}>
                 <View style={styles.aiCardHeader}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                     <Text style={styles.aiCardTitle}>📋 Pre-Contact Intelligence Brief</Text>
                     <View style={{ backgroundColor: '#7c3aed', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 1 }}>PRO</Text>
+                      <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 1 }}>{tierLabel}</Text>
                     </View>
                   </View>
                   {riskData && (
