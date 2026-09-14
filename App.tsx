@@ -993,7 +993,7 @@ export default function App() {
   if (screen === 'geo_map')  return wrapAnimated(<MapScreen onBack={goHome} onSaveNote={(t) => { setNoteText(t); setShowNoteModal(true); }} />);
   if (screen === 'settings') return wrapAnimated(<SettingsScreen onBack={goHome} isPro={isPro} />);
   if (screen === 'one_input') return wrapAnimated(<OneInputScreen isPro={isPro} hasEntityResolution={true} canUseAI={true} tierLabel={subscriptionTier === 'pro' ? 'PRO' : subscriptionTier === 'essential' ? 'ESSENTIAL' : subscriptionTier === 'trial' ? 'TRIAL' : ''} onBack={goHome} onUpgrade={() => setScreen('upgrade')} activeCaseId={activeCaseId} />);
-  if (screen === 'timeline') return wrapAnimated(<TimelineScreen isPro={isPro} onBack={goHome} />);
+  if (screen === 'timeline') return wrapAnimated(<TimelineScreen isPro={isPro} canUseAI={true} onBack={goHome} />);
   if (screen === 'upgrade') return wrapAnimated(<UpgradeScreen onBack={goHome} onSubscribe={async (tier) => { await Trial.setSubscription(tier); setSubscriptionTier(tier as SubscriptionTier); setIsPro(tier === 'pro'); goHome(); }} />);
   if (screen === 'watchlist') return wrapAnimated(<WatchListScreen isPro={isPro} onBack={goHome} />);
   if (screen === 'case_intake') return wrapAnimated(<CaseIntakeScreen isPro={isPro} hasCaseIntake={true} onBack={goHome} onUpgrade={() => setScreen('upgrade')} />);

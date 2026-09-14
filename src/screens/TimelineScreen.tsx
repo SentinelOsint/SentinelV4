@@ -23,6 +23,7 @@ interface TimelineSummary {
 // ─── Props ─────────────────────────────────────────────────────────────────
 interface Props {
   isPro:    boolean;
+  canUseAI: boolean;
   apiKey?:  string;
   onBack:   () => void;
 }
@@ -113,7 +114,7 @@ function groupByDate(entries: AuditEntry[]): { date: string; items: AuditEntry[]
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────
-export default function TimelineScreen({ isPro, apiKey, onBack }: Props) {
+export default function TimelineScreen({ isPro, canUseAI, apiKey, onBack }: Props) {
   const [entries,   setEntries]   = useState<AuditEntry[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
@@ -217,14 +218,14 @@ Rules:
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent}>
 
         {/* AI Summary Button (Pro only) */}
-        {isPro && !showAI && (
+        {canUseAI && !showAI && (
           <TouchableOpacity style={s.aiBtn} onPress={generateSummary}>
             <Text style={s.aiBtnIcon}>✦</Text>
             <Text style={s.aiBtnTxt}>Generate AI Investigation Summary</Text>
           </TouchableOpacity>
         )}
 
-        {!isPro && (
+        {!canUseAI && (
           <View style={s.proGate}>
             <Text style={s.proGateIcon}>✦</Text>
             <Text style={s.proGateTxt}>AI Investigation Summary</Text>
