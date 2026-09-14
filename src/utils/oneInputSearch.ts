@@ -50,7 +50,11 @@ export function getDetectedLabel(type: InputType): string {
   }
 }
 
-async function personModules(q: string, isPro: boolean = false, tracerfyKey: string = '', batchDataKey: string = ''): Promise<ModuleResult[]> {
+async function personModules(q: string, isPro: boolean = false): Promise<ModuleResult[]> {
+  const { Storage } = await import('./storage');
+  const settings = await Storage.getSettings();
+  const tracerfyKey = (settings.tracerfyKey as string) || '';
+  const batchDataKey = (settings.batchDataKey as string) || '';
   const enc = encodeURIComponent(q);
 
   // Wanted checks + Google KG — all run in parallel

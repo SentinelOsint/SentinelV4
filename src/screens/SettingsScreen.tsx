@@ -24,7 +24,6 @@ export default function SettingsScreen({ onBack, isPro = false }: Props) {
   const [greyNoiseKey,  setGreyNoiseKey]  = useState('');
   const [tracerfyKey,   setTracerfyKey]   = useState('');
   const [batchDataKey,  setBatchDataKey]  = useState('');
-  const [shodanKey,     setShodanKey]     = useState('');
   const [showApiKeys,   setShowApiKeys]   = useState(false);
   const [firmName,        setFirmName]        = useState('');
   const [investigatorName, setInvestigatorName] = useState('');
@@ -45,7 +44,6 @@ export default function SettingsScreen({ onBack, isPro = false }: Props) {
     if (settings.greyNoiseKey)  setGreyNoiseKey(settings.greyNoiseKey as string);
     if (settings.tracerfyKey)   setTracerfyKey(settings.tracerfyKey as string);
     if (settings.batchDataKey)  setBatchDataKey(settings.batchDataKey as string);
-    if (settings.shodanKey)     setShodanKey(settings.shodanKey as string);
     if (settings.reportFirmName)        setFirmName(settings.reportFirmName as string);
     if (settings.reportInvestigatorName) setInvestigatorName(settings.reportInvestigatorName as string);
     if (settings.reportLicenseNumber)    setLicenseNumber(settings.reportLicenseNumber as string);
@@ -126,7 +124,6 @@ export default function SettingsScreen({ onBack, isPro = false }: Props) {
     await Storage.saveSetting('greyNoiseKey', greyNoiseKey.trim());
     await Storage.saveSetting('tracerfyKey',  tracerfyKey.trim());
     await Storage.saveSetting('batchDataKey', batchDataKey.trim());
-    await Storage.saveSetting('shodanKey',    shodanKey.trim());
     await AuditLog.log('SETTINGS_CHANGE', 'API keys updated');
     Alert.alert('✓ Saved', 'API keys saved securely on this device.');
   };
@@ -276,7 +273,7 @@ export default function SettingsScreen({ onBack, isPro = false }: Props) {
                 autoCorrect={false}
                 secureTextEntry={true}
               />
-              {isPro && (<><Text style={[s.apiLabel, { marginTop: 16, color: C.accent }]}>PRO — Paid API Keys</Text>
+              {(<><Text style={[s.apiLabel, { marginTop: 16, color: C.accent }]}>Your Own API Keys</Text>
               <Text style={[s.apiHint, { marginBottom: 12 }]}>These keys unlock additional Pro data sources. Costs apply per search.</Text>
 
               <Text style={s.apiLabel}>Tracerfy API Key</Text>
@@ -305,18 +302,6 @@ export default function SettingsScreen({ onBack, isPro = false }: Props) {
                 secureTextEntry={true}
               />
 
-              <Text style={s.apiLabel}>Shodan API Key</Text>
-              <Text style={s.apiHint}>Network intelligence & device search at shodan.io</Text>
-              <TextInput
-                style={s.apiInput}
-                value={shodanKey}
-                onChangeText={setShodanKey}
-                placeholder="Paste your Shodan key"
-                placeholderTextColor={C.textDim}
-                autoCapitalize="none"
-                autoCorrect={false}
-                secureTextEntry={true}
-              />
 
               </>)}
               <TouchableOpacity style={[s.actionBtn, { borderColor: C.green, backgroundColor: C.greenDim, marginBottom: 0 }]} onPress={handleSaveAPIKeys}>
