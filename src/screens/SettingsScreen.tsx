@@ -7,7 +7,7 @@ import { C, IS_IPAD } from '../utils/theme';
 import { SessionManager, TIMEOUT_OPTIONS } from '../utils/sessionManager';
 import { AuditLog, AuditEntry }            from '../utils/auditLog';
 import { SecureStorage }                   from '../utils/secureStorage';
-import { Storage }                         from '../utils/storage';
+import { Storage, Trial }                  from '../utils/storage';
 import { runIntegrityCheck, IntegrityReport } from '../utils/integrityCheck';
 
 interface Props { onBack: () => void; isPro?: boolean; }
@@ -364,6 +364,44 @@ export default function SettingsScreen({ onBack, isPro = false }: Props) {
           <Text style={[s.actionBtnText, { color: C.red }]}>⛔ Wipe All Data</Text>
           <Text style={s.actionBtnSub}>Permanently deletes all cases, notes, and history from this device</Text>
         </TouchableOpacity>
+
+        {__DEV__ && (
+          <>
+            <Text style={s.sectionTitle}>Debug — Tier Switcher (DEV only)</Text>
+            <View style={s.card}>
+              <View style={s.rowBtns}>
+                <TouchableOpacity
+                  style={[s.halfBtn, { borderColor: C.border }]}
+                  onPress={async () => {
+                    await SecureStorage.remove('sentinel_subscription_v1');
+                    Alert.alert('Debug', 'Subscription cleared — tier will follow trial state.');
+                  }}
+                >
+                  <Text style={[s.halfBtnText, { color: C.text }]}>Trial</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.halfBtn, { borderColor: C.accent }]}
+                  onPress={async () => {
+                    await Trial.setSubscription('essential');
+                    Alert.alert('Debug', 'Tier set to Essential.');
+                  }}
+                >
+                  <Text style={[s.halfBtnText, { color: C.accent }]}>Essential</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.halfBtn, { borderColor: C.green }]}
+                  onPress={async () => {
+                    await Trial.setSubscription('pro');
+                    Alert.alert('Debug', 'Tier set to Pro.');
+                  }}
+                >
+                  <Text style={[s.halfBtnText, { color: C.green }]}>Pro</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={s.apiHint}>Restart the app after switching (App.tsx reads tier on launch).</Text>
+            </View>
+          </>
+        )}
 
         <View style={{ height: 48 }} />
       </ScrollView>
