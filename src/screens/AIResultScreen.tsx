@@ -12,7 +12,7 @@
  * – Copy to clipboard
  * – Share as text
  * – Save as field note
- * – Pro tier gate (shows upgrade prompt for Solo users)
+ * – Pro tier gate (shows upgrade prompt for non-Pro users)
  */
 
 import React, { useEffect, useState, useRef } from 'react';

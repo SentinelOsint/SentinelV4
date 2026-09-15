@@ -3,8 +3,8 @@
  *
  * Single query → automatic input type detection → relevant module aggregation
  *
- * Solo tier: input detection + curated module links
- * Pro tier:  Solo features + AI summary of all findings
+ * Essential/Trial: input detection + curated module links + AI (Essential capped, trial capped)
+ * Pro tier: same + unlimited-feeling AI cap + advanced reporting
  */
 
 export type InputType = 'person' | 'phone' | 'email' | 'ip' | 'domain' | 'company' | 'unknown';

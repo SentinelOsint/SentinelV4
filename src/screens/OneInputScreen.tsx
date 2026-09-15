@@ -1,8 +1,8 @@
 /**
  * SENTINEL — One-Input Intelligence Search Screen
  *
- * Solo: input detection + curated module links
- * Pro:  Solo + AI summary of all findings
+ * Essential/Trial: input detection + curated module links + AI (capped)
+ * Pro: same + higher AI cap + advanced reporting
  */
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
@@ -1793,7 +1793,7 @@ Return to the search field and enter this variation.`)}
             )}
 
 
-            {/* Pro preview — Solo users only */}
+            {/* Pro preview — non-Pro users */}
             {!isPro && (
               <View style={styles.proPreviewCard}>
                 <View style={styles.proPreviewHeader}>
@@ -1803,7 +1803,7 @@ Return to the search field and enter this variation.`)}
                   </View>
                 </View>
                 <Text style={styles.proPreviewSubtitle}>
-                  Pro provides deeper analysis and broader coverage than Solo.
+                  Pro provides deeper analysis and broader coverage than your current plan.
                 </Text>
                 <View style={styles.proPreviewList}>
                   {[
