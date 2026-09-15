@@ -700,7 +700,7 @@ export default function App() {
     // Essential+Pro: live USPTO Markbase API-haku (core intelligence source, not advanced-workflow)
     if (true) {
       try {
-        const r = await fetch(`https://markbase.co/search?query=${encoded}&limit=5`);
+        const r = await fetch(`https://api.markbase.co/search?q=${encoded}&limit=5`);
         const d = await r.json();
         if (d.hits && d.hits.length > 0) {
           results.push({ label: '─── USPTO LIVE TRADEMARK RESULTS', value: '', type: 'info' });

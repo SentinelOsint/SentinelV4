@@ -415,7 +415,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.sentinel.osint;
-				PRODUCT_NAME = SentinelOSINT;
+				PRODUCT_NAME = "SentinelOSINT";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "SentinelOSINT/SentinelOSINT-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -450,7 +450,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.sentinel.osint;
-				PRODUCT_NAME = SentinelOSINT;
+				PRODUCT_NAME = "SentinelOSINT";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "SentinelOSINT/SentinelOSINT-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
