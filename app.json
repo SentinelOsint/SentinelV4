@@ -14,7 +14,6 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.sentinel.osint",
       "buildNumber": "65",
-      "marketingVersion": "3.0.0",
       "subtitle": "Background Check, Skip Trace & AI",
       "requireFullScreen": false,
       "entitlements": {
@@ -43,7 +42,15 @@
           "UIInterfaceOrientationPortrait",
           "UIInterfaceOrientationPortrait"
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "ip-api.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
       },
       "icon": "./assets/icon.png"
     },
