@@ -203,10 +203,11 @@ export default function App() {
 
         const tier = await Trial.getSubscriptionTier();
         setSubscriptionTier(tier);
-        // isPro gates Pro-exclusive advanced features (Entity Resolution, Image Forensics,
-        // advanced report options, etc.) — trial gets the full Pro experience for these
-        // per the Essential/Pro model, since they cost nothing extra beyond AI usage,
-        // which is gated separately via the AI monthly-usage cap system.
+        // isPro now gates only genuinely Pro-exclusive things: advanced PDF reporting,
+        // custom report branding, Natural-Language Case Search, AI Client-Ready Summary.
+        // Entity Resolution, Image Forensics, Case Intake, and AI features are gated via
+        // their own dedicated props (hasEntityResolution, hasImageForensics, canUseAI, etc.)
+        // since Essential gets those too per the finalized spec.
         setIsPro(tier === 'pro' || tier === 'trial');
       });
       // Initialize session manager with lock callback
@@ -432,8 +433,8 @@ export default function App() {
     const greyKey    = settings.greyNoiseKey as string || '';
     const shodanKey  = settings.shodanKey as string || '';
 
-    // Shodan live lookup — Pro only
-    if (isPro && shodanKey) {
+    // Shodan live lookup — user's own key, all tiers (Sentinel pays nothing for this)
+    if (shodanKey) {
       try {
         const sr = await fetch(`https://api.shodan.io/shodan/host/${ip}?key=${encodeURIComponent(shodanKey)}`);
         const sd = await sr.json();
@@ -696,8 +697,8 @@ export default function App() {
     const encoded = encodeURIComponent(q);
     const results = getCompanyResults(encoded);
 
-    // Pro: live USPTO Markbase API-haku
-    if (isPro) {
+    // Essential+Pro: live USPTO Markbase API-haku (core intelligence source, not advanced-workflow)
+    if (true) {
       try {
         const r = await fetch(`https://markbase.co/search?query=${encoded}&limit=5`);
         const d = await r.json();
@@ -1051,7 +1052,7 @@ export default function App() {
             style={{ backgroundColor: '#001a0a', borderWidth: 1, borderColor: '#00ff88', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginBottom: 12 }}
             disabled={notesAiLoading}
             onPress={async () => {
-              if (!isPro) { Alert.alert('Pro Feature', 'AI Note Analysis requires a Pro subscription.'); return; }
+              // AI Note Analysis — same summarizeNotes() already opened to Essential in CasesScreen
               setNotesAiLoading(true);
               setNotesAiSummary(null);
               try {
@@ -1417,13 +1418,9 @@ export default function App() {
           {results.length > 0 && (
             <TouchableOpacity
               style={s.aiBtn}
-              onPress={() => {
-                if (!isPro) { setScreen('upgrade'); return; }
-                analyzeWithAI(screen, input, results);
-              }}
+              onPress={() => analyzeWithAI(screen, input, results)}
             >
               <Text style={s.aiBtnText}>🤖  AI Analysis</Text>
-              {!isPro && <Text style={s.aiBtnBadge}>PRO</Text>}
             </TouchableOpacity>
           )}
           {results.length > 0 && activeCaseId && (
