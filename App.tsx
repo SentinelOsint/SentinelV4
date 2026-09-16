@@ -29,7 +29,7 @@ import CasesScreen    from './src/screens/CasesScreen';
 import MapScreen      from './src/screens/MapScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import OneInputScreen from './src/screens/OneInputScreen';
-import { analyzeResults, summarizeNotes, generateCompanyBrief } from './src/utils/aiEngine';
+import { analyzeResults, summarizeNotes, generateWebBrief, WebBriefModuleType } from './src/utils/aiEngine';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import TimelineScreen from './src/screens/TimelineScreen';
 import UpgradeScreen from './src/screens/UpgradeScreen';
@@ -97,8 +97,8 @@ export default function App() {
   const [notes,         setNotes]         = useState<FieldNote[]>([]);
   const [notesAiSummary, setNotesAiSummary] = useState<string | null>(null);
   const [notesAiLoading, setNotesAiLoading] = useState(false);
-  const [companyBriefResult, setCompanyBriefResult] = useState<string | null>(null);
-  const [companyBriefLoading, setCompanyBriefLoading] = useState(false);
+  const [webBriefResult, setWebBriefResult] = useState<string | null>(null);
+  const [webBriefLoading, setWebBriefLoading] = useState(false);
   const [isListeningNote, setIsListeningNote] = useState(false);
 
   useSpeechRecognitionEvent('result', (event) => {
@@ -388,7 +388,7 @@ export default function App() {
   const run = async (module: string, query: string, fn: () => Promise<OsintResult[]> | OsintResult[]) => {
     if (!query.trim()) { Alert.alert('Required', 'Enter a value to search.'); return; }
     onUserInteraction();
-    setLoading(true); setResults([]); setCurModule(module); setCurQuery(query.trim()); setCompanyBriefResult(null);
+    setLoading(true); setResults([]); setCurModule(module); setCurQuery(query.trim()); setWebBriefResult(null);
     try {
       const res = await fn();
       setResults(res);
@@ -1365,6 +1365,9 @@ export default function App() {
   // ════════════════════════════════════════════════════════════════════════
   // OSINT SEARCH SCREENS
   // ════════════════════════════════════════════════════════════════════════
+  const WEB_BRIEF_MODULES: Partial<Record<string, WebBriefModuleType>> = {
+    phone: 'phone', email: 'email', social: 'social', ip: 'ip', domain: 'domain', company: 'company', court: 'court',
+  };
   const cfgs: Record<string, { title: string; ph: string; ph2?: string; btn: string; action: () => void; hint?: string; tips?: string[] }> = {
     phone:   { title: '📞 Phone Lookup',    ph: '+1 555 000 0000',               btn: 'Lookup Number',           action: searchPhone,   hint: 'Include country code (+1)',       tips: ['Include country code for best results', 'Checks spam databases & carrier info', 'Works for US and Canadian numbers'] },
     email:   { title: '✉️ Email Lookup',    ph: 'address@domain.com',            btn: 'Lookup Email',            action: searchEmail,   hint: 'Check breaches & owner info',     tips: ['Searches breach databases', 'Finds linked social accounts', 'Checks domain registration'] },
@@ -1425,35 +1428,39 @@ export default function App() {
               <Text style={s.aiBtnText}>🤖  AI Analysis</Text>
             </TouchableOpacity>
           )}
-          {screen === 'company' && results.length > 0 && (
+          {WEB_BRIEF_MODULES[screen] && results.length > 0 && (
             <TouchableOpacity
               style={{ backgroundColor: '#001a0a', borderWidth: 1, borderColor: '#00ff88', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginTop: 10 }}
-              disabled={companyBriefLoading}
+              disabled={webBriefLoading}
               onPress={async () => {
-                setCompanyBriefLoading(true);
-                setCompanyBriefResult(null);
+                const moduleType = WEB_BRIEF_MODULES[screen];
+                if (!moduleType) return;
+                setWebBriefLoading(true);
+                setWebBriefResult(null);
                 try {
                   const findingsSummary = results.filter(r => r.type !== 'info').slice(0, 15).map(r => r.label).join('; ');
-                  const brief = await generateCompanyBrief(input.trim(), input2.trim() || undefined, findingsSummary);
-                  setCompanyBriefResult(brief);
+                  const brief = await generateWebBrief(moduleType, input.trim(), input2.trim() || undefined, findingsSummary);
+                  setWebBriefResult(brief);
                 } catch (e: any) {
                   if (e?.message === 'USAGE_CAP_REACHED') {
-                    Alert.alert('Monthly Limit Reached', 'You\'ve used all your Company Brief searches for this billing period.');
+                    Alert.alert('Monthly Limit Reached', 'You\'ve used all your Web Brief searches for this billing period.');
+                  } else if (e?.message === 'SEARCH_TEMPORARILY_UNAVAILABLE') {
+                    Alert.alert('Search Busy', 'Web search is temporarily busy. Please try again in a moment.');
                   } else {
-                    Alert.alert('Company Brief Error', e?.message || 'Could not generate brief. Check your connection.');
+                    Alert.alert('Web Brief Error', e?.message || 'Could not generate brief. Check your connection.');
                   }
                 } finally {
-                  setCompanyBriefLoading(false);
+                  setWebBriefLoading(false);
                 }
               }}
             >
-              {companyBriefLoading ? <ActivityIndicator color="#00ff88" /> : <Text style={{ color: '#00ff88', fontSize: 13, fontWeight: '700' }}>🌐 Generate Company Brief (Web Search)</Text>}
+              {webBriefLoading ? <ActivityIndicator color="#00ff88" /> : <Text style={{ color: '#00ff88', fontSize: 13, fontWeight: '700' }}>🌐 Generate Web Brief</Text>}
             </TouchableOpacity>
           )}
-          {screen === 'company' && companyBriefResult && (
+          {WEB_BRIEF_MODULES[screen] && webBriefResult && (
             <View style={{ backgroundColor: '#0a0f1a', borderRadius: 8, borderWidth: 1, borderColor: '#1a2535', padding: 12, marginTop: 10 }}>
-              <Text style={{ color: '#00ff88', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>COMPANY BRIEF — WEB SEARCH</Text>
-              <Text style={{ color: '#e8edf5', fontSize: 13, lineHeight: 19 }}>{companyBriefResult}</Text>
+              <Text style={{ color: '#00ff88', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>WEB BRIEF — LIVE SEARCH</Text>
+              <Text style={{ color: '#e8edf5', fontSize: 13, lineHeight: 19 }}>{webBriefResult}</Text>
             </View>
           )}
           {results.length > 0 && activeCaseId && (

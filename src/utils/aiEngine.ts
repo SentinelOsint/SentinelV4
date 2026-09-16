@@ -137,64 +137,66 @@ export async function callClaude(systemPrompt: string, userMessage: string): Pro
   return data.result ?? '';
 }
 
-// ── Company Brief (web-search-powered) ─────────────────────────────────────────
+// ── Web Brief (web-search-powered, unified across modules) ─────────────────────
 // Separate quota from general AI usage: Essential 20/mo, Pro 50/mo, Trial 5 (one-time).
-const COMPANY_BRIEF_TRIAL_CAP = 5;
-const COMPANY_BRIEF_ESSENTIAL_CAP = 20;
-const COMPANY_BRIEF_PRO_CAP = 50;
-const COMPANY_BRIEF_API_URL = 'https://sentinel-backend-production-05e1.up.railway.app/ai/company-brief';
-const COMPANY_BRIEF_USAGE_KEY = 'sentinel_companybrief_usage_v1';
+// Shared across all module types (company/phone/email/social/ip/domain/court).
+export type WebBriefModuleType = 'company' | 'phone' | 'email' | 'social' | 'ip' | 'domain' | 'court';
+const WEB_BRIEF_TRIAL_CAP = 5;
+const WEB_BRIEF_ESSENTIAL_CAP = 20;
+const WEB_BRIEF_PRO_CAP = 50;
+const WEB_BRIEF_API_URL = 'https://sentinel-backend-production-05e1.up.railway.app/ai/web-brief';
+const WEB_BRIEF_USAGE_KEY = 'sentinel_webbrief_usage_v1';
 
-async function getCompanyBriefEffectiveCap(): Promise<number> {
+async function getWebBriefEffectiveCap(): Promise<number> {
   try {
     const { Trial } = await import('./storage');
     const tier = await Trial.getSubscriptionTier();
-    if (tier === 'trial') return COMPANY_BRIEF_TRIAL_CAP;
-    if (tier === 'essential') return COMPANY_BRIEF_ESSENTIAL_CAP;
+    if (tier === 'trial') return WEB_BRIEF_TRIAL_CAP;
+    if (tier === 'essential') return WEB_BRIEF_ESSENTIAL_CAP;
     if (tier === 'expired') return 0;
-    return COMPANY_BRIEF_PRO_CAP;
+    return WEB_BRIEF_PRO_CAP;
   } catch { return 0; }
 }
 
-async function getCompanyBriefUsage(): Promise<UsageRecord> {
+async function getWebBriefUsage(): Promise<UsageRecord> {
   try {
-    const data = await SecureStorage.get<UsageRecord>(COMPANY_BRIEF_USAGE_KEY);
+    const data = await SecureStorage.get<UsageRecord>(WEB_BRIEF_USAGE_KEY);
     const thisMonth = new Date().toISOString().slice(0, 7);
     if (!data || data.month !== thisMonth) return { month: thisMonth, count: 0 };
     return data;
   } catch { return { month: new Date().toISOString().slice(0, 7), count: 0 }; }
 }
 
-async function incrementCompanyBriefUsage(): Promise<number> {
+async function incrementWebBriefUsage(): Promise<number> {
   try {
-    const usage = await getCompanyBriefUsage();
+    const usage = await getWebBriefUsage();
     usage.count++;
-    await SecureStorage.set(COMPANY_BRIEF_USAGE_KEY, usage);
+    await SecureStorage.set(WEB_BRIEF_USAGE_KEY, usage);
     return usage.count;
   } catch { return 0; }
 }
 
-export async function getCompanyBriefUsageThisMonth(): Promise<{ count: number; cap: number; remaining: number }> {
-  const usage = await getCompanyBriefUsage();
-  const cap = await getCompanyBriefEffectiveCap();
+export async function getWebBriefUsageThisMonth(): Promise<{ count: number; cap: number; remaining: number }> {
+  const usage = await getWebBriefUsage();
+  const cap = await getWebBriefEffectiveCap();
   return { count: usage.count, cap, remaining: Math.max(0, cap - usage.count) };
 }
 
-export async function generateCompanyBrief(companyName: string, state?: string, existingFindings?: string): Promise<string> {
-  const usage = await getCompanyBriefUsage();
-  const cap = await getCompanyBriefEffectiveCap();
+export async function generateWebBrief(moduleType: WebBriefModuleType, subjectValue: string, subjectContext?: string, existingFindings?: string): Promise<string> {
+  const usage = await getWebBriefUsage();
+  const cap = await getWebBriefEffectiveCap();
   if (usage.count >= cap) throw new Error('USAGE_CAP_REACHED');
-  const response = await fetch(COMPANY_BRIEF_API_URL, {
+  const response = await fetch(WEB_BRIEF_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ companyName, state, existingFindings }),
+    body: JSON.stringify({ moduleType, subjectValue, subjectContext, existingFindings }),
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.error || `API error ${response.status}`);
   }
   const data = await response.json();
-  await incrementCompanyBriefUsage();
+  await incrementWebBriefUsage();
   return data.result ?? '';
 }
 
