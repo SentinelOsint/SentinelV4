@@ -29,7 +29,7 @@ import CasesScreen    from './src/screens/CasesScreen';
 import MapScreen      from './src/screens/MapScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import OneInputScreen from './src/screens/OneInputScreen';
-import { analyzeResults, summarizeNotes } from './src/utils/aiEngine';
+import { analyzeResults, summarizeNotes, generateCompanyBrief } from './src/utils/aiEngine';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import TimelineScreen from './src/screens/TimelineScreen';
 import UpgradeScreen from './src/screens/UpgradeScreen';
@@ -97,6 +97,8 @@ export default function App() {
   const [notes,         setNotes]         = useState<FieldNote[]>([]);
   const [notesAiSummary, setNotesAiSummary] = useState<string | null>(null);
   const [notesAiLoading, setNotesAiLoading] = useState(false);
+  const [companyBriefResult, setCompanyBriefResult] = useState<string | null>(null);
+  const [companyBriefLoading, setCompanyBriefLoading] = useState(false);
   const [isListeningNote, setIsListeningNote] = useState(false);
 
   useSpeechRecognitionEvent('result', (event) => {
@@ -386,7 +388,7 @@ export default function App() {
   const run = async (module: string, query: string, fn: () => Promise<OsintResult[]> | OsintResult[]) => {
     if (!query.trim()) { Alert.alert('Required', 'Enter a value to search.'); return; }
     onUserInteraction();
-    setLoading(true); setResults([]); setCurModule(module); setCurQuery(query.trim());
+    setLoading(true); setResults([]); setCurModule(module); setCurQuery(query.trim()); setCompanyBriefResult(null);
     try {
       const res = await fn();
       setResults(res);
@@ -1422,6 +1424,37 @@ export default function App() {
             >
               <Text style={s.aiBtnText}>🤖  AI Analysis</Text>
             </TouchableOpacity>
+          )}
+          {screen === 'company' && results.length > 0 && (
+            <TouchableOpacity
+              style={{ backgroundColor: '#001a0a', borderWidth: 1, borderColor: '#00ff88', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginTop: 10 }}
+              disabled={companyBriefLoading}
+              onPress={async () => {
+                setCompanyBriefLoading(true);
+                setCompanyBriefResult(null);
+                try {
+                  const findingsSummary = results.filter(r => r.type !== 'info').slice(0, 15).map(r => r.label).join('; ');
+                  const brief = await generateCompanyBrief(input.trim(), input2.trim() || undefined, findingsSummary);
+                  setCompanyBriefResult(brief);
+                } catch (e: any) {
+                  if (e?.message === 'USAGE_CAP_REACHED') {
+                    Alert.alert('Monthly Limit Reached', 'You\'ve used all your Company Brief searches for this billing period.');
+                  } else {
+                    Alert.alert('Company Brief Error', e?.message || 'Could not generate brief. Check your connection.');
+                  }
+                } finally {
+                  setCompanyBriefLoading(false);
+                }
+              }}
+            >
+              {companyBriefLoading ? <ActivityIndicator color="#00ff88" /> : <Text style={{ color: '#00ff88', fontSize: 13, fontWeight: '700' }}>🌐 Generate Company Brief (Web Search)</Text>}
+            </TouchableOpacity>
+          )}
+          {screen === 'company' && companyBriefResult && (
+            <View style={{ backgroundColor: '#0a0f1a', borderRadius: 8, borderWidth: 1, borderColor: '#1a2535', padding: 12, marginTop: 10 }}>
+              <Text style={{ color: '#00ff88', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>COMPANY BRIEF — WEB SEARCH</Text>
+              <Text style={{ color: '#e8edf5', fontSize: 13, lineHeight: 19 }}>{companyBriefResult}</Text>
+            </View>
           )}
           {results.length > 0 && activeCaseId && (
             <TouchableOpacity

@@ -137,6 +137,67 @@ export async function callClaude(systemPrompt: string, userMessage: string): Pro
   return data.result ?? '';
 }
 
+// ── Company Brief (web-search-powered) ─────────────────────────────────────────
+// Separate quota from general AI usage: Essential 20/mo, Pro 50/mo, Trial 5 (one-time).
+const COMPANY_BRIEF_TRIAL_CAP = 5;
+const COMPANY_BRIEF_ESSENTIAL_CAP = 20;
+const COMPANY_BRIEF_PRO_CAP = 50;
+const COMPANY_BRIEF_API_URL = 'https://sentinel-backend-production-05e1.up.railway.app/ai/company-brief';
+const COMPANY_BRIEF_USAGE_KEY = 'sentinel_companybrief_usage_v1';
+
+async function getCompanyBriefEffectiveCap(): Promise<number> {
+  try {
+    const { Trial } = await import('./storage');
+    const tier = await Trial.getSubscriptionTier();
+    if (tier === 'trial') return COMPANY_BRIEF_TRIAL_CAP;
+    if (tier === 'essential') return COMPANY_BRIEF_ESSENTIAL_CAP;
+    if (tier === 'expired') return 0;
+    return COMPANY_BRIEF_PRO_CAP;
+  } catch { return 0; }
+}
+
+async function getCompanyBriefUsage(): Promise<UsageRecord> {
+  try {
+    const data = await SecureStorage.get<UsageRecord>(COMPANY_BRIEF_USAGE_KEY);
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    if (!data || data.month !== thisMonth) return { month: thisMonth, count: 0 };
+    return data;
+  } catch { return { month: new Date().toISOString().slice(0, 7), count: 0 }; }
+}
+
+async function incrementCompanyBriefUsage(): Promise<number> {
+  try {
+    const usage = await getCompanyBriefUsage();
+    usage.count++;
+    await SecureStorage.set(COMPANY_BRIEF_USAGE_KEY, usage);
+    return usage.count;
+  } catch { return 0; }
+}
+
+export async function getCompanyBriefUsageThisMonth(): Promise<{ count: number; cap: number; remaining: number }> {
+  const usage = await getCompanyBriefUsage();
+  const cap = await getCompanyBriefEffectiveCap();
+  return { count: usage.count, cap, remaining: Math.max(0, cap - usage.count) };
+}
+
+export async function generateCompanyBrief(companyName: string, state?: string, existingFindings?: string): Promise<string> {
+  const usage = await getCompanyBriefUsage();
+  const cap = await getCompanyBriefEffectiveCap();
+  if (usage.count >= cap) throw new Error('USAGE_CAP_REACHED');
+  const response = await fetch(COMPANY_BRIEF_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ companyName, state, existingFindings }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `API error ${response.status}`);
+  }
+  const data = await response.json();
+  await incrementCompanyBriefUsage();
+  return data.result ?? '';
+}
+
 // ── Error message helper ──────────────────────────────────────────────────────
 
 export function getAIErrorMessage(error: Error): string {
