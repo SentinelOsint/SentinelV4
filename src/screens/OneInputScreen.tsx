@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { C, SPACE, FONT, IS_IPAD, CARD } from '../utils/theme';
 import { buildOneInputResult, OneInputResult, InputType, ModuleResult } from '../utils/oneInputSearch';
-import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult, generateEntityRelationshipMap, generateClientReadySummary } from '../utils/aiEngine';
+import { analyzeResults, generatePreContactBrief, validateBrief, ValidationResult, generateEntityRelationshipMap, generateClientReadySummary, generateWebBrief } from '../utils/aiEngine';
 import ConfidenceGauge from '../components/ConfidenceGauge';
 import { exportSearchPDF, exportInvestigationReport } from '../utils/pdfExport';
 import { Storage } from '../utils/storage';
@@ -55,6 +55,8 @@ export default function OneInputScreen({ isPro, hasEntityResolution, canUseAI, t
   const [result, setResult]         = useState<OneInputResult | null>(null);
   const [aiSummary, setAiSummary]   = useState<string>('');
   const [loadingAI, setLoadingAI]   = useState(false);
+  const [webBriefResult, setWebBriefResult] = useState<string | null>(null);
+  const [webBriefLoading, setWebBriefLoading] = useState(false);
   const [searched, setSearched]     = useState(false);
   const [exporting, setExporting]   = useState(false);
   const [riskData, setRiskData]       = useState<any>(null);
@@ -1770,6 +1772,40 @@ Return to the search field and enter this variation.`)}
                     </TouchableOpacity>
                   </>
                 )}
+              </View>
+            )}
+
+            {canUseAI && result && (
+              <TouchableOpacity
+                style={{ backgroundColor: '#001a0a', borderWidth: 1, borderColor: '#00ff88', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginTop: 10, marginBottom: 10 }}
+                disabled={webBriefLoading}
+                onPress={async () => {
+                  setWebBriefLoading(true);
+                  setWebBriefResult(null);
+                  try {
+                    const findingsSummary = result.modules.flatMap(m => m.links.map(l => `${m.module} — ${l.label}`)).slice(0, 15).join('; ');
+                    const brief = await generateWebBrief('person', result.query, undefined, findingsSummary);
+                    setWebBriefResult(brief);
+                  } catch (e: any) {
+                    if (e?.message === 'USAGE_CAP_REACHED') {
+                      Alert.alert('Monthly Limit Reached', 'You\'ve used all your Web Brief searches for this billing period.');
+                    } else if (e?.message === 'SEARCH_TEMPORARILY_UNAVAILABLE') {
+                      Alert.alert('Search Busy', 'Web search is temporarily busy. Please try again in a moment.');
+                    } else {
+                      Alert.alert('Web Brief Error', e?.message || 'Could not generate brief. Check your connection.');
+                    }
+                  } finally {
+                    setWebBriefLoading(false);
+                  }
+                }}
+              >
+                {webBriefLoading ? <ActivityIndicator color="#00ff88" /> : <Text style={{ color: '#00ff88', fontSize: 13, fontWeight: '700' }}>🌐 Generate Web Brief</Text>}
+              </TouchableOpacity>
+            )}
+            {webBriefResult && (
+              <View style={{ backgroundColor: '#0a0f1a', borderRadius: 8, borderWidth: 1, borderColor: '#1a2535', padding: 12, marginBottom: 10 }}>
+                <Text style={{ color: '#00ff88', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>WEB BRIEF — LIVE SEARCH</Text>
+                <Text style={{ color: '#e8edf5', fontSize: 13, lineHeight: 19 }}>{webBriefResult}</Text>
               </View>
             )}
 

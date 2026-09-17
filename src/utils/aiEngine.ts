@@ -140,7 +140,7 @@ export async function callClaude(systemPrompt: string, userMessage: string): Pro
 // ── Web Brief (web-search-powered, unified across modules) ─────────────────────
 // Separate quota from general AI usage: Essential 20/mo, Pro 50/mo, Trial 5 (one-time).
 // Shared across all module types (company/phone/email/social/ip/domain/court).
-export type WebBriefModuleType = 'company' | 'phone' | 'email' | 'social' | 'ip' | 'domain' | 'court';
+export type WebBriefModuleType = 'person' | 'company' | 'phone' | 'email' | 'social' | 'ip' | 'domain' | 'court';
 const WEB_BRIEF_TRIAL_CAP = 5;
 const WEB_BRIEF_ESSENTIAL_CAP = 20;
 const WEB_BRIEF_PRO_CAP = 50;
