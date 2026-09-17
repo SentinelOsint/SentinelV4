@@ -268,7 +268,7 @@ export default function App() {
   const navigate = (s: Screen) => {
     onUserInteraction();
     Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
-      setScreen(s); setResults([]); setInput(''); setInput2('');
+      setScreen(s); setResults([]); setInput(''); setInput2(''); setWebBriefResult(null); setNotesAiSummary(null);
       Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
     });
   };
