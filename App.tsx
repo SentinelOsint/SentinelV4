@@ -57,6 +57,8 @@ import {
 } from './src/utils/osintEngines';
 import { Screen, OsintResult, FieldNote, HistoryItem } from './src/types';
 
+const SENTINEL_API_KEY = '371b8aa684ea487336f139c1eddc0107762a6c8073b7ce0c';
+
 export default function App() {
   const [unlocked,      setUnlocked]      = useState(false);
   const [forceUpdateRequired, setForceUpdateRequired] = useState(false);
@@ -75,7 +77,7 @@ export default function App() {
     }
     (async () => {
       try {
-        const res = await fetch('https://sentinel-backend-production-05e1.up.railway.app/app/min-version');
+        const res = await fetch('https://sentinel-backend-production-05e1.up.railway.app/app/min-version', { headers: { 'X-Sentinel-Key': SENTINEL_API_KEY } });
         const data = await res.json();
         const currentVersion = Constants.expoConfig?.version || '0.0.0';
         if (data?.minVersion && isVersionOutdated(currentVersion, data.minVersion)) {
@@ -171,8 +173,8 @@ export default function App() {
               if (!receipt) continue;
               try {
                 const res = await fetch('https://sentinel-backend-production-05e1.up.railway.app/iap/validate', {
+                  headers: { 'X-Sentinel-Key': SENTINEL_API_KEY, 'Content-Type': 'application/json' },
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ receiptData: receipt }),
                 });
                 const data = await res.json();
@@ -458,7 +460,7 @@ export default function App() {
 
     if (abuseKey || greyKey) {
       try {
-        const threat = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/ip/threat?ip=${ip}&abuseKey=${encodeURIComponent(abuseKey)}&greyNoiseKey=${encodeURIComponent(greyKey)}`);
+        const threat = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/ip/threat?ip=${ip}&abuseKey=${encodeURIComponent(abuseKey)}&greyNoiseKey=${encodeURIComponent(greyKey)}`, { headers: { 'X-Sentinel-Key': SENTINEL_API_KEY } });
         const td = await threat.json();
 
         if (td.results.abuseIPDB) {
@@ -495,7 +497,7 @@ export default function App() {
   });
   const searchDomain  = () => run('Domain & WHOIS',  input, async () => {
     const q = input.trim().replace(/^https?:\/\//,'').split('/')[0];
-    const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/domain/lookup?domain=${q}`);
+    const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/domain/lookup?domain=${q}`, { headers: { 'X-Sentinel-Key': SENTINEL_API_KEY } });
     const d = await r.json();
     if (d.error) throw new Error(d.error);
     
@@ -652,7 +654,7 @@ export default function App() {
 
       // Domain MX and DNS lookup
       try {
-        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/domain/lookup?domain=${domain}`);
+        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/domain/lookup?domain=${domain}`, { headers: { 'X-Sentinel-Key': SENTINEL_API_KEY } });
         const d = await r.json();
         
         if (d.ipData && d.ipData.status === 'success') {
@@ -734,7 +736,7 @@ export default function App() {
     
     if (isVIN) {
       try {
-        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/vin/lookup?vin=${q}`);
+        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/vin/lookup?vin=${q}`, { headers: { 'X-Sentinel-Key': SENTINEL_API_KEY } });
         const d = await r.json();
         
         if (d.results && d.results.length > 0) {
@@ -839,7 +841,7 @@ export default function App() {
         const prefix = hashHex.slice(0, 5);
         const suffix = hashHex.slice(5);
         
-        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/breach/password?hash=${prefix}`);
+        const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/breach/password?hash=${prefix}`, { headers: { 'X-Sentinel-Key': SENTINEL_API_KEY } });
         const d = await r.json();
         
         if (d.results) {
@@ -882,7 +884,7 @@ export default function App() {
     results.push({ label: 'DHS Tip Line (Report Trafficking)', value: 'tel:18663472423', type: 'link' });
 
     try {
-      const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/court/search?query=${encodeURIComponent(q)}`);
+      const r = await fetch(`https://sentinel-backend-production-05e1.up.railway.app/court/search?query=${encodeURIComponent(q)}`, { headers: { 'X-Sentinel-Key': SENTINEL_API_KEY } });
       const d = await r.json();
 
       if (d.cases && d.cases.length > 0) {

@@ -18,6 +18,7 @@ import { AuditLog }      from './auditLog';
 import { OsintResult, FieldNote, CaseReport } from '../types';
 
 const API_URL   = 'https://sentinel-backend-production-05e1.up.railway.app/ai/analyze';
+const SENTINEL_API_KEY = '371b8aa684ea487336f139c1eddc0107762a6c8073b7ce0c';
 const BACKEND_BASE_URL = 'https://sentinel-backend-production-05e1.up.railway.app';
 const MODEL     = 'claude-sonnet-4-20250514';
 const MAX_TOKENS = 4096;
@@ -125,7 +126,7 @@ export async function callClaude(systemPrompt: string, userMessage: string): Pro
   if (usage.count >= effectiveCap) throw new Error('USAGE_CAP_REACHED');
   const response = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Sentinel-Key': SENTINEL_API_KEY },
     body: JSON.stringify({ systemPrompt, userPrompt: userMessage }),
   });
   if (!response.ok) {
@@ -188,7 +189,7 @@ export async function generateWebBrief(moduleType: WebBriefModuleType, subjectVa
   if (usage.count >= cap) throw new Error('USAGE_CAP_REACHED');
   const response = await fetch(WEB_BRIEF_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Sentinel-Key': SENTINEL_API_KEY },
     body: JSON.stringify({ moduleType, subjectValue, subjectContext, existingFindings }),
   });
   if (!response.ok) {
@@ -698,7 +699,7 @@ Write a polished, professional summary suitable for sharing with a client or non
 async function postImageEndpoint(path: string, body: Record<string, unknown>): Promise<any> {
   const response = await fetch(`${BACKEND_BASE_URL}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Sentinel-Key': SENTINEL_API_KEY },
     body: JSON.stringify(body),
   });
   if (!response.ok) {

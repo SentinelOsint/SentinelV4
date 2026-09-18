@@ -117,7 +117,7 @@ export async function restorePurchasesIAP(
         try {
           const res = await fetch('https://sentinel-backend-production-05e1.up.railway.app/iap/validate', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Sentinel-Key': '371b8aa684ea487336f139c1eddc0107762a6c8073b7ce0c' },
             body: JSON.stringify({ receiptData: receipt }),
           });
           const data = await res.json();

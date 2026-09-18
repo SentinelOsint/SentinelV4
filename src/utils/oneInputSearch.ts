@@ -94,11 +94,11 @@ async function personModules(q: string, isPro: boolean = false): Promise<ModuleR
 
   const [fbiResult, interpolResult, googleResult, ofacResult, unResult, bisResult] = await Promise.allSettled([
     fetch(`https://api.fbi.gov/wanted/v1/list?title=${encodeURIComponent(lastName)}&pageSize=50`).then(r => r.json()),
-    fetch(`https://sentinel-backend-production-05e1.up.railway.app/interpol/search?forename=${encodeURIComponent(forename)}&name=${encodeURIComponent(surname)}`).then(r => r.json()),
+    fetch(`https://sentinel-backend-production-05e1.up.railway.app/interpol/search?forename=${encodeURIComponent(forename)}&name=${encodeURIComponent(surname)}`, { headers: { 'X-Sentinel-Key': '371b8aa684ea487336f139c1eddc0107762a6c8073b7ce0c' } }).then(r => r.json()),
     fetch(`https://kgsearch.googleapis.com/v1/entities:search?query=${enc}&limit=1&key=AIzaSyBC3110xUO4fOpNj1BCawuevrdtFevnQlo`).then(r => r.json()),
-    fetch(`https://sentinel-backend-production-05e1.up.railway.app/sanctions/ofac?name=${encodeURIComponent(q)}`).then(r => r.json()),
-    fetch(`https://sentinel-backend-production-05e1.up.railway.app/sanctions/un?name=${encodeURIComponent(q)}`).then(r => r.json()),
-    fetch(`https://sentinel-backend-production-05e1.up.railway.app/sanctions/bis?name=${encodeURIComponent(q)}`).then(r => r.json()),
+    fetch(`https://sentinel-backend-production-05e1.up.railway.app/sanctions/ofac?name=${encodeURIComponent(q)}`, { headers: { 'X-Sentinel-Key': '371b8aa684ea487336f139c1eddc0107762a6c8073b7ce0c' } }).then(r => r.json()),
+    fetch(`https://sentinel-backend-production-05e1.up.railway.app/sanctions/un?name=${encodeURIComponent(q)}`, { headers: { 'X-Sentinel-Key': '371b8aa684ea487336f139c1eddc0107762a6c8073b7ce0c' } }).then(r => r.json()),
+    fetch(`https://sentinel-backend-production-05e1.up.railway.app/sanctions/bis?name=${encodeURIComponent(q)}`, { headers: { 'X-Sentinel-Key': '371b8aa684ea487336f139c1eddc0107762a6c8073b7ce0c' } }).then(r => r.json()),
   ]);
 
   // FBI result
