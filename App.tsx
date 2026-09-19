@@ -1440,7 +1440,7 @@ export default function App() {
                 setWebBriefLoading(true);
                 setWebBriefResult(null);
                 try {
-                  const findingsSummary = results.filter(r => r.type !== 'info').slice(0, 15).map(r => r.label).join('; ');
+                  const findingsSummary = results.filter(r => r.type !== 'info').slice(0, 15).map(r => r.value ? `${r.label}: ${r.value}` : r.label).join('; ');
                   const brief = await generateWebBrief(moduleType, input.trim(), input2.trim() || undefined, findingsSummary);
                   setWebBriefResult(brief);
                 } catch (e: any) {
